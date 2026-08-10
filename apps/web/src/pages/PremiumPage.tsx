@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import { getQuota, type QuotaUsageSummary } from '../lib/quotaApi';
+import { createCheckoutSession } from '../lib/paymentsApi';
 
 export default function PremiumPage() {
   const { t } = useLocale();
+  const navigate = useNavigate();
   const [quota, setQuota] = useState<QuotaUsageSummary | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const isSignedIn = Boolean(localStorage.getItem('accessToken'));
 
   useEffect(() => {
-    if (!localStorage.getItem('accessToken')) {
+    if (!isSignedIn) {
       return;
     }
     getQuota()
@@ -17,9 +21,24 @@ export default function PremiumPage() {
       .catch(() => {
         // Sayfa üyelik durumu olmadan da görüntülenebilir; sessizce yut.
       });
-  }, []);
+  }, [isSignedIn]);
 
   const isPremium = quota?.membershipTier === 'PREMIUM';
+
+  async function handleUpgrade() {
+    if (!isSignedIn) {
+      navigate('/auth/signin');
+      return;
+    }
+    setIsCheckingOut(true);
+    try {
+      const { url } = await createCheckoutSession();
+      window.location.href = url;
+    } catch {
+      // Checkout oluşturulamadıysa kullanıcıyı butonla tekrar denemeye bırak.
+      setIsCheckingOut(false);
+    }
+  }
 
   return (
     <main>
@@ -58,16 +77,17 @@ export default function PremiumPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#e8d9c4] bg-[#fff8ee] px-4 py-3 text-sm text-[#6e6257]">
-          {t('premium.comingSoonNote')}
-        </div>
-
         <div className="flex flex-wrap gap-3">
           <Button
-            disabled
-            className="rounded-full bg-mint px-6 py-3 text-white opacity-60 disabled:cursor-not-allowed"
+            onClick={handleUpgrade}
+            disabled={isPremium || isCheckingOut}
+            className="rounded-full bg-mint px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {t('premium.upgradeCta')}
+            {isCheckingOut
+              ? t('premium.upgradeCtaLoading')
+              : !isSignedIn
+                ? t('premium.signInToUpgrade')
+                : t('premium.upgradeCta')}
           </Button>
           <Link to="/convert">
             <Button className="rounded-full border-2 border-mint bg-transparent px-6 py-3 text-mint hover:bg-mint-pale">

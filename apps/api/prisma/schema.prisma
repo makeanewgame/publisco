@@ -39,6 +39,11 @@ model User {
   // premium'da limit yok ama sayaç yine de tutulur. Hiçbir zaman resetlenmez.
   convertedBytesTotal BigInt @default(0)
 
+  // Lemon Squeezy'deki müşteri kaydına karşılık gelir; ilk checkout webhook'unda
+  // doldurulur. Aynı kullanıcının sonraki webhook'larını (custom_data.user_id
+  // olmadan da) müşteri bazında eşleştirmek için tutuluyor.
+  lemonSqueezyCustomerId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -47,6 +52,7 @@ model User {
   passwordResetTokens   PasswordResetToken[]
   fileAssets            FileAsset[]
   quota                 UserQuota?
+  subscriptions          Subscription[]
 
   @@map("users")
 }
@@ -140,4 +146,27 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+// Lemon Squeezy'deki bir aboneliğin DB tarafındaki aynası. Webhook'lar
+// (subscription_created/updated/cancelled/expired/resumed) bu satırı upsert
+// eder; asıl doğruluk kaynağı Lemon Squeezy'dir, burası sadece son bilinen
+// durumu tutar (bkz. PaymentsService).
+model Subscription {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lemonSqueezySubscriptionId String @unique
+  variantId                  String
+  // Lemon Squeezy'nin ham durum string'i: active/on_trial/cancelled/expired/past_due/paused/unpaid.
+  status                     String
+  renewsAt                   DateTime?
+  endsAt                     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("subscriptions")
 }

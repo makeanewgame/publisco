@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import ConvertPage from './pages/ConvertPage';
 import LibraryPage from './pages/LibraryPage';
 import PremiumPage from './pages/PremiumPage';
+import AccountPage from './pages/AccountPage';
 import AuthPage from './pages/AuthPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route element={<RequireAuth />}>
             <Route path="/library" element={<LibraryPage />} />
+            <Route path="/account" element={<AccountPage />} />
           </Route>
         </Route>
 

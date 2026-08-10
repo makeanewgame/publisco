@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum MembershipTier {
+  FREE
+  PREMIUM
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  avatarUrl    String?
+
+  provider     AuthProvider @default(LOCAL)
+  googleId     String?      @unique
+
+  emailVerified Boolean @default(false)
+
+  // Hesap açılırken frontend'in aktif dilinden yakalanır; e-posta
+  // şablonlarının (doğrulama, şifre sıfırlama) hangi dilde gönderileceğini belirler.
+  locale String @default("tr")
+
+  membershipTier MembershipTier @default(FREE)
+  // Kullanıcının hesabı boyunca dönüştürdüğü toplam kaynak dosya boyutu (bayt).
+  // Free kullanıcılar için 200MB'lık dönüşüm kotasına karşı kontrol edilir;
+  // premium'da limit yok ama sayaç yine de tutulur. Hiçbir zaman resetlenmez.
+  convertedBytesTotal BigInt @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens        RefreshToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens   PasswordResetToken[]
+  fileAssets            FileAsset[]
+  quota                 UserQuota?
+
+  @@map("users")
+}
+
+// Kullanıcı bazlı kota limitleri. Üyelik oluşturulurken (bkz. UsersService)
+// o anki membershipTier'a karşılık gelen QUOTA_BYTES sabitlerinden dolduruluyor,
+// böylece ileride bir kullanıcıya özel (tier'dan bağımsız) limit tanımlanabilir.
+model UserQuota {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  storageQuotaBytes   BigInt
+  // null = sınırsız (premium dönüşüm kotası)
+  converterQuotaBytes BigInt?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_quotas")
+}
+
+// Vercel Blob'da saklanan bir dosyanın DB tarafındaki kaydı.
+// `pathname` blob store'daki sabit/stabil depolama anahtarıdır; rename sadece
+// `fileName` (kullanıcıya gösterilen ad) üzerinde çalışır, blob'u taşımaz.
+model FileAsset {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  fileName    String
+  pathname    String   @unique
+  url         String
+  contentType String?
+  size        Int
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerId])
+  @@map("file_assets")
+}
+
+// Bir kullanıcının aktif oturumlarını (cihazlarını) temsil eder.
+// Sign out akışı burada ilgili kaydı revokedAt ile iptal eder,
+// böylece diğer cihazlardaki oturumlar etkilenmez.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String    @unique
+  userAgent String?
+  ipAddress String?
+
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model EmailVerificationToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 6 haneli kodun hash'i. Kod, tam token'ın aksine global olarak benzersiz
+  // değildir (iki kullanıcı aynı anda aynı kodu alabilir), bu yüzden lookup
+  // userId üzerinden yapılır ve tokenHash artık @unique değildir.
+  tokenHash  String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}

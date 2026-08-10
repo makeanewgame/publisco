@@ -1,0 +1,307 @@
+{
+  "nav": {
+    "features": "Özellikler",
+    "how": "Nasıl çalışır",
+    "faq": "SSS",
+    "login": "Giriş yap",
+    "signup": "Kaydol",
+    "home": "Ana sayfa",
+    "library": "Kitaplığım",
+    "themeFolder": "Klasör",
+    "themeDefault": "Klasik"
+  },
+  "hero": {
+    "badge": "E-kitap okuyucu için özel olarak tasarlandı",
+    "title": "PDF’ini akışkan bir e-kitaba",
+    "highlightWord": "akışkan",
+    "accent": "dönüştür.",
+    "description": "Sabit sayfalı PDF’leri, kitabın ruhuna uygun, akışkan ve temiz bir EPUB’e dönüştür. Kapak, bölüm yapısı ve görseller korunsun.",
+    "ctaPrimary": "EPUB’e dönüştür",
+    "ctaSecondary": "Daha fazla bilgi",
+    "cardStatus": "Dönüştürülüyor",
+    "cardMeta": "PDF → EPUB • Kapak • Bölüm yapısı"
+  },
+  "platforms": {
+    "caption": "Popüler e-okuyucularla uyumlu"
+  },
+  "howItWorks": {
+    "eyebrow": "üç adımda",
+    "heading": "Nasıl çalışır?",
+    "subtitle": "Yükle, bekle, indir. Hepsi bu kadar.",
+    "step1": {
+      "title": "PDF’inizi yükleyin",
+      "text": "Dönüştürmek istediğiniz belgeyi yükleme alanına sürükleyin ya da seçin."
+    },
+    "step2": {
+      "title": "Yapay zekâ işlesin",
+      "text": "Motorumuz belgeyi tarar; metin, tablo ve görsel düzenini bozmadan akıllıca yeniden hizalar."
+    },
+    "step3": {
+      "title": "EPUB’ı indirin",
+      "text": "Kısa sürede hazır olan dosyanızı indirin ve dilediğiniz e-okuyucuya gönderin."
+    }
+  },
+  "features": {
+    "eyebrow": "farkımız",
+    "heading": "Neden publisco?",
+    "section1": {
+      "title": "Kusursuz format",
+      "text": "Bölüm yapısı, kapak ve tablolar bozulmadan korunur; satır kaymalarına son."
+    },
+    "section2": {
+      "title": "Süper hızlı",
+      "text": "Onlarca sayfalık PDF’ler bile kısa sürede EPUB’e dönüşür."
+    },
+    "section3": {
+      "title": "Tam gizlilik",
+      "text": "Dosyalarınız yalnızca dönüştürme için kullanılır, sizin dışınızda kimseyle paylaşılmaz."
+    }
+  },
+  "useCases": {
+    "eyebrow": "senin için",
+    "heading": "Kimler için ideal?",
+    "item1": {
+      "title": "Öğrenciler ve akademisyenler",
+      "description": "Çift sütunlu makaleleri telefonda rahatça okumak için."
+    },
+    "item2": {
+      "title": "Bağımsız yazarlar",
+      "description": "Taslaklarını dijital mağazalara hazır hale getirmek için."
+    },
+    "item3": {
+      "title": "Kitap kurtları",
+      "description": "İnternetteki PDF kitapları göz yormadan, font büyüterek okumak için."
+    }
+  },
+  "faq": {
+    "heading": "Sıkça sorulan sorular",
+    "q1": {
+      "question": "Dosyalarım güvende mi?",
+      "answer": "Evet. Dosyalarınız yalnızca dönüştürme işlemi için kullanılır ve sizin dışınızda kimseyle paylaşılmaz."
+    },
+    "q2": {
+      "question": "Ücretsiz mi?",
+      "answer": "Dönüştürme aracını ücretsiz deneyebilirsiniz; kredi kartı bilgisi gerekmez."
+    },
+    "q3": {
+      "question": "Görseller ve grafikler kaybolur mu?",
+      "answer": "Hayır. Görseller, tablolar ve şemalar orijinal düzenine sadık kalacak şekilde EPUB’e aktarılır."
+    },
+    "q4": {
+      "question": "Şifreli PDF yükleyebilir miyim?",
+      "answer": "Şu an için şifre korumalı PDF dosyaları desteklenmiyor; lütfen önce şifreyi kaldırıp tekrar deneyin."
+    }
+  },
+  "finalCta": {
+    "heading": "Hemen başlamaya hazır mısın?",
+    "description": "PDF'lerini yüksek kaliteli EPUB'e dönüştür. Ücretsiz dene, ödeme kartı gerekli değil.",
+    "primary": "Dönüştürmeye başla",
+    "secondary": "Ücretsiz hesap oluştur"
+  },
+  "footer": {
+    "title": "publisco",
+    "description": "PDF’leri e-kitap okuyucu deneyimine uygun EPUB’e dönüştür.",
+    "features": "Özellikler",
+    "flow": "Akış",
+    "login": "Giriş",
+    "explore": "Keşfet",
+    "account": "Hesap",
+    "contact": "İletişim",
+    "rightsReserved": "Tüm hakları saklıdır.",
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfService": "Kullanım Şartları"
+  },
+  "convert": {
+    "step": "Adım 2",
+    "title": "Dosyalarını yükle",
+    "home": "Ana sayfa",
+    "dropTitle": "PDF dosyalarını buraya sürükleyip bırak",
+    "dropDescription": "veya bilgisayarından seç. Birden fazla dosya yükleyebilirsin.",
+    "selectFile": "Dosya seç",
+    "selectedCount": "Seçilen dosya sayısı: {{count}}",
+    "removeFile": "Dosyayı kaldır",
+    "invalidFileType": "Yalnızca PDF dosyaları yükleyebilirsiniz.",
+    "formError": "Dönüştürmeden önce en az bir PDF dosyası ekleyin, kitap başlığı, yazar ve dil alanlarını doldurun.",
+    "converting": "Dönüştürülüyor…",
+    "conversionFailed": "Dönüştürme başarısız oldu. Lütfen tekrar deneyin.",
+    "progress": {
+      "fileLabel": "Dosya {{index}}/{{count}}: {{name}}",
+      "queued": "Kuyrukta bekliyor ({{position}}. sırada)",
+      "processing": "Sayfa {{current}} / {{total}} işleniyor",
+      "processingUnknown": "Dönüştürülüyor…"
+    },
+    "settingsHeading": "Dönüştürme ayarları",
+    "titleField": "Kitap başlığı",
+    "titlePlaceholder": "Örneğin: Deniz Kızı",
+    "authorField": "Yazar",
+    "authorPlaceholder": "Yazar adı",
+    "languageField": "Dil",
+    "languageAuto": "Otomatik algıla",
+    "languageTr": "Türkçe",
+    "languageEn": "İngilizce",
+    "languageDe": "Almanca",
+    "languageFr": "Fransızca",
+    "languageEs": "İspanyolca",
+    "languageIt": "İtalyanca",
+    "languagePt": "Portekizce",
+    "languageRu": "Rusça",
+    "languageAr": "Arapça",
+    "languageNl": "Felemenkçe",
+    "languagePl": "Lehçe",
+    "advanced": "Gelişmiş ayarlar",
+    "rangeLabel": "Sayfa aralığı (opsiyonel)",
+    "rangePlaceholder": "Örn. 10-120",
+    "modeAuto": "Otomatik",
+    "modeAdvanced": "Gelişmiş",
+    "modeAutoDescription": "Başlık, yazar ve bölümler PDF'ten otomatik tespit edilecek.",
+    "modeAdvancedSummary": "Başlık: {{title}} • Yazar: {{author}}",
+    "modeAdvancedEdit": "Ayarları düzenle",
+    "advancedModalTitle": "Gelişmiş ayarlar",
+    "advancedModalSave": "Kaydet",
+    "warningTitle": "başlık tespit edilemedi",
+    "warningAuthor": "yazar tespit edilemedi",
+    "warningChapters": "bölümler tespit edilemedi, tek bölüm olarak eklenecek",
+    "unknownAuthor": "Bilinmeyen yazar",
+    "analyzeFailed": "PDF analiz edilemedi, öntanımlı değerlerle devam edildi",
+    "analyzing": "Analiz ediliyor…",
+    "chaptersDetectedCount": "{{count}} bölüm tespit edildi",
+    "conversionWarningsHeading": "Bazı dosyalarda otomatik tespit eksik kaldı:",
+    "submit": "EPUB’e dönüştür",
+    "cancel": "İptal",
+    "logout": "Çıkış",
+    "authTitle": "Bu işlem için üyelik gereklidir.",
+    "authDescription": "Giriş yap ya da hesap oluştur, sonra dönüşümü başlat.",
+    "authLogin": "Giriş yap",
+    "authSignup": "Kayıt ol",
+    "footer": "publisco • PDF’leri EPUB’e dönüştürerek e-kitap okuyucu akışına hazırlar.",
+    "library": "Kitaplığım",
+    "quota": {
+      "heading": "Kullanım durumu",
+      "tierFree": "Ücretsiz",
+      "tierPremium": "Premium",
+      "storageLabel": "Depolama",
+      "converterLabel": "Dönüştürme",
+      "upgradeLink": "Daha fazla kota için premium'a geç →",
+      "converterExceededTitle": "Dönüştürme kotanız doldu",
+      "converterExceededDescription": "Ücretsiz üyelikteki dönüştürme kotanızı kullandınız. Daha fazla dosya dönüştürmek için premium üyeliğe geçebilirsiniz.",
+      "storageExceededTitle": "Depolama alanınız yetersiz",
+      "storageExceededDescription": "Bu dosyayı dönüştürmek için depolama alanınızda yeterli yer yok. Devam edebilmek için kitaplığınızdan dosya silerek yer açın.",
+      "upgradeCta": "Premium'a geç",
+      "manageStorageCta": "Kitaplığa git"
+    }
+  },
+  "library": {
+    "title": "Kitaplığım",
+    "home": "Ana sayfa",
+    "convert": "Dönüştür",
+    "logout": "Çıkış",
+    "loading": "Dosyalar yükleniyor…",
+    "empty": "Henüz dosya yok — dönüştürdüğün dosyalar burada görünecek.",
+    "loadError": "Dosyalar yüklenemedi. Lütfen tekrar deneyin.",
+    "downloadError": "Dosya indirilemedi. Lütfen tekrar deneyin.",
+    "deleteError": "Dosya silinemedi. Lütfen tekrar deneyin.",
+    "download": "İndir",
+    "delete": "Dosyayı sil",
+    "footer": "publisco • PDF’leri EPUB’e dönüştürerek e-kitap okuyucu akışına hazırlar."
+  },
+  "auth": {
+    "step": "Adım 3",
+    "title": "Kitabını dönüştürmek için giriş yap",
+    "signupTitle": "Hesap oluştur",
+    "home": "Ana sayfa",
+    "quickAccess": "Hızlı erişim",
+    "quickAccessText": "Google hesabınla veya e-posta adresinle devam edebilirsin.",
+    "google": "Google ile devam et",
+    "emailSignIn": "E-posta ile giriş yap",
+    "emailSignUp": "E-posta ile kayıt ol",
+    "nameLabel": "Adınız",
+    "namePlaceholder": "Adınız",
+    "emailLabel": "E-posta adresi",
+    "emailPlaceholder": "ornek@mail.com",
+    "passwordLabel": "Şifre",
+    "forgotPassword": "Şifremi unuttum?",
+    "submitSignIn": "Giriş yap",
+    "submitSignUp": "Kayıt ol",
+    "switchSignIn": "Zaten hesabın var mı?",
+    "switchSignUp": "Hesabın yok mu?",
+    "footer": "publisco • PDF’leri EPUB’e dönüştürerek e-kitap okuyucu akışına hazırlar.",
+    "errorNameRequired": "Lütfen adınızı girin.",
+    "errorEmailRequired": "Lütfen e-posta adresinizi girin.",
+    "errorEmailInvalid": "Lütfen geçerli bir e-posta adresi girin.",
+    "errorPasswordRequired": "Lütfen şifrenizi girin.",
+    "errorPasswordRules": "Şifre en az 8 karakter, bir büyük harf, bir küçük harf ve bir noktalama işareti içermelidir.",
+    "passwordRuleMinLength": "En az 8 karakter",
+    "passwordRuleUpper": "En az bir büyük harf",
+    "passwordRuleLower": "En az bir küçük harf",
+    "passwordRulePunctuation": "En az bir noktalama işareti (!?.,;: vb.)",
+    "showPassword": "Şifreyi göster",
+    "hidePassword": "Şifreyi gizle",
+    "orDivider": "veya",
+    "errorGoogle": "Google ile giriş yapılamadı. Lütfen tekrar deneyin.",
+    "genericError": "Bir hata oluştu. Lütfen tekrar deneyiniz."
+  },
+  "forgotPassword": {
+    "title": "Şifremi unuttum",
+    "description": "E-posta adresinizi girin. Şifrenizi sıfırlamak için bir bağlantı gönderelim.",
+    "emailLabel": "E-posta adresi",
+    "emailPlaceholder": "ornek@mail.com",
+    "submit": "Bağlantı gönder",
+    "sending": "...",
+    "backLink": "Geri dön",
+    "successTitle": "Başarılı!",
+    "successDescription": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen kontrol ediniz.",
+    "redirectNotice": "3 saniye içinde giriş sayfasına yönlendirileceksiniz...",
+    "footerNoAccount": "Hesabınız mı yok?",
+    "footerSignup": "Kayıt olun",
+    "genericError": "E-posta gönderilemedi. Lütfen tekrar deneyiniz."
+  },
+  "resetPassword": {
+    "title": "Şifreyi sıfırla",
+    "description": "Hesabın için yeni bir şifre belirle.",
+    "newPasswordLabel": "Yeni şifre",
+    "confirmPasswordLabel": "Yeni şifre (tekrar)",
+    "submit": "Şifreyi sıfırla",
+    "sending": "...",
+    "successTitle": "Başarılı!",
+    "successDescription": "Şifren sıfırlandı. Yeni şifrenle giriş yapabilirsin.",
+    "redirectNotice": "3 saniye içinde giriş sayfasına yönlendirileceksiniz...",
+    "errorTokenMissing": "Bu sıfırlama bağlantısı geçersiz veya eksik. Lütfen yeni bir bağlantı iste.",
+    "errorPasswordMismatch": "Şifreler eşleşmiyor.",
+    "backToForgotPassword": "Yeni bağlantı iste",
+    "genericError": "Şifren sıfırlanamadı. Lütfen tekrar deneyiniz."
+  },
+  "verifyEmail": {
+    "title": "E-postanı doğrula",
+    "description": "{{email}} adresine 6 haneli bir doğrulama kodu gönderdik. Kodu aşağıya girerek hesabını doğrula.",
+    "codeLabel": "Doğrulama kodu",
+    "submit": "Doğrula",
+    "resend": "Kodu tekrar gönder",
+    "resendCooldown": "Tekrar gönder ({{seconds}}sn)",
+    "successTitle": "Doğrulandı!",
+    "successDescription": "E-posta adresin doğrulandı. Ana sayfaya yönlendiriliyorsun...",
+    "errorCodeFormat": "Lütfen 6 haneli kodu eksiksiz gir.",
+    "errorGeneric": "Kod doğrulanamadı. Lütfen tekrar deneyin."
+  },
+  "common": {
+    "lang": "Dil",
+    "tr": "Türkçe",
+    "en": "English"
+  },
+  "premium": {
+    "title": "Premium'a geç",
+    "subtitle": "Daha fazla depolama alanı ve sınırsız dönüştürme kotası için premium üyeliğe geç.",
+    "alreadyPremium": "Zaten premium üyesiniz — sınırsız dönüştürme kotasından yararlanıyorsunuz.",
+    "freeTier": "Ücretsiz",
+    "freePrice": "0 ₺",
+    "freeStorage": "50 MB depolama alanı",
+    "freeConverter": "200 MB dönüştürme kotası",
+    "recommended": "Önerilen",
+    "premiumTier": "Premium",
+    "premiumPrice": "Yakında",
+    "premiumStorage": "2 GB depolama alanı",
+    "premiumConverter": "Sınırsız dönüştürme kotası",
+    "comingSoonNote": "Ödeme entegrasyonu yakında eklenecek. Şu an için premium'a geçiş yapılamıyor.",
+    "upgradeCta": "Yakında",
+    "backToConvert": "Dönüştürmeye geri dön"
+  }
+}

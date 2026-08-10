@@ -1,0 +1,307 @@
+{
+  "nav": {
+    "features": "Features",
+    "how": "How it works",
+    "faq": "FAQ",
+    "login": "Log in",
+    "signup": "Sign up",
+    "home": "Home",
+    "library": "My Library",
+    "themeFolder": "Folder",
+    "themeDefault": "Classic"
+  },
+  "hero": {
+    "badge": "Crafted for the e-reader experience",
+    "title": "Turn your PDF into a fluid digital book",
+    "highlightWord": "fluid",
+    "accent": "in minutes.",
+    "description": "Convert static PDFs into a clean, flowing EPUB that respects your book’s structure, cover, chapters, and imagery.",
+    "ctaPrimary": "Convert to EPUB",
+    "ctaSecondary": "Learn more",
+    "cardStatus": "Converting",
+    "cardMeta": "PDF → EPUB • Cover • Chapters"
+  },
+  "platforms": {
+    "caption": "Works with popular e-readers"
+  },
+  "howItWorks": {
+    "eyebrow": "in three steps",
+    "heading": "How it works",
+    "subtitle": "Upload, wait, download. That's it.",
+    "step1": {
+      "title": "Upload your PDF",
+      "text": "Drag the document you want to convert into the upload area, or pick it from your device."
+    },
+    "step2": {
+      "title": "Let the AI process it",
+      "text": "Our engine scans the document and intelligently realigns text, tables, and images without breaking the layout."
+    },
+    "step3": {
+      "title": "Download your EPUB",
+      "text": "Grab your file once it’s ready and send it to whichever e-reader you like."
+    }
+  },
+  "features": {
+    "eyebrow": "what sets us apart",
+    "heading": "Why publisco?",
+    "section1": {
+      "title": "Flawless formatting",
+      "text": "Chapter structure, covers, and tables stay intact — no more broken layouts."
+    },
+    "section2": {
+      "title": "Super fast",
+      "text": "Even lengthy PDFs turn into EPUBs in a short time."
+    },
+    "section3": {
+      "title": "Full privacy",
+      "text": "Your files are only used for the conversion and are never shared with anyone else."
+    }
+  },
+  "useCases": {
+    "eyebrow": "built for you",
+    "heading": "Who is it for?",
+    "item1": {
+      "title": "Students and academics",
+      "description": "Read two-column papers comfortably on a phone."
+    },
+    "item2": {
+      "title": "Independent authors",
+      "description": "Get manuscripts ready for digital storefronts."
+    },
+    "item3": {
+      "title": "Book lovers",
+      "description": "Read PDF books found online without eye strain, with a larger font."
+    }
+  },
+  "faq": {
+    "heading": "Frequently asked questions",
+    "q1": {
+      "question": "Are my files safe?",
+      "answer": "Yes. Your files are only used for the conversion itself and are never shared with anyone else."
+    },
+    "q2": {
+      "question": "Is it free?",
+      "answer": "You can try the converter for free — no credit card required."
+    },
+    "q3": {
+      "question": "Will images and charts get lost?",
+      "answer": "No. Images, tables, and diagrams are carried over into the EPUB true to their original layout."
+    },
+    "q4": {
+      "question": "Can I upload a password-protected PDF?",
+      "answer": "Password-protected PDFs aren’t supported yet — please remove the password first and try again."
+    }
+  },
+  "finalCta": {
+    "heading": "Ready to get started?",
+    "description": "Convert your PDFs into high-quality EPUBs. Try it for free, no card required.",
+    "primary": "Start converting",
+    "secondary": "Create a free account"
+  },
+  "footer": {
+    "title": "publisco",
+    "description": "Turn PDFs into EPUBs that feel ready for the e-reader experience.",
+    "features": "Features",
+    "flow": "Flow",
+    "login": "Login",
+    "explore": "Explore",
+    "account": "Account",
+    "contact": "Contact",
+    "rightsReserved": "All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
+  "convert": {
+    "step": "Step 2",
+    "title": "Upload your files",
+    "home": "Home",
+    "dropTitle": "Drop your PDF files here",
+    "dropDescription": "or choose them from your device. You can upload multiple files at once.",
+    "selectFile": "Select files",
+    "selectedCount": "Selected files: {{count}}",
+    "removeFile": "Remove file",
+    "invalidFileType": "Only PDF files can be uploaded.",
+    "formError": "Please add at least one PDF file and fill in the title, author, and language fields before converting.",
+    "converting": "Converting…",
+    "progress": {
+      "fileLabel": "File {{index}}/{{count}}: {{name}}",
+      "queued": "Waiting in queue (position {{position}})",
+      "processing": "Processing page {{current}} / {{total}}",
+      "processingUnknown": "Converting…"
+    },
+    "conversionFailed": "Conversion failed. Please try again.",
+    "settingsHeading": "Conversion settings",
+    "titleField": "Book title",
+    "titlePlaceholder": "e.g. The Little Mermaid",
+    "authorField": "Author",
+    "authorPlaceholder": "Author name",
+    "languageField": "Language",
+    "languageAuto": "Auto-detect",
+    "languageTr": "Turkish",
+    "languageEn": "English",
+    "languageDe": "German",
+    "languageFr": "French",
+    "languageEs": "Spanish",
+    "languageIt": "Italian",
+    "languagePt": "Portuguese",
+    "languageRu": "Russian",
+    "languageAr": "Arabic",
+    "languageNl": "Dutch",
+    "languagePl": "Polish",
+    "advanced": "Advanced settings",
+    "rangeLabel": "Page range (optional)",
+    "rangePlaceholder": "e.g. 10-120",
+    "modeAuto": "Automatic",
+    "modeAdvanced": "Advanced",
+    "modeAutoDescription": "Title, author, and chapters will be detected automatically from the PDF.",
+    "modeAdvancedSummary": "Title: {{title}} • Author: {{author}}",
+    "modeAdvancedEdit": "Edit settings",
+    "advancedModalTitle": "Advanced settings",
+    "advancedModalSave": "Save",
+    "warningTitle": "title not detected",
+    "warningAuthor": "author not detected",
+    "warningChapters": "chapters not detected, added as a single chapter",
+    "unknownAuthor": "Unknown author",
+    "analyzeFailed": "Could not analyze the PDF, continued with default values",
+    "analyzing": "Analyzing…",
+    "chaptersDetectedCount": "{{count}} chapters detected",
+    "conversionWarningsHeading": "Automatic detection was incomplete for some files:",
+    "submit": "Convert to EPUB",
+    "cancel": "Cancel",
+    "logout": "Log out",
+    "authTitle": "This action requires an account.",
+    "authDescription": "Sign in or create an account before you begin.",
+    "authLogin": "Sign in",
+    "authSignup": "Sign up",
+    "footer": "publisco • Turn PDFs into EPUBs that are ready for the e-reader experience.",
+    "library": "My Library",
+    "quota": {
+      "heading": "Usage",
+      "tierFree": "Free",
+      "tierPremium": "Premium",
+      "storageLabel": "Storage",
+      "converterLabel": "Conversion",
+      "upgradeLink": "Get more quota with premium →",
+      "converterExceededTitle": "Your conversion quota is used up",
+      "converterExceededDescription": "You've used your free plan's conversion quota. Upgrade to premium to convert more files.",
+      "storageExceededTitle": "Not enough storage space",
+      "storageExceededDescription": "There isn't enough storage space to convert this file. Delete some files from your library to free up space.",
+      "upgradeCta": "Upgrade to premium",
+      "manageStorageCta": "Go to library"
+    }
+  },
+  "library": {
+    "title": "My Library",
+    "home": "Home",
+    "convert": "Convert",
+    "logout": "Log out",
+    "loading": "Loading files…",
+    "empty": "No files here yet — files you convert will show up here.",
+    "loadError": "Could not load your files. Please try again.",
+    "downloadError": "Could not download the file. Please try again.",
+    "deleteError": "Could not delete the file. Please try again.",
+    "download": "Download",
+    "delete": "Delete file",
+    "footer": "publisco • Turn PDFs into EPUBs that are ready for the e-reader experience."
+  },
+  "auth": {
+    "step": "Step 3",
+    "title": "Sign in to convert your book",
+    "signupTitle": "Create an account",
+    "home": "Home",
+    "quickAccess": "Quick access",
+    "quickAccessText": "Continue with Google or your email address.",
+    "google": "Continue with Google",
+    "emailSignIn": "Sign in with email",
+    "emailSignUp": "Sign up with email",
+    "nameLabel": "Your name",
+    "namePlaceholder": "Your name",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "example@mail.com",
+    "passwordLabel": "Password",
+    "forgotPassword": "Forgot password?",
+    "submitSignIn": "Sign in",
+    "submitSignUp": "Sign up",
+    "switchSignIn": "Already have an account?",
+    "switchSignUp": "Don’t have an account?",
+    "footer": "publisco • Turn PDFs into EPUBs that are ready for the e-reader experience.",
+    "errorNameRequired": "Please enter your name.",
+    "errorEmailRequired": "Please enter your email address.",
+    "errorEmailInvalid": "Please enter a valid email address.",
+    "errorPasswordRequired": "Please enter your password.",
+    "errorPasswordRules": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a punctuation mark.",
+    "passwordRuleMinLength": "At least 8 characters",
+    "passwordRuleUpper": "At least one uppercase letter",
+    "passwordRuleLower": "At least one lowercase letter",
+    "passwordRulePunctuation": "At least one punctuation mark (!?.,;: etc.)",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "orDivider": "or",
+    "errorGoogle": "Google sign-in failed. Please try again.",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "forgotPassword": {
+    "title": "Forgot password",
+    "description": "Enter your email address. We’ll send you a link to reset your password.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "example@mail.com",
+    "submit": "Send link",
+    "sending": "...",
+    "backLink": "Back",
+    "successTitle": "Success!",
+    "successDescription": "A password reset link has been sent to your email address. Please check your inbox.",
+    "redirectNotice": "You will be redirected to the sign-in page in 3 seconds...",
+    "footerNoAccount": "Don’t have an account?",
+    "footerSignup": "Sign up",
+    "genericError": "Could not send the email. Please try again."
+  },
+  "resetPassword": {
+    "title": "Reset password",
+    "description": "Choose a new password for your account.",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm new password",
+    "submit": "Reset password",
+    "sending": "...",
+    "successTitle": "Success!",
+    "successDescription": "Your password has been reset. You can now sign in with your new password.",
+    "redirectNotice": "You will be redirected to the sign-in page in 3 seconds...",
+    "errorTokenMissing": "This reset link is invalid or missing. Please request a new one.",
+    "errorPasswordMismatch": "Passwords do not match.",
+    "backToForgotPassword": "Request a new link",
+    "genericError": "Could not reset your password. Please try again."
+  },
+  "verifyEmail": {
+    "title": "Verify your email",
+    "description": "We sent a 6-digit verification code to {{email}}. Enter it below to verify your account.",
+    "codeLabel": "Verification code",
+    "submit": "Verify",
+    "resend": "Resend code",
+    "resendCooldown": "Resend ({{seconds}}s)",
+    "successTitle": "Verified!",
+    "successDescription": "Your email has been verified. Redirecting you home...",
+    "errorCodeFormat": "Please enter the full 6-digit code.",
+    "errorGeneric": "Could not verify the code. Please try again."
+  },
+  "common": {
+    "lang": "Language",
+    "tr": "Türkçe",
+    "en": "English"
+  },
+  "premium": {
+    "title": "Upgrade to premium",
+    "subtitle": "Get more storage and unlimited conversion quota with a premium membership.",
+    "alreadyPremium": "You're already a premium member — enjoy unlimited conversion quota.",
+    "freeTier": "Free",
+    "freePrice": "$0",
+    "freeStorage": "50 MB of storage",
+    "freeConverter": "200 MB conversion quota",
+    "recommended": "Recommended",
+    "premiumTier": "Premium",
+    "premiumPrice": "Coming soon",
+    "premiumStorage": "2 GB of storage",
+    "premiumConverter": "Unlimited conversion quota",
+    "comingSoonNote": "Payment integration is coming soon. Upgrading isn't available yet.",
+    "upgradeCta": "Coming soon",
+    "backToConvert": "Back to converting"
+  }
+}

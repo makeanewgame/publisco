@@ -1,0 +1,7 @@
+pymupdf
+EbookLib
+
+# Opsiyonel - sadece taranmış (görüntü) PDF sayfaları için OCR gerekirse:
+# pytesseract
+# pillow
+# (ayrıca sisteminizde Tesseract OCR + Türkçe dil paketi kurulu olmalı)

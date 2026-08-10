@@ -1,0 +1,7 @@
+.venv
+__pycache__
+*.pyc
+tests
+README.md
+pdf_to_epub_kit
+.pytest_cache

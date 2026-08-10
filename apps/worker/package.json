@@ -1,0 +1,8 @@
+{
+  "name": "@mintbook/worker",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "test -x .venv/bin/uvicorn || (echo 'apps/worker/.venv bulunamadi. Kurulum icin apps/worker/README.md dosyasina bakin (Python 3.10+ gerekir).' >&2 && exit 1) && .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 3002"
+  }
+}

@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+node_modules
+
+node_modules/
+apps/web/.npm-cache
+apps/web/dist/
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Env files
+.env
+.env.local
+.env.*.local
+apps/api/.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node / build
+dist/
+apps/**/dist/
+
+# Prisma
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal
+apps/api/src/generated/
+
+
+# EPUB / build artifacts
+*.epub
+*.mobi
+*.azw3
+*.pdf
+*.kfx
+*.log
+
+# Temporary/editor files
+*.swp
+*.tmp
+*.bak
+.vercel
+.env*
+
+# Claude Code local hook state (not team-shared)
+.claude/state/

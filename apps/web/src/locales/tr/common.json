@@ -115,19 +115,17 @@
   },
   "convert": {
     "step": "Adım 2",
-    "title": "Dosyalarını yükle",
+    "title": "Dosyanı yükle",
     "home": "Ana sayfa",
-    "dropTitle": "PDF dosyalarını buraya sürükleyip bırak",
-    "dropDescription": "veya bilgisayarından seç. Birden fazla dosya yükleyebilirsin.",
+    "dropTitle": "PDF dosyanı buraya sürükleyip bırak",
+    "dropDescription": "veya bilgisayarından seç.",
     "selectFile": "Dosya seç",
-    "selectedCount": "Seçilen dosya sayısı: {{count}}",
     "removeFile": "Dosyayı kaldır",
     "invalidFileType": "Yalnızca PDF dosyaları yükleyebilirsiniz.",
-    "formError": "Dönüştürmeden önce en az bir PDF dosyası ekleyin, kitap başlığı, yazar ve dil alanlarını doldurun.",
+    "formError": "Dönüştürmeden önce bir PDF dosyası ekleyin, kitap başlığı, yazar ve dil alanlarını doldurun.",
     "converting": "Dönüştürülüyor…",
     "conversionFailed": "Dönüştürme başarısız oldu. Lütfen tekrar deneyin.",
     "progress": {
-      "fileLabel": "Dosya {{index}}/{{count}}: {{name}}",
       "queued": "Kuyrukta bekliyor ({{position}}. sırada)",
       "processing": "Sayfa {{current}} / {{total}} işleniyor",
       "processingUnknown": "Dönüştürülüyor…"

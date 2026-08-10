@@ -33,10 +33,6 @@ const LANGUAGE_OPTIONS = [
   { value: 'pl', tesseract: 'pol', labelKey: 'convert.languagePl' },
 ] as const;
 
-function fileKey(file: File) {
-  return `${file.name}-${file.size}-${file.lastModified}`;
-}
-
 function sanitizeFileName(name: string): string {
   return name.replace(/[\\/:*?"<>|]+/g, ' ').trim();
 }
@@ -94,8 +90,6 @@ function QuotaBar({
 
 interface FileConversionProgress extends ConvertProgress {
   fileName: string;
-  fileIndex: number;
-  fileCount: number;
 }
 
 function ConversionProgressPanel({ progress, t }: { progress: FileConversionProgress; t: (key: string, vars?: Record<string, string | number>) => string }) {
@@ -103,9 +97,7 @@ function ConversionProgressPanel({ progress, t }: { progress: FileConversionProg
   return (
     <div className="rounded-[24px] border border-[#e8d9c4] bg-[#fff8ee] p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="font-semibold text-[#241c15]">
-          {t('convert.progress.fileLabel', { index: progress.fileIndex, count: progress.fileCount, name: progress.fileName })}
-        </span>
+        <span className="font-semibold text-[#241c15]">{progress.fileName}</span>
         <span className="font-semibold text-[#0c7a5e]">%{percent}</span>
       </div>
       <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-[#ead8c6]">
@@ -124,7 +116,7 @@ function ConversionProgressPanel({ progress, t }: { progress: FileConversionProg
 
 export default function ConvertPage() {
   const { t } = useLocale();
-  const [queuedFiles, setQueuedFiles] = useState<File[]>([]);
+  const [file, setFile] = useState<File | null>(null);
   const [fileTypeError, setFileTypeError] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -141,7 +133,7 @@ export default function ConvertPage() {
   const [quota, setQuota] = useState<QuotaUsageSummary | null>(null);
   const [conversionWarnings, setConversionWarnings] = useState<string[]>([]);
   const [conversionProgress, setConversionProgress] = useState<FileConversionProgress | null>(null);
-  const [fileAnalyses, setFileAnalyses] = useState<Record<string, FileAnalysisState>>({});
+  const [analysis, setAnalysis] = useState<FileAnalysisState | null>(null);
   const cancelControllerRef = useRef<AbortController | null>(null);
 
   const WARNING_LABEL_KEYS: Record<AnalyzeWarning, string> = {
@@ -150,7 +142,7 @@ export default function ConvertPage() {
     chapters: 'convert.warningChapters',
   };
 
-  const missingFile = queuedFiles.length === 0;
+  const missingFile = !file;
   const missingTitle = !bookTitle.trim();
   const missingAuthor = !bookAuthor.trim();
   const missingLanguage = !bookLanguage.trim();
@@ -173,77 +165,56 @@ export default function ConvertPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const runAnalysis = async (file: File) => {
-    const key = fileKey(file);
-    setFileAnalyses((prev) => ({
-      ...prev,
-      [key]: { status: 'loading', title: '', author: '', chapters: [], warnings: [] },
-    }));
+  const runAnalysis = async (targetFile: File) => {
+    setAnalysis({ status: 'loading', title: '', author: '', chapters: [], warnings: [] });
     try {
-      const analysis = await analyzePdf(file);
-      setFileAnalyses((prev) => ({
-        ...prev,
-        [key]: {
-          status: 'done',
-          title: analysis.title || file.name.replace(/\.pdf$/i, ''),
-          author: analysis.author || t('convert.unknownAuthor'),
-          chapters: analysis.chapters,
-          warnings: analysis.warnings,
-        },
-      }));
+      const result = await analyzePdf(targetFile);
+      setAnalysis({
+        status: 'done',
+        title: result.title || targetFile.name.replace(/\.pdf$/i, ''),
+        author: result.author || t('convert.unknownAuthor'),
+        chapters: result.chapters,
+        warnings: result.warnings,
+      });
     } catch {
-      setFileAnalyses((prev) => ({
-        ...prev,
-        [key]: {
-          status: 'error',
-          title: file.name.replace(/\.pdf$/i, ''),
-          author: t('convert.unknownAuthor'),
-          chapters: [],
-          warnings: ['title', 'author', 'chapters'],
-        },
-      }));
+      setAnalysis({
+        status: 'error',
+        title: targetFile.name.replace(/\.pdf$/i, ''),
+        author: t('convert.unknownAuthor'),
+        chapters: [],
+        warnings: ['title', 'author', 'chapters'],
+      });
     }
   };
 
-  const updateFileAnalysis = (key: string, patch: Partial<Pick<FileAnalysisState, 'title' | 'author'>>) => {
-    setFileAnalyses((prev) => (prev[key] ? { ...prev, [key]: { ...prev[key], ...patch } } : prev));
+  const updateAnalysis = (patch: Partial<Pick<FileAnalysisState, 'title' | 'author'>>) => {
+    setAnalysis((prev) => (prev ? { ...prev, ...patch } : prev));
   };
 
-  const addFiles = (files: File[]) => {
-    const pdfFiles = files.filter((file) => file.type === PDF_MIME_TYPE);
-    setFileTypeError(pdfFiles.length !== files.length);
-    if (pdfFiles.length === 0) {
+  const selectFile = (files: File[]) => {
+    const pdfFile = files.find((candidate) => candidate.type === PDF_MIME_TYPE);
+    setFileTypeError(!pdfFile);
+    if (!pdfFile) {
       return;
     }
-    const existingKeys = new Set(queuedFiles.map(fileKey));
-    const newFiles = pdfFiles.filter((file) => !existingKeys.has(fileKey(file)));
-    if (newFiles.length === 0) {
-      return;
-    }
-    setQueuedFiles((prev) => [...prev, ...newFiles]);
+    setFile(pdfFile);
+    setAnalysis(null);
     if (mode === 'auto') {
-      newFiles.forEach((file) => runAnalysis(file));
+      runAnalysis(pdfFile);
     }
   };
 
   const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      addFiles(Array.from(files));
+      selectFile(Array.from(files));
     }
     event.target.value = '';
   };
 
-  const handleRemoveFile = (index: number) => {
-    const removed = queuedFiles[index];
-    setQueuedFiles((prev) => prev.filter((_, i) => i !== index));
-    if (removed) {
-      setFileAnalyses((prev) => {
-        const next = { ...prev };
-        delete next[fileKey(removed)];
-        return next;
-      });
-    }
+  const handleRemoveFile = () => {
+    setFile(null);
+    setAnalysis(null);
   };
 
   const handleConvert = async () => {
@@ -266,90 +237,93 @@ export default function ConvertPage() {
     cancelControllerRef.current = controller;
 
     const warnings: string[] = [];
-    const fileCount = queuedFiles.length;
 
     try {
-      for (const [fileIndex, file] of queuedFiles.entries()) {
-        let title = bookTitle.trim();
-        let author = bookAuthor.trim();
-        let chapters: DetectedChapter[] = [];
-
-        if (mode === 'auto') {
-          // Dosya eklenirken/moda geçilirken tetiklenen analiz genelde çoktan bitmiştir;
-          // kullanıcının düzenlediği değerler varsa onlar kullanılır. Bitmemişse (veya
-          // hiç tetiklenmemişse) burada bekleyip aynı fallback mantığıyla tamamlanır.
-          let analysis = fileAnalyses[fileKey(file)];
-          if (!analysis || analysis.status === 'loading') {
-            try {
-              const result = await analyzePdf(file);
-              analysis = {
-                status: 'done',
-                title: result.title || file.name.replace(/\.pdf$/i, ''),
-                author: result.author || t('convert.unknownAuthor'),
-                chapters: result.chapters,
-                warnings: result.warnings,
-              };
-            } catch {
-              analysis = {
-                status: 'error',
-                title: file.name.replace(/\.pdf$/i, ''),
-                author: t('convert.unknownAuthor'),
-                chapters: [],
-                warnings: ['title', 'author', 'chapters'],
-              };
-            }
-          }
-
-          title = analysis.title.trim() || file.name.replace(/\.pdf$/i, '');
-          author = analysis.author.trim() || t('convert.unknownAuthor');
-          chapters = analysis.chapters;
-          if (analysis.warnings.length > 0) {
-            const labels = analysis.warnings.map((warning) => t(WARNING_LABEL_KEYS[warning]));
-            warnings.push(`${file.name}: ${labels.join(', ')}`);
-          }
-        }
-
-        const selectedLanguage = LANGUAGE_OPTIONS.find((option) => option.value === bookLanguage);
-        const options: { chapters?: DetectedChapter[]; ocr_language: string; start_page?: number; end_page?: number } = {
-          ocr_language: selectedLanguage?.tesseract ?? 'auto',
-        };
-        if (chapters.length > 0) {
-          options.chapters = chapters;
-        }
-        if (mode === 'advanced') {
-          const range = parsePageRange(pageRange);
-          if (range) {
-            options.start_page = range.start_page;
-            options.end_page = range.end_page;
-          }
-        }
-
-        // Kota kontrolü (converter -> storage) API tarafında /convert içinde yapılır;
-        // aşım durumunda QuotaExceededError fırlatılır (aşağıdaki catch'te yakalanır).
-        const epubBlob = await convertPdf(
-          { file, title, author, language: bookLanguage, options },
-          (progress) => {
-            setConversionProgress({ ...progress, fileName: file.name, fileIndex: fileIndex + 1, fileCount });
-          },
-          controller.signal,
-        );
-        const epubFileName = `${sanitizeFileName(title) || 'book'}.epub`;
-        triggerDownload(epubBlob, epubFileName);
-
-        // Kütüphaneye kaydetme en iyi çaba (best-effort): başarısız olsa da indirme akışını bozmasın.
-        // Orijinal PDF sadece EPUB'a çevrilmek için kütüphaneye yükleniyor; dönüşüm zaten
-        // tamamlandığından PDF'in kendisine artık ihtiyaç yok, yükleme sonrası hemen siliniyor
-        // ki blob depolamayı (ve kullanıcının kotasını) boşuna kaplamasın.
-        uploadFile(file, file.name)
-          .then((asset) =>
-            deleteFile(asset.id).catch((error) =>
-              console.error('PDF kütüphaneden silinemedi:', error),
-            ),
-          )
-          .catch((error) => console.error('PDF kütüphaneye kaydedilemedi:', error));
-        uploadFile(epubBlob, epubFileName).catch((error) => console.error('EPUB kütüphaneye kaydedilemedi:', error));
+      if (!file) {
+        return;
       }
-      setQueuedFiles([]);
+
+      let title = bookTitle.trim();
+      let author = bookAuthor.trim();
+      let chapters: DetectedChapter[] = [];
+
+      if (mode === 'auto') {
+        // Dosya eklenirken/moda geçilirken tetiklenen analiz genelde çoktan bitmiştir;
+        // kullanıcının düzenlediği değerler varsa onlar kullanılır. Bitmemişse (veya
+        // hiç tetiklenmemişse) burada bekleyip aynı fallback mantığıyla tamamlanır.
+        let currentAnalysis = analysis;
+        if (!currentAnalysis || currentAnalysis.status === 'loading') {
+          try {
+            const result = await analyzePdf(file);
+            currentAnalysis = {
+              status: 'done',
+              title: result.title || file.name.replace(/\.pdf$/i, ''),
+              author: result.author || t('convert.unknownAuthor'),
+              chapters: result.chapters,
+              warnings: result.warnings,
+            };
+          } catch {
+            currentAnalysis = {
+              status: 'error',
+              title: file.name.replace(/\.pdf$/i, ''),
+              author: t('convert.unknownAuthor'),
+              chapters: [],
+              warnings: ['title', 'author', 'chapters'],
+            };
+          }
+        }
+
+        title = currentAnalysis.title.trim() || file.name.replace(/\.pdf$/i, '');
+        author = currentAnalysis.author.trim() || t('convert.unknownAuthor');
+        chapters = currentAnalysis.chapters;
+        if (currentAnalysis.warnings.length > 0) {
+          const labels = currentAnalysis.warnings.map((warning) => t(WARNING_LABEL_KEYS[warning]));
+          warnings.push(labels.join(', '));
+        }
+      }
+
+      const selectedLanguage = LANGUAGE_OPTIONS.find((option) => option.value === bookLanguage);
+      const options: { chapters?: DetectedChapter[]; ocr_language: string; start_page?: number; end_page?: number } = {
+        ocr_language: selectedLanguage?.tesseract ?? 'auto',
+      };
+      if (chapters.length > 0) {
+        options.chapters = chapters;
+      }
+      if (mode === 'advanced') {
+        const range = parsePageRange(pageRange);
+        if (range) {
+          options.start_page = range.start_page;
+          options.end_page = range.end_page;
+        }
+      }
+
+      // Kota kontrolü (converter -> storage) API tarafında /convert içinde yapılır;
+      // aşım durumunda QuotaExceededError fırlatılır (aşağıdaki catch'te yakalanır).
+      const epubBlob = await convertPdf(
+        { file, title, author, language: bookLanguage, options },
+        (progress) => {
+          setConversionProgress({ ...progress, fileName: file.name });
+        },
+        controller.signal,
+      );
+      const epubFileName = `${sanitizeFileName(title) || 'book'}.epub`;
+      triggerDownload(epubBlob, epubFileName);
+
+      // Kütüphaneye kaydetme en iyi çaba (best-effort): başarısız olsa da indirme akışını bozmasın.
+      // Orijinal PDF sadece EPUB'a çevrilmek için kütüphaneye yükleniyor; dönüşüm zaten
+      // tamamlandığından PDF'in kendisine artık ihtiyaç yok, yükleme sonrası hemen siliniyor
+      // ki blob depolamayı (ve kullanıcının kotasını) boşuna kaplamasın.
+      uploadFile(file, file.name)
+        .then((asset) =>
+          deleteFile(asset.id).catch((error) =>
+            console.error('PDF kütüphaneden silinemedi:', error),
+          ),
+        )
+        .catch((error) => console.error('PDF kütüphaneye kaydedilemedi:', error));
+      uploadFile(epubBlob, epubFileName).catch((error) => console.error('EPUB kütüphaneye kaydedilemedi:', error));
+
+      setFile(null);
+      setAnalysis(null);
       setConversionWarnings(warnings);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -391,7 +365,7 @@ export default function ConvertPage() {
     if (files.length === 0) {
       return;
     }
-    addFiles(files);
+    selectFile(files);
   };
 
   return (
@@ -454,82 +428,67 @@ export default function ConvertPage() {
             <p className="mt-2 text-sm leading-7 text-[#6e6257]">{t('convert.dropDescription')}</p>
             <label className="mt-6 inline-flex cursor-pointer items-center rounded-full bg-mint px-5 py-3 text-sm font-semibold text-white transition hover:bg-mint/90">
               <span>{t('convert.selectFile')}</span>
-              <input type="file" accept="application/pdf" multiple className="hidden" onChange={handleFileSelection} />
+              <input type="file" accept="application/pdf" className="hidden" onChange={handleFileSelection} />
             </label>
             {fileTypeError && (
               <p className="mt-3 text-sm text-red-600">{t('convert.invalidFileType')}</p>
             )}
-            {queuedFiles.length > 0 && (
-              <div className="mt-5 w-full max-w-2xl rounded-[20px] border border-[#ead8c6] bg-[#fffdf8] p-4 text-left">
-                <p className="text-sm font-medium text-[#5f544b]">
-                  {t('convert.selectedCount', { count: queuedFiles.length })}
-                </p>
-                <ul className="mt-3 flex flex-col gap-2">
-                  {queuedFiles.map((file, index) => {
-                    const analysis = fileAnalyses[fileKey(file)];
-                    return (
-                      <li
-                        key={fileKey(file)}
-                        className="flex flex-col gap-2 rounded-[20px] border border-[#ead8c6] bg-[#fff8ee] px-4 py-3 text-sm text-[#241c15]"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="truncate font-medium">{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFile(index)}
-                            aria-label={t('convert.removeFile')}
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#9b6b4f] transition hover:bg-[#f6ebdc] hover:text-coral"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M3 6h18" />
-                              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                              <path d="M10 11v6" />
-                              <path d="M14 11v6" />
-                            </svg>
-                          </button>
-                        </div>
+            {file && (
+              <div className="mt-5 w-full max-w-2xl rounded-[20px] border border-[#ead8c6] bg-[#fff8ee] px-4 py-3 text-left text-sm text-[#241c15]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate font-medium">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveFile}
+                    aria-label={t('convert.removeFile')}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#9b6b4f] transition hover:bg-[#f6ebdc] hover:text-coral"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                  </button>
+                </div>
 
-                        {mode === 'auto' && analysis?.status === 'loading' && (
-                          <p className="text-xs text-[#9b8b7e]">{t('convert.analyzing')}</p>
-                        )}
+                {mode === 'auto' && analysis?.status === 'loading' && (
+                  <p className="mt-2 text-xs text-[#9b8b7e]">{t('convert.analyzing')}</p>
+                )}
 
-                        {mode === 'auto' && analysis && analysis.status !== 'loading' && (
-                          <div className="flex flex-col gap-2 sm:flex-row">
-                            <label className="flex-1">
-                              <span className="mb-1 block text-xs text-[#5f544b]">{t('convert.titleField')}</span>
-                              <input
-                                className="w-full rounded-full border border-[#ead8c6] bg-[#fffdf8] px-3 py-1.5 text-sm outline-none"
-                                value={analysis.title}
-                                onChange={(event) => updateFileAnalysis(fileKey(file), { title: event.target.value })}
-                              />
-                            </label>
-                            <label className="flex-1">
-                              <span className="mb-1 block text-xs text-[#5f544b]">{t('convert.authorField')}</span>
-                              <input
-                                className="w-full rounded-full border border-[#ead8c6] bg-[#fffdf8] px-3 py-1.5 text-sm outline-none"
-                                value={analysis.author}
-                                onChange={(event) => updateFileAnalysis(fileKey(file), { author: event.target.value })}
-                              />
-                            </label>
-                          </div>
-                        )}
+                {mode === 'auto' && analysis && analysis.status !== 'loading' && (
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <label className="flex-1">
+                      <span className="mb-1 block text-xs text-[#5f544b]">{t('convert.titleField')}</span>
+                      <input
+                        className="w-full rounded-full border border-[#ead8c6] bg-[#fffdf8] px-3 py-1.5 text-sm outline-none"
+                        value={analysis.title}
+                        onChange={(event) => updateAnalysis({ title: event.target.value })}
+                      />
+                    </label>
+                    <label className="flex-1">
+                      <span className="mb-1 block text-xs text-[#5f544b]">{t('convert.authorField')}</span>
+                      <input
+                        className="w-full rounded-full border border-[#ead8c6] bg-[#fffdf8] px-3 py-1.5 text-sm outline-none"
+                        value={analysis.author}
+                        onChange={(event) => updateAnalysis({ author: event.target.value })}
+                      />
+                    </label>
+                  </div>
+                )}
 
-                        {mode === 'auto' && analysis && analysis.status !== 'loading' && analysis.chapters.length > 0 && (
-                          <p className="text-xs text-[#9b8b7e]">
-                            {t('convert.chaptersDetectedCount', { count: analysis.chapters.length })}
-                          </p>
-                        )}
+                {mode === 'auto' && analysis && analysis.status !== 'loading' && analysis.chapters.length > 0 && (
+                  <p className="mt-2 text-xs text-[#9b8b7e]">
+                    {t('convert.chaptersDetectedCount', { count: analysis.chapters.length })}
+                  </p>
+                )}
 
-                        {mode === 'auto' && analysis && analysis.warnings.length > 0 && (
-                          <p className="text-xs text-amber-700">
-                            {analysis.warnings.map((warning) => t(WARNING_LABEL_KEYS[warning])).join(', ')}
-                          </p>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
+                {mode === 'auto' && analysis && analysis.warnings.length > 0 && (
+                  <p className="mt-2 text-xs text-amber-700">
+                    {analysis.warnings.map((warning) => t(WARNING_LABEL_KEYS[warning])).join(', ')}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -543,11 +502,9 @@ export default function ConvertPage() {
               type="button"
               onClick={() => {
                 setMode('auto');
-                queuedFiles.forEach((file) => {
-                  if (!fileAnalyses[fileKey(file)]) {
-                    runAnalysis(file);
-                  }
-                });
+                if (file && !analysis) {
+                  runAnalysis(file);
+                }
               }}
               className={`rounded-full border px-4 py-2 text-sm font-medium transition ${mode === 'auto' ? 'border-mint bg-mint text-white' : 'border-[#ead8c6] bg-[#fffdf8] text-[#241c15] hover:bg-[#fff5e9]'
                 }`}

@@ -115,18 +115,16 @@
   },
   "convert": {
     "step": "Step 2",
-    "title": "Upload your files",
+    "title": "Upload your file",
     "home": "Home",
-    "dropTitle": "Drop your PDF files here",
-    "dropDescription": "or choose them from your device. You can upload multiple files at once.",
-    "selectFile": "Select files",
-    "selectedCount": "Selected files: {{count}}",
+    "dropTitle": "Drop your PDF file here",
+    "dropDescription": "or choose it from your device.",
+    "selectFile": "Select file",
     "removeFile": "Remove file",
     "invalidFileType": "Only PDF files can be uploaded.",
-    "formError": "Please add at least one PDF file and fill in the title, author, and language fields before converting.",
+    "formError": "Please add a PDF file and fill in the title, author, and language fields before converting.",
     "converting": "Converting…",
     "progress": {
-      "fileLabel": "File {{index}}/{{count}}: {{name}}",
       "queued": "Waiting in queue (position {{position}})",
       "processing": "Processing page {{current}} / {{total}}",
       "processingUnknown": "Converting…"

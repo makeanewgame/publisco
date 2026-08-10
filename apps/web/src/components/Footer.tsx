@@ -1,12 +1,15 @@
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../theme';
 import { useLocale } from '../i18n';
 import { Logo } from './Logo';
+import { selectCurrentUser } from '../app/authSlice';
 
 export function Footer() {
   const { theme } = useTheme();
   const { t } = useLocale();
   const currentYear = new Date().getFullYear();
+  const isAuthenticated = !!useSelector(selectCurrentUser);
 
   if (theme === 'folder') {
     return (
@@ -64,16 +67,26 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-[#241c15]">{t('footer.account')}</h3>
             <ul className="mt-4 space-y-3">
-              <li>
-                <Link to="/auth/signin" className="text-sm text-[#6e6257] transition hover:text-[#241c15]">
-                  {t('nav.login')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/auth/signup" className="text-sm text-[#6e6257] transition hover:text-[#241c15]">
-                  {t('nav.signup')}
-                </Link>
-              </li>
+              {isAuthenticated ? (
+                <li>
+                  <Link to="/account" className="text-sm text-[#6e6257] transition hover:text-[#241c15]">
+                    {t('nav.account')}
+                  </Link>
+                </li>
+              ) : (
+                <>
+                  <li>
+                    <Link to="/auth/signin" className="text-sm text-[#6e6257] transition hover:text-[#241c15]">
+                      {t('nav.login')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/auth/signup" className="text-sm text-[#6e6257] transition hover:text-[#241c15]">
+                      {t('nav.signup')}
+                    </Link>
+                  </li>
+                </>
+              )}
               <li>
                 <Link to="/library" className="text-sm text-[#6e6257] transition hover:text-[#241c15]">
                   {t('nav.library')}

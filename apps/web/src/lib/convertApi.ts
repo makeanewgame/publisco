@@ -1,3 +1,4 @@
+import { put } from '@vercel/blob/client';
 import { authFetch } from './authFetch';
 import { WORKER_URL } from './apiConfig';
 
@@ -61,22 +62,61 @@ export interface ConvertProgress {
 
 const CONVERT_POLL_INTERVAL_MS = 1200;
 
-// Dosya, kota kontrolünün (converter -> storage) yapıldığı API'nin
-// /convert endpoint'ine gönderilir; API arka planda worker'a proxy yapar ve
-// worker dönüştürmeyi bir job olarak kuyruğa alıp hemen jobId döner (bkz.
-// apps/worker/app/jobs.py) — bu yüzden burada sonucu değil jobId'yi bekleriz.
+interface UploadTokenResponse {
+  clientToken: string;
+  pathname: string;
+}
+
+// Dosyayı API üzerinden değil doğrudan Vercel Blob'a yükleyebilmek için
+// önce buradan tek kullanımlık, süreli bir client token alınır (bkz.
+// apps/api/src/convert/convert.service.ts — createUploadToken). Vercel
+// Function'ların ~4.5MB'lik inbound request-body limiti yüzünden dosya
+// artık hiç bu API isteğinin gövdesine girmiyor.
+async function requestUploadToken(fileName: string, signal?: AbortSignal): Promise<UploadTokenResponse> {
+  const response = await authFetch('/convert/upload-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    if (isQuotaErrorPayload(errorBody)) {
+      throw new QuotaExceededError(errorBody);
+    }
+    throw new Error(errorBody?.message || 'conversion_failed');
+  }
+
+  return response.json();
+}
+
+// Dosya önce doğrudan Blob'a yüklenir, sonra API'ye sadece pathname + metadata
+// gönderilir; kota kontrolü (converter -> storage) API tarafında gerçek dosya
+// boyutu blob'dan okunduktan sonra yapılır. API arka planda worker'a proxy
+// yapar ve worker dönüştürmeyi bir job olarak kuyruğa alıp hemen jobId döner
+// (bkz. apps/worker/app/jobs.py) — bu yüzden burada sonucu değil jobId'yi bekleriz.
 async function startConvertJob(params: ConvertPdfParams, signal?: AbortSignal): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', params.file);
-  if (params.title) formData.append('title', params.title);
-  if (params.author) formData.append('author', params.author);
-  formData.append('language', params.language);
-  if (params.options) formData.append('options', JSON.stringify(params.options));
-  if (params.forceOcr !== undefined) formData.append('force_ocr', String(params.forceOcr));
+  const { clientToken, pathname } = await requestUploadToken(params.file.name, signal);
+
+  await put(pathname, params.file, {
+    access: 'private',
+    token: clientToken,
+    abortSignal: signal,
+  });
 
   const response = await authFetch('/convert', {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      pathname,
+      fileName: params.file.name,
+      title: params.title,
+      author: params.author,
+      language: params.language,
+      options: params.options ? JSON.stringify(params.options) : undefined,
+      force_ocr: params.forceOcr,
+    }),
     signal,
   });
 

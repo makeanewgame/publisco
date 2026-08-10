@@ -34,6 +34,7 @@ apps/**/dist/
 apps/api/prisma/dev.db
 apps/api/prisma/dev.db-journal
 apps/api/src/generated/
+apps/api/tsconfig.build.tsbuildinfo
 
 
 # EPUB / build artifacts

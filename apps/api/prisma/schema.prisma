@@ -53,6 +53,7 @@ model User {
   fileAssets            FileAsset[]
   quota                 UserQuota?
   subscriptions          Subscription[]
+  convertJobs            ConvertJob[]
 
   @@map("users")
 }
@@ -146,6 +147,28 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+// Worker'a devredilmiş bir dönüştürme job'ının hangi kullanıcıya ait olduğunu
+// ve kotasının serbest bırakılıp bırakılmadığını takip eder (bkz. ConvertService).
+// `id` worker'ın döndürdüğü job_id ile aynıdır (worker kendi job'larını bilir
+// ama kimlik doğrulaması yapmaz, bkz. apps/worker/app/jobs.py). Bu eşleme
+// bilinçli olarak bellek-içi bir Map yerine burada tutuluyor: `apps/api`
+// Vercel'de serverless çalışıyor, instance'lar arasında bellek paylaşılmıyor —
+// uzun süren (çok sayfalı) dönüşümlerde status polling'in bir kısmı job'ı
+// oluşturan instance'tan farklı bir instance'a düşüp yanlışlıkla 404 dönebiliyordu.
+model ConvertJob {
+  id     String @id
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fileSizeBytes Int
+  released      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("convert_jobs")
 }
 
 // Lemon Squeezy'deki bir aboneliğin DB tarafındaki aynası. Webhook'lar

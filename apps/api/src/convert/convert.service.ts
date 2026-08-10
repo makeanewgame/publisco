@@ -10,6 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
 import { del, get } from '@vercel/blob';
+import { PrismaService } from '../prisma/prisma.service';
 import { QuotaService } from '../quota/quota.service';
 import { ConverterQuotaExceededException } from '../quota/quota.exceptions';
 import { ConvertPdfDto } from './dto/convert-pdf.dto';
@@ -54,23 +55,21 @@ interface WorkerStatusPayload {
 // Worker'daki job'ın hangi kullanıcıya ait olduğunu ve kotasının serbest
 // bırakılıp bırakılmadığını takip eder — worker kendi job'larını bilmiyor,
 // kimlik doğrulaması da yapmıyor (bkz. apps/worker/app/jobs.py), o yüzden bu
-// eşleme API katmanında (bellek içi, worker'daki job store gibi) tutuluyor.
-interface PendingJob {
-  userId: string;
-  fileSizeBytes: number;
-  released: boolean;
-  createdAt: number;
-}
+// eşleme API katmanında tutuluyor. Bellek-içi bir Map DEĞİL, DB'de (ConvertJob)
+// tutuluyor: `apps/api` Vercel'de serverless çalışıyor, instance'lar arasında
+// bellek paylaşılmıyor — uzun süren dönüşümlerde status polling'in bir kısmı
+// job'ı oluşturan instance'tan farklı bir instance'a düşüp bellek-içi Map'te
+// job'ı bulamayınca yanlışlıkla "İş bulunamadı" (404) dönüyordu.
+type PendingJob = { userId: string; fileSizeBytes: number; released: boolean };
 
 const PENDING_JOB_TTL_MS = 2 * 60 * 60 * 1000; // 2 saat: kullanıcı hiç poll etmeden vazgeçerse kota bu sürede serbest bırakılır
 
 @Injectable()
 export class ConvertService {
-  private readonly pendingJobs = new Map<string, PendingJob>();
-
   constructor(
     private readonly quotaService: QuotaService,
     private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
   ) {}
 
   private get workerUrl(): string {
@@ -166,18 +165,15 @@ export class ConvertService {
       throw new BadRequestException('Sadece .pdf uzantılı dosyalar kabul edilir.');
     }
     this.assertOwnedUploadPath(userId, dto.pathname);
-    this.cleanupExpiredJobs();
+    await this.cleanupExpiredJobs();
 
     const uploaded = await this.consumeUploadedBlob(dto.pathname);
     await this.quotaService.reserveConversionQuota(userId, uploaded.size);
 
     try {
       const jobId = await this.startWorkerJob(uploaded, dto);
-      this.pendingJobs.set(jobId, {
-        userId,
-        fileSizeBytes: uploaded.size,
-        released: false,
-        createdAt: Date.now(),
+      await this.prisma.convertJob.create({
+        data: { id: jobId, userId, fileSizeBytes: uploaded.size },
       });
       return { jobId };
     } catch (error) {
@@ -187,7 +183,7 @@ export class ConvertService {
   }
 
   async getStatus(userId: string, jobId: string): Promise<ConvertStatus> {
-    const pending = this.requireOwnedJob(userId, jobId);
+    const pending = await this.requireOwnedJob(userId, jobId);
 
     let response: Response;
     try {
@@ -197,7 +193,7 @@ export class ConvertService {
     }
 
     if (response.status === 404) {
-      this.pendingJobs.delete(jobId);
+      await this.deleteJob(jobId);
       throw new NotFoundException('İş bulunamadı.');
     }
     if (!response.ok) {
@@ -221,7 +217,7 @@ export class ConvertService {
   }
 
   async getResult(userId: string, jobId: string): Promise<ConvertResult> {
-    const pending = this.requireOwnedJob(userId, jobId);
+    const pending = await this.requireOwnedJob(userId, jobId);
 
     let response: Response;
     try {
@@ -231,7 +227,7 @@ export class ConvertService {
     }
 
     if (response.status === 404) {
-      this.pendingJobs.delete(jobId);
+      await this.deleteJob(jobId);
       throw new NotFoundException('İş bulunamadı.');
     }
     if (response.status === 409) {
@@ -240,7 +236,7 @@ export class ConvertService {
     if (!response.ok) {
       const errorBody = await response.json().catch(() => null);
       await this.releaseIfNeeded(jobId, pending);
-      this.pendingJobs.delete(jobId);
+      await this.deleteJob(jobId);
       throw new BadRequestException(errorBody?.detail || 'Dönüştürme sırasında bir hata oluştu.');
     }
 
@@ -249,12 +245,12 @@ export class ConvertService {
     const match = disposition.match(/filename="?([^"]+)"?/);
     const fileName = match?.[1] || 'book.epub';
 
-    this.pendingJobs.delete(jobId);
+    await this.deleteJob(jobId);
     return { buffer: Buffer.from(arrayBuffer), fileName };
   }
 
-  private requireOwnedJob(userId: string, jobId: string): PendingJob {
-    const pending = this.pendingJobs.get(jobId);
+  private async requireOwnedJob(userId: string, jobId: string): Promise<PendingJob> {
+    const pending = await this.prisma.convertJob.findUnique({ where: { id: jobId } });
     if (!pending) {
       throw new NotFoundException('İş bulunamadı.');
     }
@@ -264,30 +260,40 @@ export class ConvertService {
     return pending;
   }
 
+  private async deleteJob(jobId: string): Promise<void> {
+    await this.prisma.convertJob.deleteMany({ where: { id: jobId } });
+  }
+
+  // `released` bayrağını DB'de koşullu olarak (yalnızca hâlâ false ise) true'ya
+  // çeker; `updateMany`'ın etkilediği satır sayısı, kotayı bu çağrının gerçekten
+  // serbest bırakması gerekip gerekmediğini söyler — aynı job için eşzamanlı iki
+  // status/result isteği kotayı iki kez serbest bırakmasın diye.
   private async releaseIfNeeded(jobId: string, pending: PendingJob): Promise<void> {
     if (pending.released) {
       return;
     }
-    pending.released = true;
-    await this.quotaService.releaseConversionQuota(pending.userId, pending.fileSizeBytes);
+    const { count } = await this.prisma.convertJob.updateMany({
+      where: { id: jobId, released: false },
+      data: { released: true },
+    });
+    if (count > 0) {
+      await this.quotaService.releaseConversionQuota(pending.userId, pending.fileSizeBytes);
+    }
   }
 
   // Kullanıcı sonucu hiç almadan (sekmeyi kapatma vb.) vazgeçerse job kalıcı
-  // olarak bellekte kalmasın ve rezerve edilen kota sonsuza dek kilitli kalmasın diye.
-  private cleanupExpiredJobs(): void {
-    const now = Date.now();
-    for (const [jobId, pending] of this.pendingJobs) {
-      if (now - pending.createdAt > PENDING_JOB_TTL_MS) {
-        if (!pending.released) {
-          this.quotaService
-            .releaseConversionQuota(pending.userId, pending.fileSizeBytes)
-            .catch(() => {
-              // best-effort — bir sonraki cleanup denemesinde tekrar denenir
-            });
-        }
-        this.pendingJobs.delete(jobId);
-      }
+  // olarak DB'de kalmasın ve rezerve edilen kota sonsuza dek kilitli kalmasın diye.
+  private async cleanupExpiredJobs(): Promise<void> {
+    const cutoff = new Date(Date.now() - PENDING_JOB_TTL_MS);
+    const expired = await this.prisma.convertJob.findMany({
+      where: { createdAt: { lt: cutoff }, released: false },
+    });
+    for (const pending of expired) {
+      await this.quotaService.releaseConversionQuota(pending.userId, pending.fileSizeBytes).catch(() => {
+        // best-effort — bir sonraki cleanup denemesinde tekrar denenir
+      });
     }
+    await this.prisma.convertJob.deleteMany({ where: { createdAt: { lt: cutoff } } });
   }
 
   private async startWorkerJob(uploaded: UploadedBlob, dto: ConvertPdfDto): Promise<string> {

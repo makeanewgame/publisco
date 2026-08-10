@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Headers,
@@ -11,6 +12,7 @@ import {
 import type { Request } from 'express';
 import { CurrentUser, RequestUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateCheckoutDto } from './dto/create-checkout.dto';
 import { PaymentsService } from './payments.service';
 
 @Controller('payments')
@@ -19,8 +21,8 @@ export class PaymentsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('checkout')
-  async createCheckout(@CurrentUser() user: RequestUser) {
-    const url = await this.paymentsService.createCheckoutUrl(user);
+  async createCheckout(@Body() dto: CreateCheckoutDto, @CurrentUser() user: RequestUser) {
+    const url = await this.paymentsService.createCheckoutUrl(user, dto.locale);
     return { url };
   }
 

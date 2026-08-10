@@ -18,7 +18,7 @@ declare global {
 const LEMON_SQUEEZY_SCRIPT_SRC = 'https://app.lemonsqueezy.com/js/lemon.js';
 
 export default function PremiumPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const navigate = useNavigate();
   const [quota, setQuota] = useState<QuotaUsageSummary | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -75,7 +75,7 @@ export default function PremiumPage() {
     }
     setIsCheckingOut(true);
     try {
-      const { url } = await createCheckoutSession();
+      const { url } = await createCheckoutSession(locale);
       window.createLemonSqueezy?.();
       window.LemonSqueezy?.Url.Open(url);
     } catch {

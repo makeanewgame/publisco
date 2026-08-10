@@ -82,7 +82,7 @@ export class PaymentsService implements OnModuleInit {
     });
   }
 
-  async createCheckoutUrl(user: { userId: string; email: string }): Promise<string> {
+  async createCheckoutUrl(user: { userId: string; email: string }, locale?: 'tr' | 'en'): Promise<string> {
     const storeId = this.config.get<string>('LEMONSQUEEZY_STORE_ID');
     const variantId = this.config.get<string>('LEMONSQUEEZY_PREMIUM_VARIANT_ID');
 
@@ -93,8 +93,13 @@ export class PaymentsService implements OnModuleInit {
       },
       // Frontend bu URL'i tam sayfa yönlendirme yerine Lemon.js overlay'i
       // (window.LemonSqueezy.Url.Open) ile açıyor (bkz. PremiumPage.tsx) —
-      // embed:true overlay'e uygun stille dönmesini sağlıyor.
-      checkoutOptions: { embed: true },
+      // embed:true overlay'e uygun stille dönmesini sağlıyor. locale
+      // verilmezse checkout mağaza varsayılanına, sonra tarayıcı diline
+      // düşer — bu da uygulamanın kendi dil seçiminden bağımsız kalabilir
+      // (bkz. NOTES.md), o yüzden burada açıkça frontend'in dili geçiliyor.
+      // `locale` SDK'nın CheckoutOptions tipinde henüz yok ama Lemon
+      // Squeezy API'si destekliyor (bkz. checkout_options.locale, API docs).
+      checkoutOptions: { embed: true, locale } as { embed: boolean; locale?: string },
     });
 
     if (error || !data) {

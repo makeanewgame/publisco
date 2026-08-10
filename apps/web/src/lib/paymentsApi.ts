@@ -28,8 +28,12 @@ export interface Invoice {
   createdAt: string;
 }
 
-export async function createCheckoutSession(): Promise<CheckoutSession> {
-  const response = await authFetch('/payments/checkout', { method: 'POST' });
+export async function createCheckoutSession(locale?: 'tr' | 'en'): Promise<CheckoutSession> {
+  const response = await authFetch('/payments/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ locale }),
+  });
   if (!response.ok) {
     throw new Error(`Failed to create checkout session (${response.status})`);
   }

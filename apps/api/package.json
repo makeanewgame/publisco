@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
-    "postinstall": "prisma generate",
+    "postinstall": "[ -z \"$PRISMA_DATABASE_URL\" ] && echo 'Skipping prisma generate: PRISMA_DATABASE_URL not set' || prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
   },

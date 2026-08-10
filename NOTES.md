@@ -20,6 +20,7 @@ Tamamlanan maddeler burada kalabalık yapmasın diye [`TAMAMLANANLAR.md`](./TAMA
 - [ ] convert edilecek dokümanlara ön izleme özelliği ekleyelim -- v2
 
 ## Sorunlar (Buglar)
+- [x] Vercel'de web deploy'u, `apps/api`'nin `postinstall` (`prisma generate`) script'i `PRISMA_DATABASE_URL` bulamadığı için install adımında patlıyordu — monorepo kökünde `pnpm install` çalıştığı için tüm workspace paketlerinin postinstall'ı tetikleniyor. `pnpm install --filter=<pkg>...` bunu ÇÖZMÜYOR: yerelde doğrulandı, filtreli install'da bile `apps/api`'nin kendi lifecycle script'i (ve tüm bağımlılıkları) yine kuruluyor — pnpm bu install modunda sibling workspace paketlerinin script'lerini atlamıyor. Asıl çözüm: `apps/api/package.json`'daki `postinstall`, `PRISMA_DATABASE_URL` set değilse `prisma generate`'i sessizce atlayacak şekilde korumaya alındı (`[ -z "$PRISMA_DATABASE_URL" ] && echo ... || prisma generate`). Vercel'deki custom Install Command (`--filter=web...`) artık gereksiz, gerekirse default'a geri alınabilir.
 - [ ] `FloatingThemeToggle.tsx` hem `RootLayout.tsx`'te hem `Navbar.tsx`'te import ediliyor ama hiçbir yerde `<FloatingThemeToggle />` olarak render edilmiyor (ölü kod) — component'in kendi konumlama class'ı da eksik (`right-4 top-4` var ama `fixed`/`absolute` yok, render edilse bile ekranda konumlanmazdı). Kullanılacaksa gerçekten JSX'e eklenip pozisyon class'ı düzeltilmeli, kullanılmayacaksa silinmeli.
 
 ## Çözüm Önerileri

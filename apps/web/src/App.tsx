@@ -11,6 +11,8 @@ import AuthPage from './pages/AuthPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
         <Route element={<MainLayout />}>
           <Route path="/convert" element={<ConvertPage />} />
           <Route path="/premium" element={<PremiumPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route element={<RequireAuth />}>
             <Route path="/library" element={<LibraryPage />} />
           </Route>

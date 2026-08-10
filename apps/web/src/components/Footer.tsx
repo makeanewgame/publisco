@@ -107,8 +107,8 @@ export function Footer() {
               © {currentYear} publisco. {t('footer.rightsReserved')}
             </p>
             <div className="flex gap-6 text-xs text-[#6e6257]">
-              <a href="#" className="transition hover:text-[#241c15]">{t('footer.privacyPolicy')}</a>
-              <a href="#" className="transition hover:text-[#241c15]">{t('footer.termsOfService')}</a>
+              <Link to="/privacy-policy" className="transition hover:text-[#241c15]">{t('footer.privacyPolicy')}</Link>
+              <Link to="/terms-of-service" className="transition hover:text-[#241c15]">{t('footer.termsOfService')}</Link>
             </div>
           </div>
         </div>

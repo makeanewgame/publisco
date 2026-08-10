@@ -303,5 +303,87 @@
     "comingSoonNote": "Ödeme entegrasyonu yakında eklenecek. Şu an için premium'a geçiş yapılamıyor.",
     "upgradeCta": "Yakında",
     "backToConvert": "Dönüştürmeye geri dön"
+  },
+  "legal": {
+    "privacyPolicy": {
+      "title": "Gizlilik Politikası",
+      "lastUpdated": "Son güncelleme: 10 Ağustos 2026",
+      "intro": "publisco (\"biz\", \"bize\", \"şirket\") olarak kullanıcılarımızın gizliliğine önem veriyoruz. Bu Gizlilik Politikası, publisco.com üzerinden sunduğumuz PDF'ten EPUB'a dönüştürme hizmetini kullanırken hangi verileri topladığımızı, bu verileri nasıl kullandığımızı ve haklarınızı açıklar.",
+      "dataCollection": {
+        "title": "Topladığımız Veriler",
+        "text": "Hesap oluşturduğunuzda adınızı, e-posta adresinizi ve şifrenizin şifrelenmiş halini saklarız. Google ile giriş yaptığınızda Google'ın bize sağladığı temel profil bilgilerini kullanırız. Dönüştürme işlemi sırasında yüklediğiniz PDF dosyalarını ve oluşturulan EPUB çıktılarını, ayrıca hizmeti iyileştirmek için IP adresi ve tarayıcı bilgisi gibi temel kullanım verilerini toplarız."
+      },
+      "dataUsage": {
+        "title": "Verilerinizi Nasıl Kullanıyoruz",
+        "text": "Verileriniz yalnızca hesabınızı yönetmek, dosyalarınızı dönüştürmek, kitaplığınızda saklamak, şifre sıfırlama ve e-posta doğrulama gibi işlemleri gerçekleştirmek ve hizmeti geliştirmek amacıyla kullanılır. Verileriniz reklam amacıyla üçüncü taraflara satılmaz."
+      },
+      "fileRetention": {
+        "title": "Dosya Saklama ve Silme",
+        "text": "Yüklediğiniz PDF dosyaları ve oluşturulan EPUB dosyaları, dönüştürme işlemi ve kitaplığınızda erişilebilir olması için güvenli bulut depolama alanında saklanır. Kitaplığınızdaki herhangi bir dosyayı istediğiniz zaman silebilirsiniz; silinen dosyalar sistemlerimizden kalıcı olarak kaldırılır."
+      },
+      "thirdParty": {
+        "title": "Üçüncü Taraf Hizmet Sağlayıcılar",
+        "text": "Hizmetimizi sunabilmek için dosya depolama (Vercel Blob), e-posta gönderimi (SMTP sağlayıcısı) ve isteğe bağlı olarak Google ile giriş gibi üçüncü taraf hizmetlerden faydalanırız. Bu sağlayıcılarla yalnızca hizmeti sunmak için gerekli olan veriler paylaşılır."
+      },
+      "cookies": {
+        "title": "Çerezler ve Yerel Depolama",
+        "text": "Oturumunuzu açık tutabilmek için tarayıcınızın yerel depolama alanında (localStorage) kimlik doğrulama belirteçleri (JWT) saklanır. Dil tercihiniz gibi ayarlar da yerel depolamada tutulur. Üçüncü taraf reklam çerezi kullanmıyoruz."
+      },
+      "security": {
+        "title": "Veri Güvenliği",
+        "text": "Verilerinizi korumak için şifreleme, erişim kontrolleri ve güvenli iletişim protokolleri gibi makul teknik ve idari önlemler alıyoruz. Ancak internet üzerinden hiçbir iletim yönteminin %100 güvenli olmadığını unutmayın."
+      },
+      "rights": {
+        "title": "Haklarınız",
+        "text": "Kişisel verilerinize erişme, bunları düzeltme, silinmesini talep etme ve işlenmesine itiraz etme hakkına sahipsiniz. Bu haklarınızı kullanmak için hesap ayarlarınızı kullanabilir veya bizimle iletişime geçebilirsiniz."
+      },
+      "changes": {
+        "title": "Politika Değişiklikleri",
+        "text": "Bu Gizlilik Politikasını zaman zaman güncelleyebiliriz. Önemli değişiklikler olduğunda sizi e-posta yoluyla veya hizmet üzerinden bilgilendireceğiz."
+      },
+      "contact": "Bu politika hakkında sorularınız için hello@publisco.com adresinden bize ulaşabilirsiniz."
+    },
+    "termsOfService": {
+      "title": "Kullanım Şartları",
+      "lastUpdated": "Son güncelleme: 10 Ağustos 2026",
+      "intro": "Bu Kullanım Şartları, publisco.com üzerinden sunulan PDF'ten EPUB'a dönüştürme hizmetini kullanımınızı düzenler. Hizmete erişerek veya kullanarak bu şartları kabul etmiş sayılırsınız.",
+      "acceptance": {
+        "title": "Şartların Kabulü",
+        "text": "Hizmetimizi kullanarak bu Kullanım Şartlarını ve Gizlilik Politikamızı okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz. Şartları kabul etmiyorsanız hizmeti kullanmamalısınız."
+      },
+      "serviceDescription": {
+        "title": "Hizmetin Tanımı",
+        "text": "publisco, kullanıcıların PDF belgelerini EPUB formatına dönüştürmesine olanak tanıyan bir araçtır. Hizmet \"olduğu gibi\" sunulur ve zaman zaman özellikler eklenebilir, değiştirilebilir veya kaldırılabilir."
+      },
+      "accountResponsibility": {
+        "title": "Hesap Sorumluluğu",
+        "text": "Hesabınızın güvenliğinden ve hesabınız altında gerçekleştirilen tüm işlemlerden siz sorumlusunuz. Şifrenizi gizli tutmalı ve hesabınızda şüpheli bir etkinlik fark ederseniz bizimle iletişime geçmelisiniz."
+      },
+      "acceptableUse": {
+        "title": "Kabul Edilebilir Kullanım",
+        "text": "Yalnızca yasal olarak sahibi olduğunuz veya dönüştürme hakkına sahip olduğunuz belgeleri yükleyebilirsiniz. Telif hakkı ihlali oluşturan, yasa dışı, zararlı veya başkalarının haklarını ihlal eden içerikleri yüklemek yasaktır. Bu tür bir kullanım tespit edilirse hesabınız askıya alınabilir."
+      },
+      "plans": {
+        "title": "Ücretsiz ve Premium Planlar",
+        "text": "Hizmet, sınırlı depolama ve dönüştürme kotasına sahip ücretsiz bir plan ile sunulur. Premium plan yakında ek depolama ve sınırsız dönüştürme kotası sunacak şekilde kullanıma açılacaktır; ücretlendirme detayları o zaman ayrıca duyurulacaktır."
+      },
+      "intellectualProperty": {
+        "title": "Fikri Mülkiyet",
+        "text": "Yüklediğiniz belgelerin ve bunlardan oluşturulan EPUB dosyalarının fikri mülkiyet hakları size aittir. publisco markası, arayüzü ve alttaki yazılım teknolojisi publisco'ya aittir."
+      },
+      "disclaimer": {
+        "title": "Garanti Reddi ve Sorumluluğun Sınırlandırılması",
+        "text": "Hizmet \"olduğu gibi\" ve \"mevcut olduğu şekilde\" sunulur; kesintisiz veya hatasız çalışacağına dair garanti verilmez. Yasaların izin verdiği ölçüde, hizmetin kullanımından doğabilecek dolaylı, arızi veya sonuç niteliğindeki zararlardan sorumlu tutulamayız."
+      },
+      "termination": {
+        "title": "Hesabın Feshi",
+        "text": "Bu şartları ihlal etmeniz durumunda hesabınızı askıya alma veya sonlandırma hakkımız saklıdır. Hesabınızı istediğiniz zaman kendiniz de kapatabilirsiniz."
+      },
+      "changes": {
+        "title": "Şartlarda Değişiklik",
+        "text": "Bu Kullanım Şartlarını zaman zaman güncelleyebiliriz. Önemli değişiklikler hizmet üzerinden veya e-posta yoluyla duyurulacaktır. Değişikliklerden sonra hizmeti kullanmaya devam etmeniz, güncellenmiş şartları kabul ettiğiniz anlamına gelir."
+      },
+      "contact": "Bu şartlar hakkında sorularınız için hello@publisco.com adresinden bize ulaşabilirsiniz."
+    }
   }
 }

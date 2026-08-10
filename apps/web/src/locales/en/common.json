@@ -303,5 +303,87 @@
     "comingSoonNote": "Payment integration is coming soon. Upgrading isn't available yet.",
     "upgradeCta": "Coming soon",
     "backToConvert": "Back to converting"
+  },
+  "legal": {
+    "privacyPolicy": {
+      "title": "Privacy Policy",
+      "lastUpdated": "Last updated: August 10, 2026",
+      "intro": "At publisco (\"we\", \"us\", \"our\"), we care about your privacy. This Privacy Policy explains what data we collect, how we use it, and your rights when you use our PDF-to-EPUB conversion service at publisco.com.",
+      "dataCollection": {
+        "title": "Data We Collect",
+        "text": "When you create an account, we store your name, email address, and a hashed version of your password. If you sign in with Google, we use the basic profile information Google provides. During conversion, we collect the PDF files you upload and the EPUB files we generate, along with basic usage data such as IP address and browser information to help improve the service."
+      },
+      "dataUsage": {
+        "title": "How We Use Your Data",
+        "text": "Your data is used solely to manage your account, convert your files, store them in your library, handle password resets and email verification, and improve the service. We do not sell your data to third parties for advertising purposes."
+      },
+      "fileRetention": {
+        "title": "File Storage and Deletion",
+        "text": "The PDF files you upload and the EPUB files we generate are stored in secure cloud storage so they remain available for conversion and in your library. You can delete any file from your library at any time; deleted files are permanently removed from our systems."
+      },
+      "thirdParty": {
+        "title": "Third-Party Service Providers",
+        "text": "To provide our service, we rely on third-party providers for file storage (Vercel Blob), email delivery (an SMTP provider), and optional Google sign-in. We only share the data necessary for these providers to deliver the service."
+      },
+      "cookies": {
+        "title": "Cookies and Local Storage",
+        "text": "To keep you signed in, authentication tokens (JWTs) are stored in your browser's local storage. Preferences such as your language setting are also stored locally. We do not use third-party advertising cookies."
+      },
+      "security": {
+        "title": "Data Security",
+        "text": "We take reasonable technical and administrative measures, including encryption, access controls, and secure communication protocols, to protect your data. However, no method of transmission over the internet is 100% secure."
+      },
+      "rights": {
+        "title": "Your Rights",
+        "text": "You have the right to access, correct, and request deletion of your personal data, as well as to object to its processing. You can exercise these rights through your account settings or by contacting us."
+      },
+      "changes": {
+        "title": "Changes to This Policy",
+        "text": "We may update this Privacy Policy from time to time. We will notify you of significant changes via email or through the service."
+      },
+      "contact": "If you have questions about this policy, contact us at hello@publisco.com."
+    },
+    "termsOfService": {
+      "title": "Terms of Service",
+      "lastUpdated": "Last updated: August 10, 2026",
+      "intro": "These Terms of Service govern your use of the PDF-to-EPUB conversion service provided at publisco.com. By accessing or using the service, you agree to be bound by these terms.",
+      "acceptance": {
+        "title": "Acceptance of Terms",
+        "text": "By using our service, you confirm that you have read, understood, and agree to these Terms of Service and our Privacy Policy. If you do not agree, you should not use the service."
+      },
+      "serviceDescription": {
+        "title": "Description of Service",
+        "text": "publisco is a tool that allows users to convert PDF documents into EPUB format. The service is provided \"as is\", and features may be added, changed, or removed from time to time."
+      },
+      "accountResponsibility": {
+        "title": "Account Responsibility",
+        "text": "You are responsible for the security of your account and for all activity that occurs under it. You must keep your password confidential and contact us if you notice any suspicious activity on your account."
+      },
+      "acceptableUse": {
+        "title": "Acceptable Use",
+        "text": "You may only upload documents you legally own or have the right to convert. Uploading content that infringes copyright, is illegal, harmful, or violates the rights of others is prohibited. Accounts found engaging in such use may be suspended."
+      },
+      "plans": {
+        "title": "Free and Premium Plans",
+        "text": "The service is offered with a free plan that includes limited storage and conversion quota. A premium plan offering additional storage and unlimited conversion quota will be introduced soon; pricing details will be announced separately at that time."
+      },
+      "intellectualProperty": {
+        "title": "Intellectual Property",
+        "text": "You retain all intellectual property rights to the documents you upload and the EPUB files generated from them. The publisco brand, interface, and underlying software technology belong to publisco."
+      },
+      "disclaimer": {
+        "title": "Disclaimer and Limitation of Liability",
+        "text": "The service is provided \"as is\" and \"as available\", with no guarantee that it will be uninterrupted or error-free. To the extent permitted by law, we are not liable for any indirect, incidental, or consequential damages arising from your use of the service."
+      },
+      "termination": {
+        "title": "Termination",
+        "text": "We reserve the right to suspend or terminate your account if you violate these terms. You may also close your account at any time."
+      },
+      "changes": {
+        "title": "Changes to These Terms",
+        "text": "We may update these Terms of Service from time to time. Significant changes will be announced through the service or via email. Continuing to use the service after changes take effect means you accept the updated terms."
+      },
+      "contact": "If you have questions about these terms, contact us at hello@publisco.com."
+    }
   }
 }

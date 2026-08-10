@@ -91,6 +91,10 @@ export class PaymentsService implements OnModuleInit {
         email: user.email,
         custom: { user_id: user.userId },
       },
+      // Frontend bu URL'i tam sayfa yönlendirme yerine Lemon.js overlay'i
+      // (window.LemonSqueezy.Url.Open) ile açıyor (bkz. PremiumPage.tsx) —
+      // embed:true overlay'e uygun stille dönmesini sağlıyor.
+      checkoutOptions: { embed: true },
     });
 
     if (error || !data) {

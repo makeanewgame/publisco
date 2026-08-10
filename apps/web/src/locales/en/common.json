@@ -305,6 +305,7 @@
     "upgradeCta": "Upgrade to premium",
     "upgradeCtaLoading": "Redirecting to checkout…",
     "signInToUpgrade": "Sign in to upgrade",
+    "checkoutSuccess": "Payment successful! Your premium access will activate within a few moments.",
     "backToConvert": "Back to converting"
   },
   "account": {

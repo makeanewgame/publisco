@@ -5,11 +5,25 @@ import { useLocale } from '../i18n';
 import { getQuota, type QuotaUsageSummary } from '../lib/quotaApi';
 import { createCheckoutSession } from '../lib/paymentsApi';
 
+declare global {
+  interface Window {
+    createLemonSqueezy?: () => void;
+    LemonSqueezy?: {
+      Setup: (options: { eventHandler: (event: { event: string }) => void }) => void;
+      Url: { Open: (url: string) => void; Close: () => void };
+    };
+  }
+}
+
+const LEMON_SQUEEZY_SCRIPT_SRC = 'https://app.lemonsqueezy.com/js/lemon.js';
+
 export default function PremiumPage() {
   const { t } = useLocale();
   const navigate = useNavigate();
   const [quota, setQuota] = useState<QuotaUsageSummary | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isLemonLoaded, setIsLemonLoaded] = useState(false);
+  const [checkoutSucceeded, setCheckoutSucceeded] = useState(false);
   const isSignedIn = Boolean(localStorage.getItem('accessToken'));
 
   useEffect(() => {
@@ -23,6 +37,35 @@ export default function PremiumPage() {
       });
   }, [isSignedIn]);
 
+  // Checkout'u tam sayfa yönlendirme yerine Lemon.js overlay'i içinde açmak
+  // için (bkz. handleUpgrade) — kullanıcı sitede kalır.
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = LEMON_SQUEEZY_SCRIPT_SRC;
+    script.defer = true;
+    script.onload = () => setIsLemonLoaded(true);
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLemonLoaded) {
+      return;
+    }
+    // Ödeme overlay içinde tamamlanıyor; membershipTier'ın asıl güncellemesi
+    // webhook üzerinden gelir (bkz. payments.service.ts) — bu sadece anlık
+    // kullanıcı geri bildirimi için.
+    window.LemonSqueezy?.Setup({
+      eventHandler: (event) => {
+        if (event.event === 'Checkout.Success') {
+          setCheckoutSucceeded(true);
+        }
+      },
+    });
+  }, [isLemonLoaded]);
+
   const isPremium = quota?.membershipTier === 'PREMIUM';
 
   async function handleUpgrade() {
@@ -33,9 +76,11 @@ export default function PremiumPage() {
     setIsCheckingOut(true);
     try {
       const { url } = await createCheckoutSession();
-      window.location.href = url;
+      window.createLemonSqueezy?.();
+      window.LemonSqueezy?.Url.Open(url);
     } catch {
       // Checkout oluşturulamadıysa kullanıcıyı butonla tekrar denemeye bırak.
+    } finally {
       setIsCheckingOut(false);
     }
   }
@@ -51,6 +96,12 @@ export default function PremiumPage() {
         {isPremium && (
           <div className="rounded-2xl border border-[#a6f4dc] bg-[#ecfdf7] px-4 py-3 text-sm text-[#0e614c]">
             {t('premium.alreadyPremium')}
+          </div>
+        )}
+
+        {checkoutSucceeded && (
+          <div className="rounded-2xl border border-[#a6f4dc] bg-[#ecfdf7] px-4 py-3 text-sm text-[#0e614c]">
+            {t('premium.checkoutSuccess')}
           </div>
         )}
 
@@ -80,7 +131,7 @@ export default function PremiumPage() {
         <div className="flex flex-wrap gap-3">
           <Button
             onClick={handleUpgrade}
-            disabled={isPremium || isCheckingOut}
+            disabled={isPremium || isCheckingOut || (isSignedIn && !isLemonLoaded)}
             className="rounded-full bg-mint px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isCheckingOut

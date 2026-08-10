@@ -1,15 +1,33 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import { getQuota, type QuotaUsageSummary } from '../lib/quotaApi';
+import { createCheckoutSession } from '../lib/paymentsApi';
+
+declare global {
+  interface Window {
+    createLemonSqueezy?: () => void;
+    LemonSqueezy?: {
+      Setup: (options: { eventHandler: (event: { event: string }) => void }) => void;
+      Url: { Open: (url: string) => void; Close: () => void };
+    };
+  }
+}
+
+const LEMON_SQUEEZY_SCRIPT_SRC = 'https://app.lemonsqueezy.com/js/lemon.js';
 
 export default function PremiumPage() {
   const { t } = useLocale();
+  const navigate = useNavigate();
   const [quota, setQuota] = useState<QuotaUsageSummary | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isLemonLoaded, setIsLemonLoaded] = useState(false);
+  const [checkoutSucceeded, setCheckoutSucceeded] = useState(false);
+  const isSignedIn = Boolean(localStorage.getItem('accessToken'));
 
   useEffect(() => {
-    if (!localStorage.getItem('accessToken')) {
+    if (!isSignedIn) {
       return;
     }
     getQuota()
@@ -17,9 +35,55 @@ export default function PremiumPage() {
       .catch(() => {
         // Sayfa üyelik durumu olmadan da görüntülenebilir; sessizce yut.
       });
+  }, [isSignedIn]);
+
+  // Checkout'u tam sayfa yönlendirme yerine Lemon.js overlay'i içinde açmak
+  // için (bkz. handleUpgrade) — kullanıcı sitede kalır.
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = LEMON_SQUEEZY_SCRIPT_SRC;
+    script.defer = true;
+    script.onload = () => setIsLemonLoaded(true);
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
+  useEffect(() => {
+    if (!isLemonLoaded) {
+      return;
+    }
+    // Ödeme overlay içinde tamamlanıyor; membershipTier'ın asıl güncellemesi
+    // webhook üzerinden gelir (bkz. payments.service.ts) — bu sadece anlık
+    // kullanıcı geri bildirimi için.
+    window.LemonSqueezy?.Setup({
+      eventHandler: (event) => {
+        if (event.event === 'Checkout.Success') {
+          setCheckoutSucceeded(true);
+        }
+      },
+    });
+  }, [isLemonLoaded]);
+
   const isPremium = quota?.membershipTier === 'PREMIUM';
+
+  async function handleUpgrade() {
+    if (!isSignedIn) {
+      navigate('/auth/signin');
+      return;
+    }
+    setIsCheckingOut(true);
+    try {
+      const { url } = await createCheckoutSession();
+      window.createLemonSqueezy?.();
+      window.LemonSqueezy?.Url.Open(url);
+    } catch {
+      // Checkout oluşturulamadıysa kullanıcıyı butonla tekrar denemeye bırak.
+    } finally {
+      setIsCheckingOut(false);
+    }
+  }
 
   return (
     <main>
@@ -32,6 +96,12 @@ export default function PremiumPage() {
         {isPremium && (
           <div className="rounded-2xl border border-[#a6f4dc] bg-[#ecfdf7] px-4 py-3 text-sm text-[#0e614c]">
             {t('premium.alreadyPremium')}
+          </div>
+        )}
+
+        {checkoutSucceeded && (
+          <div className="rounded-2xl border border-[#a6f4dc] bg-[#ecfdf7] px-4 py-3 text-sm text-[#0e614c]">
+            {t('premium.checkoutSuccess')}
           </div>
         )}
 
@@ -58,16 +128,17 @@ export default function PremiumPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#e8d9c4] bg-[#fff8ee] px-4 py-3 text-sm text-[#6e6257]">
-          {t('premium.comingSoonNote')}
-        </div>
-
         <div className="flex flex-wrap gap-3">
           <Button
-            disabled
-            className="rounded-full bg-mint px-6 py-3 text-white opacity-60 disabled:cursor-not-allowed"
+            onClick={handleUpgrade}
+            disabled={isPremium || isCheckingOut || (isSignedIn && !isLemonLoaded)}
+            className="rounded-full bg-mint px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {t('premium.upgradeCta')}
+            {isCheckingOut
+              ? t('premium.upgradeCtaLoading')
+              : !isSignedIn
+                ? t('premium.signInToUpgrade')
+                : t('premium.upgradeCta')}
           </Button>
           <Link to="/convert">
             <Button className="rounded-full border-2 border-mint bg-transparent px-6 py-3 text-mint hover:bg-mint-pale">

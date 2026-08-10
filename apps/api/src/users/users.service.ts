@@ -79,7 +79,7 @@ export class UsersService {
   }
 }
 
-function defaultQuotaData(tier: MembershipTier) {
+export function defaultQuotaData(tier: MembershipTier) {
   return {
     storageQuotaBytes: BigInt(STORAGE_QUOTA_BYTES[tier]),
     converterQuotaBytes:

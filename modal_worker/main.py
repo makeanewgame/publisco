@@ -145,6 +145,7 @@ def upload_epub_to_blob(pathname: str, epub_bytes: bytes) -> str:
             "x-api-version": BLOB_API_VERSION,
             "x-content-type": "application/epub+zip",
             "x-add-random-suffix": "0",
+            "x-vercel-blob-access": "private",
         },
         timeout=120,
     )
@@ -199,6 +200,15 @@ def post_vercel_webhook(payload: dict[str, Any]) -> None:
                 timeout=30,
             )
             if response.status_code < 500:
+                if not response.ok:
+                    # 4xx sessizce "başarılı" sayılırsa (retry döngüsü sadece 5xx'te tekrar dener)
+                    # DB'deki ConvertJob.status hiç güncellenmez ve frontend sonsuza dek
+                    # polling yapar — bu yüzden 4xx'i de yüksek sesle logluyoruz.
+                    logger.error(
+                        "Vercel webhook %d döndü (kalıcı hata, tekrar denenmeyecek): %s",
+                        response.status_code,
+                        response.text[:500],
+                    )
                 return
         except Exception as exc:  # noqa: BLE001
             logger.warning("Vercel webhook denemesi %d başarısız: %s", attempt + 1, exc)
@@ -269,7 +279,6 @@ def run_pipeline(
             config["language"] = language
 
         plan_result = plan.remote(pdf_url, config)
-        delete_blob(pdf_url)
 
         if not plan_result.chunks:
             raise ConversionError("PDF'te işlenecek sayfa bulunamadı.")
@@ -282,6 +291,11 @@ def run_pipeline(
                 ]
             )
         )
+
+        # Kaynak PDF, her chunk container'ı kendi sayfa aralığını Blob'dan kendisi
+        # indirdiği için (bkz. process_chunk) map fazı tamamlanana kadar silinemez —
+        # daha erken silinirse (ör. plan'dan hemen sonra) tüm process_chunk çağrıları 404 alır.
+        delete_blob(pdf_url)
 
         epub_bytes = reduce_and_build_epub.remote(plan_result, page_results_per_chunk)
 

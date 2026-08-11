@@ -2,6 +2,7 @@
 # (`pip_install`/`apt_install`) yapılır, Modal container image'ını bu dosyadan
 # kurmaz. Yerel geliştirme/test için (`pip install -r requirements.txt`):
 modal==1.2.1
+fastapi[standard]==0.141.1
 pymupdf==1.28.2
 EbookLib==0.20
 pillow==12.3.0

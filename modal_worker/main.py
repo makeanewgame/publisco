@@ -29,7 +29,7 @@ import time
 from typing import Any
 
 import modal
-from fastapi import File, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 
 from converter import (
     ConversionError,
@@ -290,14 +290,25 @@ def run_pipeline(
 
 # ---------------------------------------------------------------------------
 # Web endpoint'ler — Vercel API bunları çağırır
+#
+# `/convert` ve `/analyze` bilinçli olarak TEK bir Modal fonksiyonu
+# (`fastapi_app`, `@modal.asgi_app()`) altında, ortak bir FastAPI app'in iki
+# route'u olarak tanımlanıyor — Modal'ın varsayılan davranışı her
+# `@modal.fastapi_endpoint` fonksiyonuna KENDİ ayrı URL'ini vermek (ortak bir
+# base + path değil); Vercel tarafı (`apps/api/src/convert/convert.service.ts`)
+# ise tek bir `MODAL_ENDPOINT_URL` + `/convert`/`/analyze` path'i varsayıyor.
+# Tek ASGI app bu varsayımı doğru kılıyor: `modal deploy` sonunda tek bir URL
+# çıkar, o URL `MODAL_ENDPOINT_URL` olarak Vercel'e verilir.
 # ---------------------------------------------------------------------------
 
-@app.function(secrets=secrets)
-@modal.fastapi_endpoint(method="POST")
-def convert(request: ConvertRequest, authorization: str = Header(None)) -> dict[str, Any]:
-    """Senkron `web_endpoint` içinde tüm PDF'i işlemek Modal'ın kendi
-    timeout'una takılabilir ve Vercel'i gereksiz bekletir — bu yüzden ağır
-    pipeline `.spawn()` ile arka plana devredilip anında 202 dönülür."""
+web_app = FastAPI()
+
+
+@web_app.post("/convert")
+def convert_endpoint(request: ConvertRequest, authorization: str = Header(None)) -> dict[str, Any]:
+    """Senkron işlemek Modal'ın kendi timeout'una takılabilir ve Vercel'i
+    gereksiz bekletir — bu yüzden ağır pipeline `.spawn()` ile arka plana
+    devredilip anında 202 dönülür."""
     _require_bearer(authorization)
 
     run_pipeline.spawn(
@@ -312,14 +323,11 @@ def convert(request: ConvertRequest, authorization: str = Header(None)) -> dict[
     return {"job_id": request.job_id, "status": "accepted"}
 
 
-@app.function(secrets=secrets, min_containers=1, timeout=120)
-@modal.fastapi_endpoint(method="POST")
-def analyze(file: UploadFile = File(...), authorization: str = Header(None)) -> dict[str, Any]:
-    """Eski `/analyze`'ın taşınmış hali — tek container, senkron, multipart PDF
-    kabul eder (Vercel API bunu proxy'ler, blob'a yükleme gerekmez — bu uç
-    zaten hafif ve tek seferlik). `min_containers=1` ile en az bir container sıcak
-    tutulur: bu uç kullanıcı dosya seçer seçmez UI'da tetikleniyor, soğuk
-    başlangıç (5-8sn) burada `run_pipeline`'dan çok daha fazla hissedilir."""
+@web_app.post("/analyze")
+def analyze_endpoint(file: UploadFile = File(...), authorization: str = Header(None)) -> dict[str, Any]:
+    """Eski `/analyze`'ın taşınmış hali — senkron, multipart PDF kabul eder
+    (Vercel API bunu proxy'ler, blob'a yükleme gerekmez — bu uç zaten hafif ve
+    tek seferlik)."""
     _require_bearer(authorization)
 
     pdf_bytes = file.file.read()
@@ -327,3 +335,13 @@ def analyze(file: UploadFile = File(...), authorization: str = Header(None)) -> 
         return analyze_pdf(pdf_bytes)
     except ConversionError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.function(secrets=secrets, min_containers=1, timeout=120)
+@modal.asgi_app()
+def fastapi_app() -> FastAPI:
+    """`min_containers=1` ile en az bir container sıcak tutulur: `/analyze`
+    kullanıcı dosya seçer seçmez UI'da tetikleniyor, soğuk başlangıç (5-8sn)
+    `run_pipeline`'dan çok daha fazla hissedilir; `/convert` zaten `.spawn()`
+    ile arka plana geçtiği için aynı sıcak container'ı paylaşması zararsız."""
+    return web_app

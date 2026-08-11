@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import {
   BadGatewayException,
   BadRequestException,
@@ -9,11 +9,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
-import { del, get } from '@vercel/blob';
+import { del, head } from '@vercel/blob';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuotaService } from '../quota/quota.service';
 import { ConverterQuotaExceededException } from '../quota/quota.exceptions';
 import { ConvertPdfDto } from './dto/convert-pdf.dto';
+import { ConvertJobStatus } from '../generated/prisma/client';
 
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024; // 100 MB
 const UPLOAD_TOKEN_TTL_MS = 15 * 60 * 1000; // client'ın upload'ı bu süre içinde tamamlaması bekleniyor
@@ -28,39 +29,23 @@ export interface UploadTokenResult {
   pathname: string;
 }
 
-interface UploadedBlob {
-  buffer: Buffer;
-  size: number;
-  contentType: string | null;
-}
-
 export interface ConvertStatus {
-  status: 'queued' | 'processing' | 'done' | 'error';
-  currentPage: number;
-  totalPages: number;
-  percent: number;
-  queuePosition: number;
+  status: ConvertJobStatus;
   error: string | null;
 }
 
-interface WorkerStatusPayload {
-  status: 'queued' | 'processing' | 'done' | 'error';
-  current_page: number;
-  total_pages: number;
-  percent: number;
-  queue_position: number;
-  error: string | null;
-}
-
-// Worker'daki job'ın hangi kullanıcıya ait olduğunu ve kotasının serbest
-// bırakılıp bırakılmadığını takip eder — worker kendi job'larını bilmiyor,
-// kimlik doğrulaması da yapmıyor (bkz. apps/worker/app/jobs.py), o yüzden bu
-// eşleme API katmanında tutuluyor. Bellek-içi bir Map DEĞİL, DB'de (ConvertJob)
-// tutuluyor: `apps/api` Vercel'de serverless çalışıyor, instance'lar arasında
-// bellek paylaşılmıyor — uzun süren dönüşümlerde status polling'in bir kısmı
-// job'ı oluşturan instance'tan farklı bir instance'a düşüp bellek-içi Map'te
-// job'ı bulamayınca yanlışlıkla "İş bulunamadı" (404) dönüyordu.
-type PendingJob = { userId: string; fileSizeBytes: number; released: boolean };
+// Modal'daki job'ın hangi kullanıcıya ait olduğunu, durumunu ve kotasının
+// serbest bırakılıp bırakılmadığını takip eder — Modal kendi job'larını
+// bilmiyor, kimlik doğrulaması da yapmıyor (bkz. modal_worker/main.py), o
+// yüzden bu eşleme API katmanında (DB'de, bkz. ConvertJob) tutuluyor.
+type PendingJob = {
+  userId: string;
+  fileSizeBytes: number;
+  released: boolean;
+  status: ConvertJobStatus;
+  epubUrl: string | null;
+  errorMessage: string | null;
+};
 
 const PENDING_JOB_TTL_MS = 2 * 60 * 60 * 1000; // 2 saat: kullanıcı hiç poll etmeden vazgeçerse kota bu sürede serbest bırakılır
 
@@ -72,8 +57,12 @@ export class ConvertService {
     private readonly prisma: PrismaService,
   ) {}
 
-  private get workerUrl(): string {
-    return this.config.get<string>('WORKER_URL') ?? 'http://127.0.0.1:3002';
+  private get modalEndpointUrl(): string {
+    return this.config.get<string>('MODAL_ENDPOINT_URL')!;
+  }
+
+  private get modalWebhookSecret(): string {
+    return this.config.get<string>('MODAL_WEBHOOK_SECRET')!;
   }
 
   private get blobToken(): string {
@@ -123,43 +112,61 @@ export class ConvertService {
     }
   }
 
-  // Client'ın Blob'a yüklediği PDF'i okur. Bu, function'ın kendi çıkış
-  // isteği (Blob storage'a) olduğu için Vercel Function'ların inbound
-  // request-body limitine tabi değil — sadece function'ın kendi bellek/süre
-  // sınırlarına tabi, ki bu zaten önceki multipart-upload akışında da vardı.
-  // Bayt worker'a iletildikten sonra tekrar gerekmediği için geçici blob
-  // en iyi çaba ile hemen siliniyor.
-  private async consumeUploadedBlob(pathname: string): Promise<UploadedBlob> {
+  // Blob'un bayt içeriğini indirmek yerine sadece metadata'sını (url, size) okur —
+  // dosyanın kendisi artık bu API'ye hiç girmiyor, Modal tarafından doğrudan
+  // Blob'dan indiriliyor (bkz. modal_worker/main.py — download_pdf).
+  private async resolveUploadedBlob(pathname: string): Promise<{ url: string; size: number }> {
     let result;
     try {
-      result = await get(pathname, { access: 'private', token: this.blobToken });
+      result = await head(pathname, { token: this.blobToken });
     } catch {
       throw new BadRequestException('Yüklenen dosya bulunamadı.');
     }
-    if (!result || result.statusCode !== 200) {
-      throw new BadRequestException('Yüklenen dosya bulunamadı.');
-    }
-
-    const arrayBuffer = await new Response(result.stream as unknown as ReadableStream).arrayBuffer();
-
-    del(pathname, { token: this.blobToken }).catch(() => {
-      // best-effort — geçici upload'ın silinmesi başarısız olsa da dönüşüm akışını bozmasın
-    });
-
-    return {
-      buffer: Buffer.from(arrayBuffer),
-      size: result.blob.size,
-      contentType: result.blob.contentType,
-    };
+    return { url: result.url, size: result.size };
   }
 
-  // Worker'a gönderilmeden önce dönüşüm kotasını rezerve eder (önce converter,
-  // sonra depolama kotası kontrol edilir — QuotaService.reserveConversionQuota).
-  // Worker artık dönüştürmeyi arka planda bir job olarak kuyruklayıp hemen
-  // job_id döner; asıl sonuç GET :jobId/status ile takip edilip GET :jobId/result
-  // ile alınır. Job kuyruğa alınamazsa (worker'a ulaşılamadı vb.) kota geri verilir;
-  // job daha sonra hata ile biterse bu, getStatus içinde tespit edilip kota
-  // orada geri verilir (bkz. releaseIfErrored).
+  // Modal kotayı rezerve ettikten sonra çağrılır; asıl ağır işi `.spawn()` ile
+  // arka plana devredip anında 202 döner (bkz. modal_worker/main.py — convert
+  // web_endpoint'i). Job daha sonra webhook ile (bkz. handleModalWebhook)
+  // COMPLETED/FAILED'e geçer.
+  private async startModalPipeline(jobId: string, pdfUrl: string, dto: ConvertPdfDto): Promise<void> {
+    let options: unknown;
+    if (dto.options) {
+      try {
+        options = JSON.parse(dto.options);
+      } catch {
+        throw new BadRequestException("Geçersiz 'options' JSON.");
+      }
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(`${this.modalEndpointUrl}/convert`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.modalWebhookSecret}`,
+        },
+        body: JSON.stringify({
+          job_id: jobId,
+          pdf_url: pdfUrl,
+          title: dto.title,
+          author: dto.author,
+          language: dto.language ?? 'tr',
+          options,
+          force_ocr: dto.force_ocr,
+        }),
+      });
+    } catch {
+      throw new BadGatewayException('Dönüştürme servisine ulaşılamadı.');
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new BadRequestException(errorBody?.detail || 'Dönüştürme başlatılamadı.');
+    }
+  }
+
   async convert(userId: string, dto: ConvertPdfDto): Promise<{ jobId: string }> {
     if (!dto.fileName.toLowerCase().endsWith('.pdf')) {
       throw new BadRequestException('Sadece .pdf uzantılı dosyalar kabul edilir.');
@@ -167,11 +174,12 @@ export class ConvertService {
     this.assertOwnedUploadPath(userId, dto.pathname);
     await this.cleanupExpiredJobs();
 
-    const uploaded = await this.consumeUploadedBlob(dto.pathname);
+    const uploaded = await this.resolveUploadedBlob(dto.pathname);
     await this.quotaService.reserveConversionQuota(userId, uploaded.size);
 
+    const jobId = randomUUID();
     try {
-      const jobId = await this.startWorkerJob(uploaded, dto);
+      await this.startModalPipeline(jobId, uploaded.url, dto);
       await this.prisma.convertJob.create({
         data: { id: jobId, userId, fileSizeBytes: uploaded.size },
       });
@@ -183,81 +191,50 @@ export class ConvertService {
   }
 
   async getStatus(userId: string, jobId: string): Promise<ConvertStatus> {
-    const pending = await this.requireOwnedJob(userId, jobId);
-
-    let response: Response;
-    try {
-      response = await fetch(`${this.workerUrl}/convert/${jobId}/status`);
-    } catch {
-      throw new BadGatewayException('Dönüştürme servisine ulaşılamadı.');
-    }
-
-    if (response.status === 404) {
-      await this.deleteJob(jobId);
-      throw new NotFoundException('İş bulunamadı.');
-    }
-    if (!response.ok) {
-      throw new BadGatewayException('Dönüştürme servisinden durum alınamadı.');
-    }
-
-    const payload = (await response.json()) as WorkerStatusPayload;
-
-    if (payload.status === 'error') {
-      await this.releaseIfNeeded(jobId, pending);
-    }
-
-    return {
-      status: payload.status,
-      currentPage: payload.current_page,
-      totalPages: payload.total_pages,
-      percent: payload.percent,
-      queuePosition: payload.queue_position,
-      error: payload.error,
-    };
+    const job = await this.requireOwnedJob(userId, jobId);
+    return { status: job.status, error: job.errorMessage };
   }
 
   async getResult(userId: string, jobId: string): Promise<ConvertResult> {
-    const pending = await this.requireOwnedJob(userId, jobId);
+    const job = await this.requireOwnedJob(userId, jobId);
+
+    if (job.status === 'FAILED') {
+      await this.deleteJob(jobId);
+      throw new BadRequestException(job.errorMessage || 'Dönüştürme sırasında bir hata oluştu.');
+    }
+    if (job.status !== 'COMPLETED' || !job.epubUrl) {
+      throw new ConflictException('Dönüştürme henüz tamamlanmadı.');
+    }
 
     let response: Response;
     try {
-      response = await fetch(`${this.workerUrl}/convert/${jobId}/result`);
+      response = await fetch(job.epubUrl, { headers: { Authorization: `Bearer ${this.blobToken}` } });
     } catch {
-      throw new BadGatewayException('Dönüştürme servisine ulaşılamadı.');
-    }
-
-    if (response.status === 404) {
-      await this.deleteJob(jobId);
-      throw new NotFoundException('İş bulunamadı.');
-    }
-    if (response.status === 409) {
-      throw new ConflictException('Dönüştürme henüz tamamlanmadı.');
+      throw new BadGatewayException('Sonuç dosyasına ulaşılamadı.');
     }
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      await this.releaseIfNeeded(jobId, pending);
-      await this.deleteJob(jobId);
-      throw new BadRequestException(errorBody?.detail || 'Dönüştürme sırasında bir hata oluştu.');
+      throw new BadGatewayException('Sonuç dosyasına ulaşılamadı.');
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    const disposition = response.headers.get('content-disposition') || '';
-    const match = disposition.match(/filename="?([^"]+)"?/);
-    const fileName = match?.[1] || 'book.epub';
 
+    await del(job.epubUrl, { token: this.blobToken }).catch(() => {
+      // best-effort — silme başarısız olsa da kullanıcı sonucu almış olur
+    });
     await this.deleteJob(jobId);
-    return { buffer: Buffer.from(arrayBuffer), fileName };
+
+    return { buffer: Buffer.from(arrayBuffer), fileName: 'book.epub' };
   }
 
   private async requireOwnedJob(userId: string, jobId: string): Promise<PendingJob> {
-    const pending = await this.prisma.convertJob.findUnique({ where: { id: jobId } });
-    if (!pending) {
+    const job = await this.prisma.convertJob.findUnique({ where: { id: jobId } });
+    if (!job) {
       throw new NotFoundException('İş bulunamadı.');
     }
-    if (pending.userId !== userId) {
+    if (job.userId !== userId) {
       throw new ForbiddenException('Bu işe erişim izniniz yok.');
     }
-    return pending;
+    return job;
   }
 
   private async deleteJob(jobId: string): Promise<void> {
@@ -267,64 +244,106 @@ export class ConvertService {
   // `released` bayrağını DB'de koşullu olarak (yalnızca hâlâ false ise) true'ya
   // çeker; `updateMany`'ın etkilediği satır sayısı, kotayı bu çağrının gerçekten
   // serbest bırakması gerekip gerekmediğini söyler — aynı job için eşzamanlı iki
-  // status/result isteği kotayı iki kez serbest bırakmasın diye.
-  private async releaseIfNeeded(jobId: string, pending: PendingJob): Promise<void> {
-    if (pending.released) {
-      return;
-    }
+  // webhook/status isteği kotayı iki kez serbest bırakmasın diye.
+  private async releaseIfNeeded(jobId: string, userId: string, fileSizeBytes: number): Promise<void> {
     const { count } = await this.prisma.convertJob.updateMany({
       where: { id: jobId, released: false },
       data: { released: true },
     });
     if (count > 0) {
-      await this.quotaService.releaseConversionQuota(pending.userId, pending.fileSizeBytes);
+      await this.quotaService.releaseConversionQuota(userId, fileSizeBytes);
+    }
+  }
+
+  verifyModalWebhookSignature(rawBody: Buffer, signatureHeader: string | undefined): boolean {
+    const secret = this.modalWebhookSecret;
+    if (!secret || !signatureHeader) {
+      return false;
+    }
+    const digest = createHmac('sha256', secret).update(rawBody).digest('hex');
+    const expected = Buffer.from(digest, 'utf8');
+    const actual = Buffer.from(signatureHeader, 'utf8');
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  }
+
+  // Modal, Vercel'in webhook yanıtı geç/hatalı dönerse (503, timeout) isteği
+  // tekrar dener — `updateMany`'ın etkilediği satır sayısı 0 ise (satır zaten
+  // COMPLETED/FAILED'e geçmiş) ikinci çağrı sessizce no-op olur (kotayı iki kez
+  // serbest bırakmama mantığı zaten `released` bayrağıyla var, aynı
+  // updateMany-count deseni status geçişine de uygulanıyor).
+  async handleModalWebhook(payload: {
+    job_id: string;
+    status: 'COMPLETED' | 'FAILED';
+    epub_url?: string;
+    error?: string;
+  }): Promise<void> {
+    const job = await this.prisma.convertJob.findUnique({ where: { id: payload.job_id } });
+    if (!job) {
+      return;
+    }
+
+    const { count } = await this.prisma.convertJob.updateMany({
+      where: { id: payload.job_id, status: { in: ['PENDING', 'PROCESSING'] } },
+      data:
+        payload.status === 'COMPLETED'
+          ? { status: ConvertJobStatus.COMPLETED, epubUrl: payload.epub_url }
+          : { status: ConvertJobStatus.FAILED, errorMessage: payload.error ?? 'Dönüştürme sırasında bir hata oluştu.' },
+    });
+
+    if (count > 0 && payload.status === 'FAILED') {
+      await this.releaseIfNeeded(payload.job_id, job.userId, job.fileSizeBytes);
     }
   }
 
   // Kullanıcı sonucu hiç almadan (sekmeyi kapatma vb.) vazgeçerse job kalıcı
   // olarak DB'de kalmasın ve rezerve edilen kota sonsuza dek kilitli kalmasın diye.
+  // `epubUrl` set edilmiş ama hiç alınmamış (kullanıcı hiç getResult çağırmamış)
+  // süresi geçmiş job'larda Blob'daki EPUB'ı da siler — yoksa Modal'ın yüklediği
+  // EPUB'lar kimse indirmezse Blob'da sonsuza dek kalır.
   private async cleanupExpiredJobs(): Promise<void> {
     const cutoff = new Date(Date.now() - PENDING_JOB_TTL_MS);
     const expired = await this.prisma.convertJob.findMany({
-      where: { createdAt: { lt: cutoff }, released: false },
+      where: { createdAt: { lt: cutoff } },
+      select: { userId: true, fileSizeBytes: true, released: true, epubUrl: true },
     });
-    for (const pending of expired) {
-      await this.quotaService.releaseConversionQuota(pending.userId, pending.fileSizeBytes).catch(() => {
-        // best-effort — bir sonraki cleanup denemesinde tekrar denenir
-      });
+    for (const job of expired) {
+      if (!job.released) {
+        await this.quotaService.releaseConversionQuota(job.userId, job.fileSizeBytes).catch(() => {
+          // best-effort — bir sonraki cleanup denemesinde tekrar denenir
+        });
+      }
+      if (job.epubUrl) {
+        await del(job.epubUrl, { token: this.blobToken }).catch(() => {
+          // best-effort
+        });
+      }
     }
     await this.prisma.convertJob.deleteMany({ where: { createdAt: { lt: cutoff } } });
   }
 
-  private async startWorkerJob(uploaded: UploadedBlob, dto: ConvertPdfDto): Promise<string> {
+  // `/analyze` — Modal'ın `/analyze` web_endpoint'ine multipart proxy (bkz.
+  // modal_worker/main.py). Analiz dönüşümden önce, dosya henüz Blob'a
+  // yüklenmeden çağrıldığı için burada da doğrudan bayt aktarılıyor.
+  async analyze(file: Express.Multer.File): Promise<unknown> {
     const formData = new FormData();
-    formData.append(
-      'file',
-      new Blob([Uint8Array.from(uploaded.buffer)], { type: uploaded.contentType || 'application/pdf' }),
-      dto.fileName,
-    );
-    if (dto.title) formData.append('title', dto.title);
-    if (dto.author) formData.append('author', dto.author);
-    formData.append('language', dto.language ?? 'tr');
-    if (dto.options) formData.append('options', dto.options);
-    if (dto.force_ocr !== undefined) formData.append('force_ocr', String(dto.force_ocr));
+    formData.append('file', new Blob([Uint8Array.from(file.buffer)], { type: file.mimetype }), file.originalname);
 
     let response: Response;
     try {
-      response = await fetch(`${this.workerUrl}/convert`, {
+      response = await fetch(`${this.modalEndpointUrl}/analyze`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${this.modalWebhookSecret}` },
         body: formData,
       });
     } catch {
-      throw new BadGatewayException('Dönüştürme servisine ulaşılamadı.');
+      throw new BadGatewayException('Analiz servisine ulaşılamadı.');
     }
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => null);
-      throw new BadRequestException(errorBody?.detail || 'Dönüştürme sırasında bir hata oluştu.');
+      throw new BadRequestException(errorBody?.detail || 'PDF analiz edilirken bir hata oluştu.');
     }
 
-    const body = (await response.json()) as { job_id: string };
-    return body.job_id;
+    return response.json();
   }
 }

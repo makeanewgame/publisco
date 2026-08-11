@@ -6,32 +6,30 @@
 publisco/
 ├── apps/
 │   ├── web/          # React + Vite frontend (port 3000)
-│   ├── api/          # NestJS backend (port 3001)
-│   └── worker/       # FastAPI worker service (port 3002)
+│   └── api/          # NestJS backend (port 3001)
+├── modal_worker/      # Modal (Python) PDF -> EPUB pipeline — NOT a pnpm/turbo workspace member
 ├── pnpm-workspace.yaml
 ├── turbo.json
 └── package.json
 ```
+
+PDF→EPUB dönüştürme artık Hostinger'daki bir FastAPI worker'da değil, **Modal.com**'da (`modal_worker/`) dağıtık (map-reduce, sayfa aralıklarına göre paralel container) çalışıyor. `modal_worker/` bir pnpm/turbo workspace üyesi değil (Python-only) — `pnpm dev` bu yüzden yalnızca web + api'yi başlatır, Modal ayrı deploy edilir (bkz. aşağıdaki "Modal Worker" bölümü).
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+
 - pnpm (package manager)
-- Python 3.10+ (for FastAPI worker — `apps/worker/requirements.txt` pins `fastapi==0.141.1`, which requires 3.10+; if your system `python3` is older, install an isolated version, e.g. `brew install python@3.12`, and build the worker's venv with that binary instead of the system one — see `apps/worker/README.md`)
+- Python 3.12+ ve [Modal CLI](https://modal.com/docs/guide) (`pip install modal && modal setup`) — yalnızca `modal_worker/`'ı deploy edecek/lokal test edecekseniz gerekir, `pnpm dev` için gerekmez
 
 ### Running the Project
 
-**Option 1: All three at once**
+**Option 1: Web + API birlikte**
 ```bash
 pnpm dev
 ```
-`apps/worker` has a `package.json` with a `dev` script (`.venv/bin/uvicorn ...`), so it's a pnpm/Turbo workspace member too — this command starts all three apps in parallel via Turbo:
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:3001
-- Worker: http://localhost:3002
-
-Requires the worker's venv to already exist (see Prerequisites above) — if it's missing, the `worker#dev` task fails fast with a message pointing to `apps/worker/README.md` instead of starting.
 
 **Option 2: Individual services**
 ```bash
@@ -40,9 +38,13 @@ pnpm --filter web dev
 
 # Backend only
 pnpm --filter api start:dev
+```
 
-# Worker only
-pnpm --filter worker dev
+**Modal worker (ayrı, pnpm dışı):**
+```bash
+cd modal_worker
+modal serve main.py   # lokal geliştirme — sıcak-reload'lu geçici bir endpoint verir
+modal deploy main.py  # prod deploy — apps/api/.env'deki MODAL_ENDPOINT_URL bu deploy'un base URL'ini işaret etmeli
 ```
 
 ## 🔧 Tech Stack
@@ -99,16 +101,25 @@ GET /api/auth/me
 - Run migrations: `pnpm --filter api prisma migrate dev`
 - Open Studio: `pnpm --filter api prisma studio`
 
-### Worker (apps/worker)
-- **Framework**: FastAPI
-- **Purpose**: PDF to EPUB conversion
-- **Port**: 3002
+### Modal Worker (modal_worker/)
+- **Framework**: Modal (Python) — `fastapi`-backed web endpoints, `.map()`/`.spawn()` ile dağıtık çalışan fonksiyonlar
+- **Purpose**: PDF → EPUB dönüştürme, plan/map/reduce fazlarına bölünmüş:
+  - **Plan** (tek container): PDF indirilir, bölüm haritası + `(start_page, end_page)` chunk listesi (25 sayfalık, `CHUNK_PAGE_SIZE`) hesaplanır.
+  - **Map** (`.map()` ile paralel): her container kendi sayfa aralığını Blob'dan kendisi indirip metin/OCR/görsel çıkarır.
+  - **Reduce** (tek container, `memory=2048`): sayfa sonuçları bölüm haritasına göre birleştirilip EPUB üretilir, Blob'a yüklenir.
+- **Deploy**: `modal deploy modal_worker/main.py` (bkz. yukarıdaki Quick Start)
+- **Auth**: Vercel ↔ Modal arası tek paylaşılan sır (`MODAL_WEBHOOK_SECRET`) — Vercel'den gelen isteklerde bearer, Modal'dan Vercel'in webhook'una giden istekte HMAC imzası olarak kullanılır.
 
 **Key Endpoints:**
 ```
-GET /health
-POST /convert - PDF to EPUB conversion
+POST /convert - kotayı zaten rezerve etmiş Vercel API'sinden gelir, .spawn() ile arka planda işler, 202 döner
+POST /analyze - dönüşümden önce başlık/yazar/bölüm tahmini (senkron, multipart PDF)
 ```
+
+**Sonuç bildirimi**: `run_pipeline`, tamamlandığında/başarısız olduğunda Vercel'in `POST /api/webhooks/modal-result`'ına HMAC imzalı bir webhook atar (bkz. `apps/api/src/convert/modal-webhook.controller.ts`) — worker artık kendi durumunu tutmuyor, `ConvertJob.status` (Prisma) tek doğruluk kaynağı.
+
+**Sunucu Paketleri** (`modal_worker/main.py`'deki `modal.Image.apt_install(...)` listesi ile senkron tutulmalı — yeni bir dil eklenirse hem oradaki liste hem `modal_worker/converter.py`'deki `LANGUAGE_MAP` güncellenmeli):
+- Tesseract OCR binary + `LANGUAGE_MAP`'teki her dil için bir `tesseract-ocr-*` apt paketi (tr/en/de/fr/es/it/pt/nl/ru/ar/pl/sv/el/ja/ko/zh-cn/zh-tw)
 
 ## 🌐 Port Configuration
 
@@ -116,7 +127,7 @@ POST /convert - PDF to EPUB conversion
 |---------|------|------------|
 | Frontend | 3000 | `pnpm dev` or `pnpm --filter web dev` |
 | Backend | 3001 | `pnpm dev` or `pnpm --filter api start:dev` |
-| Worker | 3002 | `pnpm dev` or `pnpm --filter worker dev` |
+| Modal worker | — (Modal-hosted URL, pnpm dışı) | `modal serve modal_worker/main.py` (dev) / `modal deploy modal_worker/main.py` (prod) |
 
 **Frontend Proxy Configuration** (`apps/web/vite.config.ts`):
 - All `/api/*` requests are proxied to `http://localhost:3001`
@@ -136,6 +147,15 @@ SMTP_PORT=587
 BLOB_STORE_URL=vercel-blob-url
 BLOB_STORE_ID=store-id
 BLOB_READ_WRITE_TOKEN=token
+MODAL_WEBHOOK_SECRET=shared-secret-with-modal
+MODAL_ENDPOINT_URL=https://your-modal-deploy-url
+```
+
+### Modal Worker (`modal secret create publisco-secrets ...`)
+```env
+BLOB_READ_WRITE_TOKEN=token            # aynı token, PDF indirme/EPUB yükleme/silme için
+MODAL_WEBHOOK_SECRET=shared-secret-with-modal
+VERCEL_WEBHOOK_URL=https://your-api-domain/api/webhooks/modal-result
 ```
 
 ### Frontend (apps/web)
@@ -202,9 +222,10 @@ pnpm --filter web test
 - ✅ Backend has CORS enabled in `main.ts` (app.enableCors())
 - ✅ Frontend proxy should handle requests (no CORS needed)
 
-### "Failed to fetch" / `ERR_CONNECTION_REFUSED` on `/convert`
-- ✅ Check the worker is actually running — `pnpm dev` now starts it too (see Quick Start), but if its venv is missing the `worker#dev` task fails fast instead of serving
-- ✅ Check the worker's venv exists and was built with Python 3.10+ (`python3 --version` inside the venv) — see Prerequisites above; if missing, run `pnpm --filter worker dev` directly to see the setup error
+### "Failed to fetch" / conversion stuck on PENDING
+- ✅ Check `MODAL_ENDPOINT_URL`/`MODAL_WEBHOOK_SECRET` are set in `apps/api/.env` and match the deployed Modal app (`modal deploy modal_worker/main.py`'s output URL + the `publisco-secrets` Modal secret)
+- ✅ Check Modal's own logs (`modal app logs publisco-modal-worker`) for the `run_pipeline` function — a webhook failure to `VERCEL_WEBHOOK_URL` leaves the job stuck at `PENDING` in the DB (`ConvertJob.status`)
+- ✅ In local dev, Modal can't reach `localhost` for its callback webhook — use `modal serve` + a tunnel (e.g. ngrok) pointing `VERCEL_WEBHOOK_URL` at your local API
 
 ## 📝 Important Notes
 
@@ -216,7 +237,7 @@ pnpm --filter web test
 
 ## 🚦 Development Workflow
 
-1. Start all three: `pnpm dev` (frontend, backend, and worker — see Quick Start above)
+1. Start web + api: `pnpm dev` (see Quick Start above); run `modal serve modal_worker/main.py` separately if touching the conversion pipeline
 2. Frontend changes auto-reload
 3. Backend changes auto-reload (NestJS watches files)
 4. Make API changes → test in Prisma Studio: `pnpm --filter api prisma studio`
@@ -227,7 +248,7 @@ pnpm --filter web test
 Before ending a turn that made code changes, do both of these:
 
 1. **NOTES.md** — if the work surfaced a new finding, TODO, bug, or follow-up that isn't already tracked there, add it under the right section (`Yapılacaklar` / `Sorunlar (Buglar)` / `Fikirler`). Skip this if nothing new came up — don't pad the file.
-2. **apps/worker/README.md → "Sunucu Paketleri"** — if the change added a new *system-level* dependency to the worker (an `apt`/`brew` package, a new OS binary a Python package shells out to — not a plain pip package), update that section. A Stop hook (`.claude/hooks/check-worker-deps.sh`) catches the common case (`requirements*.txt` changed without `README.md`) and will block with a reminder, but it can't tell *why* a package was added — use judgment for the OS-package/system dependency part specifically.
+2. **CLAUDE.md → "Sunucu Paketleri" (Modal Worker section)** — if the change added a new *system-level* dependency to `modal_worker/` (an `apt` package in `modal.Image.apt_install(...)`, a new OS binary a Python package shells out to — not a plain `pip_install` package), update that section. A Stop hook (`.claude/hooks/check-worker-deps.sh`) catches the common case (`modal_worker/main.py`/`requirements.txt` changed without `CLAUDE.md`) and will block with a reminder, but it can't tell *why* a package was added — use judgment for the OS-package/system dependency part specifically.
 
 ## 📞 Team Notes
 

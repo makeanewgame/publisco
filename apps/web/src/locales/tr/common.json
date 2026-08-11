@@ -126,8 +126,6 @@
     "converting": "Dönüştürülüyor…",
     "conversionFailed": "Dönüştürme başarısız oldu. Lütfen tekrar deneyin.",
     "progress": {
-      "queued": "Kuyrukta bekliyor ({{position}}. sırada)",
-      "processing": "Sayfa {{current}} / {{total}} işleniyor",
       "processingUnknown": "Dönüştürülüyor…"
     },
     "settingsHeading": "Dönüştürme ayarları",

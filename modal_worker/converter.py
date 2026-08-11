@@ -1,10 +1,27 @@
-"""PDF -> EPUB dönüştürme motoru.
+"""PDF -> EPUB dönüştürme motoru (Modal map-reduce sürümü).
 
-`pdf_to_epub_kit/pdf_to_epub.py` betiğinin (bağımsız/taşınabilir CLI kiti) aynı
-dönüştürme mantığının servis içi (in-process, tamamen bellek üzerinde çalışan)
-halidir. CLI betiğiyle bilinçli olarak ayrık tutulur: `pdf_to_epub_kit/pdf_to_epub.py`,
-kendi README.md'sinde tarif edildiği gibi tek başına kopyalanabilir bir kit
-olarak kalmalı.
+`apps/worker/app/converter.py`'den (Hostinger'daki eski tek-process FastAPI
+worker) taşındı. Sayfa-bazlı yardımcı fonksiyonlar (metin çıkarma, OCR,
+temizleme, HTML üretimi, dil/bölüm/başlık-yazar tespiti) DEĞİŞMEDEN taşındı —
+bunlar olgun ve test kapsamlı. Yeni olan kısım, eskiden tek bir
+`convert_pdf_to_epub` içinde sırayla yürüyen mantığın üç faza bölünmesi:
+
+- `plan_conversion`: PDF'i bir kere açar, bölüm sınırlarını ve
+  `(start_page, end_page)` chunk listesini hesaplar (paralelleşmez).
+- `process_page_range` / `process_page`: bir sayfa aralığını (bir Modal
+  container'ının kendi indirdiği PDF baytlarından) işler, sonucu mutlak sayfa
+  numarasıyla etiketlenmiş `PageResult` olarak döner (`.map()` ile paralel
+  çağrılır).
+- `assemble_epub`: plan fazındaki bölüm haritasına göre sayfa sonuçlarını
+  birleştirip EPUB'ı üretir (paralelleşmez).
+
+`convert_pdf_to_epub`, bu üç fazı tek bir process içinde sırayla çalıştıran
+bir kolaylık sarmalayıcısıdır — testlerin ve küçük PDF'lerin eski tek-çağrılık
+arayüzü kullanmaya devam edebilmesi için var; asıl dağıtık orkestrasyon
+`main.py`'deki Modal fonksiyonlarında (plan/map/reduce ayrı ayrı) yaşar.
+
+`max_epub_size_mb` (hedef boyuta sıkıştırma) bilinçli olarak taşınmadı — v1
+kapsamı dışında bırakıldı (bkz. NOTES.md).
 """
 
 from __future__ import annotations
@@ -14,13 +31,14 @@ import io
 import logging
 import re
 import uuid
-from typing import Any, Callable, Optional
+from dataclasses import dataclass, field
+from typing import Any
 
 import pymupdf as fitz  # `fitz` ismi pymupdf'te deprecated; gerçek modülü bu adla kullanıyoruz.
 from ebooklib import epub
 from PIL import Image
 
-logger = logging.getLogger("worker.converter")
+logger = logging.getLogger("modal_worker.converter")
 
 
 class ConversionError(Exception):
@@ -133,7 +151,7 @@ def should_use_visual_page(config: dict, text: str, page_num: int) -> bool:
     return False
 
 
-def _ocr_with_retry(doc, page_index: int, ocr_fn: "Callable[[Image.Image], Any]", dpi: int = 300) -> Any | None:
+def _ocr_with_retry(doc, page_index: int, ocr_fn, dpi: int = 300) -> Any | None:
     """`ocr_fn`'i sayfanın (alfa kanalsız, RGB) render'ı üzerinde çalıştırır.
 
     Tesseract bazı sayfalarda (ör. çok büyük/olağandışı render boyutu) iç
@@ -143,9 +161,7 @@ def _ocr_with_retry(doc, page_index: int, ocr_fn: "Callable[[Image.Image], Any]"
     yanıltıcı bir mesaj bırakıyor. Böyle bir çökmede aynı sayfayı daha düşük
     DPI ile bir kez daha denemek genelde yeterli oluyor; o da başarısız
     olursa sessizce None döner (çağıran taraf sayfayı/alanı görsel/boş
-    bırakır). Hem gövde metni OCR'ı (`try_ocr_page`) hem kapak başlık/yazar
-    OCR'ı (`_extract_cover_title_author_via_ocr`) bu yardımcıyı kullanır ki
-    aynı dayanıklılık ikisinde de geçerli olsun."""
+    bırakır)."""
     attempts = [dpi] if dpi <= 200 else [dpi, 200]
     for attempt_dpi in attempts:
         try:
@@ -262,7 +278,7 @@ def page_to_image_bytes(doc, page_index: int, dpi: int = 200, quality: int = 90)
 
 
 # ---------------------------------------------------------------------------
-# Otomatik tespit (bölümler / başlık / yazar)
+# Otomatik tespit (bölümler / başlık / yazar) — `/analyze` ve plan fazı kullanır
 # ---------------------------------------------------------------------------
 
 def detect_chapters(doc) -> list[dict[str, Any]]:
@@ -396,7 +412,8 @@ def detect_title_author(doc) -> tuple[str | None, str | None]:
 
 
 def analyze_pdf(pdf_bytes: bytes) -> dict[str, Any]:
-    """PDF'ten başlık/yazar/bölümleri otomatik tespit etmeye çalışır.
+    """PDF'ten başlık/yazar/bölümleri otomatik tespit etmeye çalışır (tek container,
+    senkron — Modal'daki `analyze` web_endpoint'i tarafından kullanılır).
 
     Tespit edilemeyen alanlar `warnings` listesinde adlandırılır; çağıran taraf
     (frontend) bunu kullanıcıya uyarı olarak gösterir, dönüşümü engellemez.
@@ -446,43 +463,190 @@ def get_image_settings(config: dict) -> tuple[int, int]:
     return dpi, quality
 
 
-def get_target_size_settings(config: dict) -> tuple[int, int, int]:
-    """Boyut hedefi varsa otomatik kalite ayarlaması için ayarlar döndürür."""
-    max_mb = config.get("max_epub_size_mb")
-    if not max_mb:
-        return 0, 0, 0
+# ---------------------------------------------------------------------------
+# Plan fazı — tek container, paralelleşmez
+# ---------------------------------------------------------------------------
 
-    target_bytes = int(max_mb * 1024 * 1024)
-    profile = config.get("image_profile", "balanced")
-    base = IMAGE_PROFILES.get(profile, IMAGE_PROFILES["balanced"])
-    return target_bytes, base["dpi"], base["quality"]
+CHUNK_PAGE_SIZE = 25
+
+
+@dataclass
+class ChapterPlan:
+    start_page: int
+    end_page: int
+    title: str
+
+
+@dataclass
+class PlanResult:
+    total_pages: int
+    resolved_config: dict[str, Any]
+    chapters: list[ChapterPlan]
+    chunks: list[tuple[int, int]]
+    cover_image: bytes | None = None
+
+
+def plan_conversion(pdf_bytes: bytes, config: dict[str, Any]) -> PlanResult:
+    """PDF'i bir kere açıp bölüm sınırlarını, kapak görselini ve paralel işlenecek
+    `(start_page, end_page)` chunk listesini (`CHUNK_PAGE_SIZE` sayfalık) hesaplar.
+    `config` alanları `book_config.json` ile aynı şemayı izler."""
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    except Exception as exc:
+        raise ConversionError(f"PDF açılamadı: {exc}") from exc
+
+    try:
+        resolved_config = resolve_auto_language(doc, config)
+        total_pages = len(doc)
+
+        start_page = max(1, resolved_config.get("start_page", 1))
+        end_page = min(total_pages, resolved_config.get("end_page", total_pages))
+
+        chapters_cfg = resolved_config.get("chapters") or [
+            {"start_page": start_page, "title": resolved_config.get("title", "Kitap")}
+        ]
+        chapters_cfg = sorted(chapters_cfg, key=lambda c: c["start_page"])
+
+        chapters: list[ChapterPlan] = []
+        for i, chap in enumerate(chapters_cfg):
+            chap_start = chap["start_page"]
+            chap_end = (
+                chapters_cfg[i + 1]["start_page"] - 1 if i + 1 < len(chapters_cfg) else end_page
+            )
+            chap_end = min(chap_end, end_page)
+            chapters.append(ChapterPlan(start_page=chap_start, end_page=chap_end, title=chap["title"]))
+
+        cover_image: bytes | None = None
+        cover_page = resolved_config.get("cover_page")
+        if cover_page:
+            image_dpi, image_quality = get_image_settings(resolved_config)
+            cover_image = page_to_image_bytes(doc, cover_page - 1, dpi=image_dpi, quality=image_quality)
+            logger.info("Kapak eklendi (sayfa %s)", cover_page)
+
+        chunks: list[tuple[int, int]] = []
+        cursor = start_page
+        while cursor <= end_page:
+            chunk_end = min(cursor + CHUNK_PAGE_SIZE - 1, end_page)
+            chunks.append((cursor, chunk_end))
+            cursor = chunk_end + 1
+
+        return PlanResult(
+            total_pages=total_pages,
+            resolved_config=resolved_config,
+            chapters=chapters,
+            chunks=chunks,
+            cover_image=cover_image,
+        )
+    finally:
+        doc.close()
 
 
 # ---------------------------------------------------------------------------
-# Asıl dönüştürme
+# Map fazı — paralel, `.map()` ile çağrılır
 # ---------------------------------------------------------------------------
 
-def _build_epub_book(
-    doc,
-    config: dict,
-    force_ocr: bool = False,
-    on_progress: Optional[Callable[[int, int], None]] = None,
-) -> epub.EpubBook:
-    total_pages = len(doc)
+@dataclass
+class PageResult:
+    page_num: int
+    html: str
+    images: list[tuple[str, bytes]] = field(default_factory=list)
 
-    start_page = config.get("start_page", 1)
-    end_page = config.get("end_page", total_pages)
-    skip_pages = set(config.get("skip_pages", []))
+
+def process_page(doc, page_num: int, config: dict[str, Any], force_ocr: bool = False) -> PageResult:
+    """Tek bir sayfayı işler (metin/OCR/görsel), sonucu mutlak sayfa numarasıyla
+    etiketlenmiş `PageResult` olarak döner — görsel dosya adları da sayfa
+    numarasını içerir ki farklı chunk'larda paralel üretilen görseller
+    reduce fazında çakışmasın."""
+    page_index = page_num - 1
     diagram_pages = set(config.get("diagram_pages", []))
-    ocr_lang = config.get("ocr_language", "tur+eng")
+    ocr_lang = config.get("ocr_language", DEFAULT_OCR_LANGUAGE)
     visual_mode = bool(config.get("visual_mode", False))
     auto_visual_mode = bool(config.get("auto_visual_mode", False))
     image_dpi, image_quality = get_image_settings(config)
+    page_captions = config.get("page_captions", {})
 
-    chapters_cfg = config.get("chapters") or [
-        {"start_page": start_page, "title": config.get("title", "Kitap")}
-    ]
-    chapters_cfg = sorted(chapters_cfg, key=lambda c: c["start_page"])
+    html_parts: list[str] = []
+    images: list[tuple[str, bytes]] = []
+
+    if page_num in diagram_pages:
+        img_name = f"images/page_{page_num}_diagram.jpg"
+        images.append((img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality)))
+        html_parts.append(f'<img src="{img_name}" alt="Şema/tablo - sayfa {page_num}" />')
+
+    text = extract_page_text(doc[page_index])
+    if text is None:
+        text = try_ocr_page(doc, page_index, ocr_lang)
+        if not text or not text.strip():
+            # Ne gömülü metin ne de OCR sonucu var (taranmış sayfa, OCR
+            # kurulu değil vb.) — sayfayı atlarsak içerik tamamen kaybolur,
+            # bu yüzden visual_mode ayarından bağımsız olarak görsel ekliyoruz.
+            img_name = f"images/page_{page_num}.jpg"
+            images.append((img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality)))
+            caption = page_captions.get(str(page_num))
+            html_parts.append(build_visual_page_html(page_num, img_name, caption=caption))
+            logger.info(
+                "Sayfa %s için metin bulunamadı (taranmış olabilir), görsel olarak eklendi.",
+                page_num,
+            )
+            return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
+    elif force_ocr:
+        ocr_text = try_ocr_page(doc, page_index, ocr_lang)
+        if ocr_text:
+            text = ocr_text
+
+    use_visual = visual_mode or (auto_visual_mode and should_use_visual_page(config, text, page_num))
+    if use_visual:
+        img_name = f"images/page_{page_num}.jpg"
+        images.append((img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality)))
+        caption = page_captions.get(str(page_num))
+        html_parts.append(build_visual_page_html(page_num, img_name, caption=caption))
+        return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
+
+    cleaned = clean_text(text)
+    block_html = text_to_html_blocks(cleaned)
+    if block_html:
+        html_parts.append(block_html)
+
+    return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
+
+
+def process_page_range(
+    pdf_bytes: bytes,
+    start_page: int,
+    end_page: int,
+    config: dict[str, Any],
+    force_ocr: bool = False,
+) -> list[PageResult]:
+    """Bir `(start_page, end_page)` chunk'ını işler — Modal'ın `process_chunk`
+    fonksiyonu bu PDF baytlarını blob URL'inden kendisi indirip burayı çağırır."""
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    except Exception as exc:
+        raise ConversionError(f"PDF açılamadı: {exc}") from exc
+
+    skip_pages = set(config.get("skip_pages", []))
+    total_pages = len(doc)
+    results: list[PageResult] = []
+    try:
+        for page_num in range(start_page, end_page + 1):
+            if page_num < 1 or page_num > total_pages or page_num in skip_pages:
+                continue
+            results.append(process_page(doc, page_num, config, force_ocr=force_ocr))
+    finally:
+        doc.close()
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Reduce fazı — tek container
+# ---------------------------------------------------------------------------
+
+def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
+    """Sayfa sonuçlarını plan fazındaki bölüm haritasına göre (chunk sınırından
+    bağımsız, sayfa numarası sırasına göre) `EpubHtml` item'larına toplayıp
+    EPUB üretir."""
+    config = plan.resolved_config
+    by_page = {pr.page_num: pr for pr in page_results}
 
     book = epub.EpubBook()
     book.set_identifier(str(uuid.uuid4()))
@@ -490,13 +654,8 @@ def _build_epub_book(
     book.set_language(config.get("language", "tr").split("-")[0])
     book.add_author(config.get("author", "Bilinmiyor"))
 
-    cover_page = config.get("cover_page")
-    if cover_page:
-        book.set_cover(
-            "cover.jpg",
-            page_to_image_bytes(doc, cover_page - 1, dpi=image_dpi, quality=image_quality),
-        )
-        logger.info("Kapak eklendi (sayfa %s)", cover_page)
+    if plan.cover_image is not None:
+        book.set_cover("cover.jpg", plan.cover_image)
 
     css = epub.EpubItem(
         uid="style",
@@ -514,182 +673,54 @@ def _build_epub_book(
     )
     book.add_item(css)
 
-    # İlerleme bildirimi (on_progress) için payda: gerçek döngüyle aynı filtreyi
-    # (skip_pages, sayfa aralığı sınırları) uygulayarak işlenecek toplam sayfa
-    # sayısını önceden hesaplıyoruz.
-    pages_to_process = 0
-    for i, chap in enumerate(chapters_cfg):
-        chap_start = chap["start_page"]
-        chap_end = (
-            chapters_cfg[i + 1]["start_page"] - 1 if i + 1 < len(chapters_cfg) else end_page
-        )
-        chap_end = min(chap_end, end_page)
-        for page_num in range(chap_start, chap_end + 1):
-            if page_num < 1 or page_num > total_pages or page_num in skip_pages:
-                continue
-            pages_to_process += 1
-
     chapter_items = []
-    image_counter = 0
-    processed_pages = 0
+    for i, chap in enumerate(plan.chapters):
+        html_parts = [f"<h1>{html.escape(chap.title)}</h1>"]
 
-    for i, chap in enumerate(chapters_cfg):
-        chap_start = chap["start_page"]
-        chap_end = (
-            chapters_cfg[i + 1]["start_page"] - 1 if i + 1 < len(chapters_cfg) else end_page
-        )
-        chap_end = min(chap_end, end_page)
-
-        html_parts = [f"<h1>{html.escape(chap['title'])}</h1>"]
-
-        for page_num in range(chap_start, chap_end + 1):
-            if page_num < 1 or page_num > total_pages or page_num in skip_pages:
+        for page_num in range(chap.start_page, chap.end_page + 1):
+            pr = by_page.get(page_num)
+            if pr is None:
                 continue
-
-            page_index = page_num - 1
-            processed_pages += 1
-            if on_progress:
-                on_progress(processed_pages, pages_to_process)
-
-            if page_num in diagram_pages:
-                image_counter += 1
-                img_name = f"images/diagram_{image_counter}.jpg"
-                img_item = epub.EpubItem(
-                    uid=f"img_{image_counter}",
-                    file_name=img_name,
-                    media_type="image/jpeg",
-                    content=page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality),
+            for img_name, img_bytes in pr.images:
+                book.add_item(
+                    epub.EpubItem(uid=img_name, file_name=img_name, media_type="image/jpeg", content=img_bytes)
                 )
-                book.add_item(img_item)
-                html_parts.append(f'<img src="{img_name}" alt="Şema/tablo - sayfa {page_num}" />')
-
-            text = extract_page_text(doc[page_index])
-            if text is None:
-                text = try_ocr_page(doc, page_index, ocr_lang)
-                if not text or not text.strip():
-                    # Ne gömülü metin ne de OCR sonucu var (taranmış sayfa, OCR
-                    # kurulu değil vb.) — sayfayı atlarsak içerik tamamen kaybolur,
-                    # bu yüzden visual_mode ayarından bağımsız olarak görsel ekliyoruz.
-                    image_counter += 1
-                    img_name = f"images/page_{image_counter}.jpg"
-                    img_item = epub.EpubItem(
-                        uid=f"img_{image_counter}",
-                        file_name=img_name,
-                        media_type="image/jpeg",
-                        content=page_to_image_bytes(
-                            doc, page_index, dpi=image_dpi, quality=image_quality
-                        ),
-                    )
-                    book.add_item(img_item)
-                    caption = config.get("page_captions", {}).get(str(page_num))
-                    html_parts.append(build_visual_page_html(page_num, img_name, caption=caption))
-                    logger.info(
-                        "Sayfa %s için metin bulunamadı (taranmış olabilir), görsel olarak eklendi.",
-                        page_num,
-                    )
-                    continue
-            elif force_ocr:
-                ocr_text = try_ocr_page(doc, page_index, ocr_lang)
-                if ocr_text:
-                    text = ocr_text
-
-            use_visual = visual_mode or (auto_visual_mode and should_use_visual_page(config, text, page_num))
-            if use_visual:
-                image_counter += 1
-                img_name = f"images/page_{image_counter}.jpg"
-                img_item = epub.EpubItem(
-                    uid=f"img_{image_counter}",
-                    file_name=img_name,
-                    media_type="image/jpeg",
-                    content=page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality),
-                )
-                book.add_item(img_item)
-                caption = config.get("page_captions", {}).get(str(page_num))
-                html_parts.append(build_visual_page_html(page_num, img_name, caption=caption))
-                continue
-
-            cleaned = clean_text(text)
-            block_html = text_to_html_blocks(cleaned)
-            if block_html:
-                html_parts.append(block_html)
+            if pr.html:
+                html_parts.append(pr.html)
 
         chap_file = f"chap_{i + 1:02d}.xhtml"
-        epub_chap = epub.EpubHtml(title=chap["title"], file_name=chap_file, lang=book.language)
+        epub_chap = epub.EpubHtml(title=chap.title, file_name=chap_file, lang=book.language)
         epub_chap.content = "\n".join(html_parts)
         epub_chap.add_item(css)
         book.add_item(epub_chap)
         chapter_items.append(epub_chap)
-        logger.info("Bölüm eklendi: %s (sayfa %s-%s)", chap["title"], chap_start, chap_end)
+        logger.info("Bölüm eklendi: %s (sayfa %s-%s)", chap.title, chap.start_page, chap.end_page)
 
     book.toc = tuple(chapter_items)
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
     book.spine = ["nav"] + chapter_items
 
-    return book
-
-
-def _epub_book_to_bytes(book: epub.EpubBook) -> bytes:
     buffer = io.BytesIO()
     epub.write_epub(buffer, book)
     return buffer.getvalue()
 
 
-def convert_pdf_to_epub(
-    pdf_bytes: bytes,
-    config: dict[str, Any],
-    force_ocr: bool = False,
-    on_progress: Optional[Callable[[int, int], None]] = None,
-) -> bytes:
-    """Bir PDF'i (bayt) EPUB'a (bayt) dönüştürür; tamamen bellek üzerinde çalışır, disk kullanmaz.
+# ---------------------------------------------------------------------------
+# Tek-process kolaylık sarmalayıcısı (testler + küçük PDF'ler için)
+# ---------------------------------------------------------------------------
 
-    `config` alanları `book_config.json` ile aynı şemayı izler (bkz. book_config.example.json).
-    `max_epub_size_mb` verilirse, hedefe ulaşana kadar görsel kalitesi kademeli düşürülerek
-    yeniden denenir; hiçbir deneme hedefi tutturamazsa en son (en düşük kaliteli) sonuç döner.
-    `on_progress(islenen_sayfa, toplam_sayfa)` verilirse her sayfa işlendiğinde çağrılır
-    (boyut hedefi için birden çok deneme yapılırsa her denemede sıfırlanır).
+def convert_pdf_to_epub(pdf_bytes: bytes, config: dict[str, Any], force_ocr: bool = False) -> bytes:
+    """Plan -> map -> reduce fazlarını tek bir process içinde sırayla çalıştırır.
+
+    Modal'daki gerçek dağıtık akış (`main.py`) bu üç fazı ayrı container'lara
+    böler; bu fonksiyon aynı sonucu tek process'te üretir (testler ve küçük
+    PDF'ler için pratik bir kolaylık — davranış olarak eşdeğerdir).
     """
-    try:
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    except Exception as exc:
-        raise ConversionError(f"PDF açılamadı: {exc}") from exc
-
-    try:
-        config = resolve_auto_language(doc, config)
-        target_bytes, base_dpi, base_quality = get_target_size_settings(config)
-        if not target_bytes:
-            book = _build_epub_book(doc, config, force_ocr=force_ocr, on_progress=on_progress)
-            return _epub_book_to_bytes(book)
-
-        profiles = [
-            (base_dpi, base_quality),
-            (max(140, base_dpi - 20), max(70, base_quality - 8)),
-            (max(120, base_dpi - 40), max(60, base_quality - 16)),
-            (max(100, base_dpi - 60), max(50, base_quality - 24)),
-        ]
-
-        best_attempt: bytes | None = None
-        for dpi, quality in profiles:
-            attempt_config = dict(config, image_dpi=dpi, image_quality=quality, image_profile="custom")
-            try:
-                book = _build_epub_book(doc, attempt_config, force_ocr=force_ocr, on_progress=on_progress)
-                data = _epub_book_to_bytes(book)
-            except Exception as exc:
-                logger.warning("Profil (dpi=%s, quality=%s) denemesi başarısız: %s", dpi, quality, exc)
-                continue
-
-            best_attempt = data
-            if len(data) <= target_bytes:
-                logger.info("Boyut hedefi sağlandı: %.2f MB", len(data) / (1024 * 1024))
-                return data
-
-        if best_attempt is None:
-            raise ConversionError("EPUB üretilemedi (tüm görsel kalite denemeleri başarısız oldu).")
-
-        logger.warning(
-            "Boyut hedefi sağlanamadı, en düşük denenen kaliteyle döndürülüyor (%.2f MB).",
-            len(best_attempt) / (1024 * 1024),
+    plan = plan_conversion(pdf_bytes, dict(config))
+    page_results: list[PageResult] = []
+    for start_page, end_page in plan.chunks:
+        page_results.extend(
+            process_page_range(pdf_bytes, start_page, end_page, plan.resolved_config, force_ocr=force_ocr)
         )
-        return best_attempt
-    finally:
-        doc.close()
+    return assemble_epub(plan, page_results)

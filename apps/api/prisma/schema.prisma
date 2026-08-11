@@ -149,13 +149,21 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-// Worker'a devredilmiş bir dönüştürme job'ının hangi kullanıcıya ait olduğunu
-// ve kotasının serbest bırakılıp bırakılmadığını takip eder (bkz. ConvertService).
-// `id` worker'ın döndürdüğü job_id ile aynıdır (worker kendi job'larını bilir
-// ama kimlik doğrulaması yapmaz, bkz. apps/worker/app/jobs.py). Bu eşleme
-// bilinçli olarak bellek-içi bir Map yerine burada tutuluyor: `apps/api`
-// Vercel'de serverless çalışıyor, instance'lar arasında bellek paylaşılmıyor —
-// uzun süren (çok sayfalı) dönüşümlerde status polling'in bir kısmı job'ı
+enum ConvertJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// Modal'a devredilmiş bir dönüştürme job'ının hangi kullanıcıya ait olduğunu,
+// durumunu ve kotasının serbest bırakılıp bırakılmadığını takip eder (bkz.
+// ConvertService, ModalWebhookController). `id` Vercel tarafında üretilir ve
+// Modal'a `job_id` olarak gönderilir (Modal kendi job'larını bilmez, kimlik
+// doğrulaması da yapmaz — bkz. modal_worker/main.py). Bu eşleme bilinçli
+// olarak bellek-içi bir Map yerine burada tutuluyor: `apps/api` Vercel'de
+// serverless çalışıyor, instance'lar arasında bellek paylaşılmıyor — uzun
+// süren (çok sayfalı) dönüşümlerde status polling'in bir kısmı job'ı
 // oluşturan instance'tan farklı bir instance'a düşüp yanlışlıkla 404 dönebiliyordu.
 model ConvertJob {
   id     String @id
@@ -163,9 +171,13 @@ model ConvertJob {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   fileSizeBytes Int
-  released      Boolean @default(false)
+  released      Boolean          @default(false)
+  status        ConvertJobStatus @default(PENDING)
+  epubUrl       String?
+  errorMessage  String?
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@map("convert_jobs")

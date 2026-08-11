@@ -154,3 +154,10 @@ def pdf_with_toc_bytes() -> bytes:
     data = doc.tobytes()
     doc.close()
     return data
+
+
+@pytest.fixture
+def multi_chunk_pdf_bytes() -> bytes:
+    """`CHUNK_PAGE_SIZE`'ı (25) aşan, birden fazla chunk'a bölünmesi gereken
+    çok sayfalı bir PDF üretir — plan/map/reduce sınır davranışını test eder."""
+    return _make_pdf([f"Sayfa {i} icin test metnidir. " * 6 for i in range(1, 31)])

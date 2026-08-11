@@ -11,9 +11,10 @@ class ChapterConfig(BaseModel):
 
 
 class ConversionOptions(BaseModel):
-    """`book_config.json` ile aynı alanları taşır; hepsi opsiyoneldir.
-
-    `/convert` isteğine `options` form alanında JSON string olarak gönderilir.
+    """`book_config.json` ile aynı alanları taşır (hedef boyuta sıkıştırma
+    hariç — `max_epub_size_mb` v1 kapsamı dışında, bkz. NOTES.md); hepsi
+    opsiyoneldir. Vercel API'sinden `/convert` isteğine JSON body olarak
+    gönderilir.
     """
 
     title: str | None = None
@@ -30,7 +31,6 @@ class ConversionOptions(BaseModel):
     image_profile: str = "balanced"
     image_dpi: int | None = None
     image_quality: int | None = None
-    max_epub_size_mb: float | None = None
     ocr_language: str = "tur+eng"
     page_captions: dict[str, str] = Field(default_factory=dict)
 
@@ -39,3 +39,19 @@ class ConversionOptions(BaseModel):
         if "chapters" in data:
             data["chapters"] = [dict(chapter) for chapter in data["chapters"]]
         return data
+
+
+class ConvertRequest(BaseModel):
+    """Vercel API'sinin Modal'ın `/convert` web_endpoint'ine POST ettiği gövde.
+
+    `/analyze` bunun aksine JSON değil multipart PDF kabul eder (bkz.
+    `main.py` — hafif/senkron bir uç olduğu için blob'a yükleme gerekmez).
+    """
+
+    job_id: str
+    pdf_url: str
+    title: str | None = None
+    author: str | None = None
+    language: str = "tr"
+    options: ConversionOptions = Field(default_factory=ConversionOptions)
+    force_ocr: bool = False

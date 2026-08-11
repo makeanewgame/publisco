@@ -1,8 +1,5 @@
 import { put } from '@vercel/blob/client';
 import { authFetch } from './authFetch';
-import { WORKER_URL } from './apiConfig';
-
-export { WORKER_URL };
 
 export type QuotaErrorCode = 'CONVERTER_QUOTA_EXCEEDED' | 'STORAGE_QUOTA_EXCEEDED';
 
@@ -49,14 +46,10 @@ export interface ConvertPdfParams {
   forceOcr?: boolean;
 }
 
-export type ConvertJobStatus = 'queued' | 'processing' | 'done' | 'error';
+export type ConvertJobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 export interface ConvertProgress {
   status: ConvertJobStatus;
-  currentPage: number;
-  totalPages: number;
-  percent: number;
-  queuePosition: number;
   error: string | null;
 }
 
@@ -93,9 +86,9 @@ async function requestUploadToken(fileName: string, signal?: AbortSignal): Promi
 
 // Dosya önce doğrudan Blob'a yüklenir, sonra API'ye sadece pathname + metadata
 // gönderilir; kota kontrolü (converter -> storage) API tarafında gerçek dosya
-// boyutu blob'dan okunduktan sonra yapılır. API arka planda worker'a proxy
-// yapar ve worker dönüştürmeyi bir job olarak kuyruğa alıp hemen jobId döner
-// (bkz. apps/worker/app/jobs.py) — bu yüzden burada sonucu değil jobId'yi bekleriz.
+// boyutu blob'dan okunduktan sonra yapılır. API, Modal'ın dönüştürme
+// pipeline'ını (bkz. modal_worker/main.py) arka planda tetikleyip hemen jobId
+// döner — bu yüzden burada sonucu değil jobId'yi bekleriz.
 async function startConvertJob(params: ConvertPdfParams, signal?: AbortSignal): Promise<string> {
   const { clientToken, pathname } = await requestUploadToken(params.file.name, signal);
 
@@ -169,12 +162,12 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 // Job'ı başlatır, tamamlanana kadar durumunu poll'lar (her adımda onProgress
-// çağrılır — sıradaki konum, işlenen sayfa/toplam sayfa ve yüzde), bitince
-// EPUB'ı indirir. İşlem uzun sürebildiği için (OCR ağırlıklı PDF'ler) kullanıcıya
-// tek bir "dönüştürülüyor" spinner'ı yerine gerçek ilerleme göstermek için var.
-// `signal` verilirse (Cancel butonu) polling'i hemen kesip AbortError fırlatır —
-// bu yalnızca istemciyi sonucu beklemekten vazgeçirir, worker'daki job'u
-// durdurmaz (bkz. apps/worker/app/jobs.py — iptal endpoint'i henüz yok).
+// çağrılır — sayfa bazlı ilerleme artık takip edilmiyor, sadece PENDING/
+// PROCESSING/COMPLETED/FAILED durumu; bkz. ConvertPage.tsx — belirsiz
+// (indeterminate) bir "dönüştürülüyor" göstergesi olarak render edilir),
+// bitince EPUB'ı indirir. `signal` verilirse (Cancel butonu) polling'i hemen
+// kesip AbortError fırlatır — bu yalnızca istemciyi sonucu beklemekten
+// vazgeçirir, Modal'daki pipeline'ı durdurmaz (iptal endpoint'i henüz yok).
 export async function convertPdf(
   params: ConvertPdfParams,
   onProgress?: (progress: ConvertProgress) => void,
@@ -187,10 +180,10 @@ export async function convertPdf(
     const progress = await getConvertJobStatus(jobId, signal);
     onProgress?.(progress);
 
-    if (progress.status === 'done') {
+    if (progress.status === 'COMPLETED') {
       return getConvertJobResult(jobId, signal);
     }
-    if (progress.status === 'error') {
+    if (progress.status === 'FAILED') {
       throw new Error(progress.error || 'conversion_failed');
     }
     await wait(CONVERT_POLL_INTERVAL_MS, signal);
@@ -211,11 +204,15 @@ export interface AnalyzeResult {
   warnings: AnalyzeWarning[];
 }
 
+// Dönüşümden önce, dosya seçilir seçilmez tetiklenir. `POST /api/convert/analyze`
+// backend'in Modal'ın `/analyze` endpoint'ine multipart proxy'sidir (bkz.
+// apps/api/src/convert/convert.service.ts — analyze) — worker'a doğrudan
+// gitmenin aksine artık auth gerektirir, o yüzden `authFetch` kullanılıyor.
 export async function analyzePdf(file: File): Promise<AnalyzeResult> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${WORKER_URL}/analyze`, {
+  const response = await authFetch('/convert/analyze', {
     method: 'POST',
     body: formData,
   });

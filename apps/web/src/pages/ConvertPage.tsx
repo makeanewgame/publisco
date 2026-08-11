@@ -92,24 +92,20 @@ interface FileConversionProgress extends ConvertProgress {
   fileName: string;
 }
 
-function ConversionProgressPanel({ progress, t }: { progress: FileConversionProgress; t: (key: string, vars?: Record<string, string | number>) => string }) {
-  const percent = Math.max(0, Math.min(100, Math.round(progress.percent)));
+// Sayfa bazlı canlı yüzde (current_page/total_pages/percent) Modal'ın
+// map-reduce mimarisinde takip edilmiyor (paralel container'lar arasında
+// toplam ilerleme anlamlı bir şekilde hesaplanamıyor) — bu yüzden belirsiz
+// (indeterminate) bir gösterge kullanılıyor.
+function ConversionProgressPanel({ progress, t }: { progress: FileConversionProgress; t: (key: string) => string }) {
   return (
     <div className="rounded-[24px] border border-[#e8d9c4] bg-[#fff8ee] p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="font-semibold text-[#241c15]">{progress.fileName}</span>
-        <span className="font-semibold text-[#0c7a5e]">%{percent}</span>
       </div>
       <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-[#ead8c6]">
-        <div className="h-full rounded-full bg-mint transition-all" style={{ width: `${percent}%` }} />
+        <div className="h-full w-1/3 animate-pulse rounded-full bg-mint" />
       </div>
-      <p className="mt-2 text-xs text-[#6e6257]">
-        {progress.status === 'queued'
-          ? t('convert.progress.queued', { position: progress.queuePosition + 1 })
-          : progress.totalPages > 0
-            ? t('convert.progress.processing', { current: progress.currentPage, total: progress.totalPages })
-            : t('convert.progress.processingUnknown')}
-      </p>
+      <p className="mt-2 text-xs text-[#6e6257]">{t('convert.progress.processingUnknown')}</p>
     </div>
   );
 }

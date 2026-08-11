@@ -4,7 +4,8 @@ import zipfile
 import pymupdf
 import pytest
 
-from app.converter import (
+from converter import (
+    CHUNK_PAGE_SIZE,
     ConversionError,
     analyze_pdf,
     clean_text,
@@ -12,6 +13,7 @@ from app.converter import (
     detect_chapters,
     detect_title_author,
     extract_page_text,
+    plan_conversion,
     text_to_html_blocks,
 )
 
@@ -70,16 +72,6 @@ def test_convert_pdf_to_epub_ocr_recovers_text_from_scanned_page(ocr_scanned_pag
 
         image_entries = [name for name in archive.namelist() if name.endswith(".jpg")]
         assert not image_entries, "Gerçek OCR metni bulunduğunda sayfa görsele düşmemeli"
-
-
-def test_convert_pdf_to_epub_respects_max_size(sample_pdf_bytes):
-    config = {
-        "title": "Boyut Testi",
-        "diagram_pages": [1, 2],
-        "max_epub_size_mb": 5,
-    }
-    result = convert_pdf_to_epub(sample_pdf_bytes, config)
-    assert len(result) <= 5 * 1024 * 1024
 
 
 def test_detect_chapters_reads_embedded_toc(pdf_with_toc_bytes):
@@ -194,3 +186,29 @@ def test_convert_pdf_to_epub_keeps_paragraphs_as_separate_p_tags(pdf_with_two_pa
     assert content.count("<p>") >= 2
     assert "birinci paragraftir" in content
     assert "ikinci paragraftir" in content
+
+
+# --- Plan/map/reduce'a özgü yeni testler ------------------------------------
+
+def test_plan_conversion_splits_into_chunk_page_size_chunks(multi_chunk_pdf_bytes):
+    """30 sayfalık bir PDF, CHUNK_PAGE_SIZE (25) sayfalık chunk'lara bölünmeli."""
+    plan = plan_conversion(multi_chunk_pdf_bytes, {"title": "Cok Sayfali"})
+
+    assert plan.total_pages == 30
+    assert plan.chunks == [(1, CHUNK_PAGE_SIZE), (CHUNK_PAGE_SIZE + 1, 30)]
+
+
+def test_convert_pdf_to_epub_reassembles_chapter_spanning_multiple_chunks(multi_chunk_pdf_bytes):
+    """Bir bölüm birden fazla chunk'a yayılsa bile (chunk sınırından bağımsız),
+    sayfa numarası sırasına göre doğru şekilde birleştirilmeli."""
+    config = {
+        "title": "Cok Sayfali",
+        "chapters": [{"start_page": 1, "title": "Tek Bolum"}],
+    }
+    result = convert_pdf_to_epub(multi_chunk_pdf_bytes, config)
+
+    with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        content = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
+
+    assert "sayfa 1 " in content.lower()
+    assert "sayfa 30 " in content.lower()

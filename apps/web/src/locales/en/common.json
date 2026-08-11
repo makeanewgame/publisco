@@ -125,8 +125,6 @@
     "formError": "Please add a PDF file and fill in the title, author, and language fields before converting.",
     "converting": "Converting…",
     "progress": {
-      "queued": "Waiting in queue (position {{position}})",
-      "processing": "Processing page {{current}} / {{total}}",
       "processingUnknown": "Converting…"
     },
     "conversionFailed": "Conversion failed. Please try again.",

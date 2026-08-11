@@ -89,6 +89,12 @@ image = (
         "pytesseract==0.3.13",
         "requests==2.32.3",
     )
+    # Modal artık entrypoint'in yerel dizinini otomatik mount etmiyor — `converter.py`/
+    # `schemas.py` gibi sibling modülleri container'a açıkça eklemek gerekiyor, yoksa
+    # `from converter import (...)` runtime'da `ModuleNotFoundError` ile patlıyor.
+    # En son eklenmeli (Modal'ın önerisi): pip/apt katmanlarının cache'ini bozmadan
+    # sadece bu dosyalar değiştiğinde yeniden mount edilir.
+    .add_local_python_source("converter", "schemas")
 )
 
 app = modal.App("publisco-modal-worker", image=image)

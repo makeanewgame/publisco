@@ -20,7 +20,6 @@ import { RequestConvertUploadDto } from './dto/request-upload.dto';
 
 const MAX_ANALYZE_UPLOAD_BYTES = 100 * 1024 * 1024; // 100 MB — createUploadToken'daki convert limitiyle aynı
 
-@UseGuards(JwtAuthGuard)
 @Controller('convert')
 export class ConvertController {
   constructor(private readonly convertService: ConvertService) {}
@@ -28,15 +27,19 @@ export class ConvertController {
   // Client, dosyayı buraya değil doğrudan Vercel Blob'a yükleyeceği için önce
   // bunun için tek kullanımlık, süreli bir upload token'ı ister (bkz.
   // ConvertService.createUploadToken — auth + kaba kota kontrolü burada yapılır).
+  @UseGuards(JwtAuthGuard)
   @Post('upload-url')
   async createUploadUrl(@Body() dto: RequestConvertUploadDto, @CurrentUser() user: RequestUser) {
     return this.convertService.createUploadToken(user.userId, dto.fileName);
   }
 
-  // Dosya seçilir seçilmez (dönüşümden önce) başlık/yazar/bölüm tahmini için
-  // çağrılır — Modal'ın `/analyze` endpoint'ine multipart proxy (bkz.
-  // ConvertService.analyze). Eskiden worker'a doğrudan, kimlik doğrulamasız
-  // gidiyordu; artık backend üzerinden proxy'lendiği için JWT gerektiriyor.
+  // Dosya seçilir seçilmez (dönüşümden önce, kullanıcı henüz giriş yapmamış
+  // olabilir — bkz. ConvertPage.tsx'teki 'auto' mod) başlık/yazar/bölüm
+  // tahmini için çağrılır — Modal'ın `/analyze` endpoint'ine multipart proxy
+  // (bkz. ConvertService.analyze). Kota/kullanıcıya özel bir yan etkisi yok,
+  // bu yüzden bilinçli olarak auth GEREKTİRMİYOR (eskiden de worker'a
+  // doğrudan, kimlik doğrulamasız gidiyordu) — JwtAuthGuard eklenirse
+  // henüz giriş yapmamış kullanıcılar dosya seçer seçmez 401 alır.
   @Post('analyze')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_ANALYZE_UPLOAD_BYTES } }))
   async analyze(@UploadedFile() file: Express.Multer.File) {
@@ -49,16 +52,19 @@ export class ConvertController {
   // Modal tarafı da aynı akışta). Dosyanın kendisi bu isteğin gövdesinde
   // değil — client onu `upload-url`den aldığı token'la doğrudan Blob'a
   // yükledi, burada sadece `dto.pathname` gelir (bkz. ConvertService.resolveUploadedBlob).
+  @UseGuards(JwtAuthGuard)
   @Post()
   async convert(@Body() dto: ConvertPdfDto, @CurrentUser() user: RequestUser) {
     return this.convertService.convert(user.userId, dto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':jobId/status')
   async status(@Param('jobId') jobId: string, @CurrentUser() user: RequestUser) {
     return this.convertService.getStatus(user.userId, jobId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':jobId/result')
   async result(
     @Param('jobId') jobId: string,

@@ -204,17 +204,34 @@ export interface AnalyzeResult {
   warnings: AnalyzeWarning[];
 }
 
-// Dönüşümden önce, dosya seçilir seçilmez tetiklenir. `POST /api/convert/analyze`
-// backend'in Modal'ın `/analyze` endpoint'ine multipart proxy'sidir (bkz.
-// apps/api/src/convert/convert.service.ts — analyze) — worker'a doğrudan
-// gitmenin aksine artık auth gerektirir, o yüzden `authFetch` kullanılıyor.
-export async function analyzePdf(file: File): Promise<AnalyzeResult> {
-  const formData = new FormData();
-  formData.append('file', file);
+// Dönüşümden önce, dosya seçilir seçilmez tetiklenir. `startConvertJob`daki gibi
+// dosya önce doğrudan Blob'a yüklenir, API'ye sadece pathname gider — eskiden
+// dosya bu isteğin gövdesine multipart olarak giriyordu, bu da Vercel
+// Function'ın ~4.5MB inbound body limitine takılıp büyük PDF'lerde 503
+// (ve dolayısıyla tarayıcıda yanıltıcı bir CORS hatası) üretiyordu.
+export async function analyzePdf(file: File, signal?: AbortSignal): Promise<AnalyzeResult> {
+  const tokenResponse = await authFetch('/convert/analyze/upload-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName: file.name }),
+    signal,
+  });
+  if (!tokenResponse.ok) {
+    throw new Error('analyze_failed');
+  }
+  const { clientToken, pathname }: UploadTokenResponse = await tokenResponse.json();
+
+  await put(pathname, file, {
+    access: 'private',
+    token: clientToken,
+    abortSignal: signal,
+  });
 
   const response = await authFetch('/convert/analyze', {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pathname }),
+    signal,
   });
 
   if (!response.ok) {

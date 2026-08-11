@@ -42,11 +42,7 @@ class ConversionOptions(BaseModel):
 
 
 class ConvertRequest(BaseModel):
-    """Vercel API'sinin Modal'ın `/convert` web_endpoint'ine POST ettiği gövde.
-
-    `/analyze` bunun aksine JSON değil multipart PDF kabul eder (bkz.
-    `main.py` — hafif/senkron bir uç olduğu için blob'a yükleme gerekmez).
-    """
+    """Vercel API'sinin Modal'ın `/convert` web_endpoint'ine POST ettiği gövde."""
 
     job_id: str
     pdf_url: str
@@ -55,3 +51,15 @@ class ConvertRequest(BaseModel):
     language: str = "tr"
     options: ConversionOptions = Field(default_factory=ConversionOptions)
     force_ocr: bool = False
+
+
+class AnalyzeRequest(BaseModel):
+    """Vercel API'sinin Modal'ın `/analyze` web_endpoint'ine POST ettiği gövde.
+
+    `/convert` ile aynı desen: dosya bayt olarak taşınmaz, sadece Blob URL'i —
+    PDF'in kendisi hâlâ Vercel'in ~4.5MB inbound body limitine tabi olan
+    Vercel Function'a hiç girmemesi gerekiyor (client doğrudan Blob'a yükler,
+    bkz. ConvertService.createAnalyzeUploadToken).
+    """
+
+    pdf_url: str

@@ -102,6 +102,27 @@ export class ConvertService {
     return { clientToken, pathname };
   }
 
+  // `/analyze` girişten önce (kullanıcı henüz giriş yapmamış olabilir) tetiklendiği
+  // için userId/kota kontrolü yok — sadece anonim, kısa ömürlü bir Blob upload
+  // token'ı. Aynı ~4.5MB inbound body limiti nedeniyle (bkz. createUploadToken)
+  // dosya burada da API'nin gövdesine değil doğrudan Blob'a gitmeli.
+  async createAnalyzeUploadToken(fileName: string): Promise<UploadTokenResult> {
+    if (!fileName.toLowerCase().endsWith('.pdf')) {
+      throw new BadRequestException('Sadece .pdf uzantılı dosyalar kabul edilir.');
+    }
+
+    const pathname = `analyze-uploads/${randomUUID()}-${this.sanitizeFileName(fileName)}`;
+    const clientToken = await generateClientTokenFromReadWriteToken({
+      token: this.blobToken,
+      pathname,
+      allowedContentTypes: ['application/pdf'],
+      maximumSizeInBytes: MAX_UPLOAD_BYTES,
+      validUntil: Date.now() + UPLOAD_TOKEN_TTL_MS,
+    });
+
+    return { clientToken, pathname };
+  }
+
   // Kullanıcının kendi upload token'ıyla yalnızca kendi `convert-uploads/{userId}/`
   // öneki altına yazabilmesi (bkz. createUploadToken) bunu tek başına garanti
   // eder, ama burada da doğrulanıyor ki bir kullanıcı başka birinin pathname'ini
@@ -321,22 +342,32 @@ export class ConvertService {
     await this.prisma.convertJob.deleteMany({ where: { createdAt: { lt: cutoff } } });
   }
 
-  // `/analyze` — Modal'ın `/analyze` web_endpoint'ine multipart proxy (bkz.
-  // modal_worker/main.py). Analiz dönüşümden önce, dosya henüz Blob'a
-  // yüklenmeden çağrıldığı için burada da doğrudan bayt aktarılıyor.
-  async analyze(file: Express.Multer.File): Promise<unknown> {
-    const formData = new FormData();
-    formData.append('file', new Blob([Uint8Array.from(file.buffer)], { type: file.mimetype }), file.originalname);
+  // `/analyze` — `/convert`'le aynı desen: client dosyayı `createAnalyzeUploadToken`
+  // ile aldığı token'la doğrudan Blob'a yükledi, burada sadece pathname geliyor.
+  // Blob'un baytını bu API'ye hiç indirmiyoruz (eskiden multipart proxy'ydi ve
+  // dosya önce client'tan bu endpoint'e bayt olarak geliyordu — Vercel
+  // Function'ın ~4.5MB inbound body limitine takılıp 503 üretiyordu, bkz.
+  // createUploadToken'daki aynı not); Modal'a sadece Blob URL'i geçilir,
+  // Modal PDF'i kendisi indirir (bkz. modal_worker/main.py — download_pdf).
+  async analyze(pathname: string): Promise<unknown> {
+    const uploaded = await this.resolveUploadedBlob(pathname);
 
     let response: Response;
     try {
       response = await fetch(`${this.modalEndpointUrl}/analyze`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${this.modalWebhookSecret}` },
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.modalWebhookSecret}`,
+        },
+        body: JSON.stringify({ pdf_url: uploaded.url }),
       });
     } catch {
       throw new BadGatewayException('Analiz servisine ulaşılamadı.');
+    } finally {
+      del(uploaded.url, { token: this.blobToken }).catch(() => {
+        // best-effort — geçici analiz upload'ının silinmesi başarısız olsa da akışı bozmasın
+      });
     }
 
     if (!response.ok) {

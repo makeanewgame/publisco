@@ -29,7 +29,7 @@ import time
 from typing import Any
 
 import modal
-from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import FastAPI, Header, HTTPException
 
 from converter import (
     ConversionError,
@@ -40,7 +40,7 @@ from converter import (
     plan_conversion,
     process_page_range,
 )
-from schemas import ConvertRequest
+from schemas import AnalyzeRequest, ConvertRequest
 
 logger = logging.getLogger("modal_worker.main")
 
@@ -324,13 +324,15 @@ def convert_endpoint(request: ConvertRequest, authorization: str = Header(None))
 
 
 @web_app.post("/analyze")
-def analyze_endpoint(file: UploadFile = File(...), authorization: str = Header(None)) -> dict[str, Any]:
-    """Eski `/analyze`'ın taşınmış hali — senkron, multipart PDF kabul eder
-    (Vercel API bunu proxy'ler, blob'a yükleme gerekmez — bu uç zaten hafif ve
-    tek seferlik)."""
+def analyze_endpoint(request: AnalyzeRequest, authorization: str = Header(None)) -> dict[str, Any]:
+    """Eski `/analyze`'ın taşınmış hali — senkron, `/convert` ile aynı şekilde
+    PDF'i multipart bayt olarak değil Blob URL'i olarak alır ve kendisi indirir
+    (bkz. schemas.AnalyzeRequest — önceki multipart hali, PDF'in client'tan bu
+    endpoint'e Vercel API üzerinden bayt olarak geçmesini gerektiriyordu, bu da
+    Vercel Function'ın ~4.5MB inbound body limitine takılıp 503 veriyordu)."""
     _require_bearer(authorization)
 
-    pdf_bytes = file.file.read()
+    pdf_bytes = download_pdf(request.pdf_url)
     try:
         return analyze_pdf(pdf_bytes)
     except ConversionError as exc:

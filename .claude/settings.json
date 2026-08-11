@@ -1,4 +1,10 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(pnpm prisma *)",
+      "Bash(git checkout *)"
+    ]
+  },
   "hooks": {
     "Stop": [
       {
@@ -11,11 +17,6 @@
           }
         ]
       }
-    ]
-  },
-  "permissions": {
-    "allow": [
-      "Bash(pnpm prisma *)"
     ]
   }
 }

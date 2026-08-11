@@ -1,101 +1,132 @@
-# PDF → Kindle EPUB Kiti — VS Code + Codex Rehberi
+# PDF'den Kindle uyumlu EPUB yapma
 
-## Bu kitte ne var?
+Bu proje taranmış veya metin tabanlı PDF'yi **reflowable EPUB 3** dosyasına dönüştürür. Üretilen kitapta Kindle üzerinden yazı tipi, punto, satır aralığı ve kenar boşlukları değiştirilebilir.
 
+> Önemli: Taranmış PDF'lerde sonuç OCR kalitesine bağlıdır. Çok sütunlu, eğri, gölgeli veya düşük çözünürlüklü sayfalarda elle düzeltme gerekebilir.
+
+## 1. VS Code hazırlığı
+
+1. Bilgisayarına Python 3.11 veya 3.12 kur.
+2. VS Code'a Microsoft'un **Python** eklentisini kur.
+3. Bu klasörü VS Code ile aç.
+4. VS Code'da `Terminal > New Terminal` seç.
+
+## 2. Sistem programlarını kur
+
+### macOS
+
+Önce Homebrew yoksa [brew.sh](https://brew.sh/) üzerinden kur. Ardından:
+
+```bash
+brew install tesseract tesseract-lang poppler ghostscript qpdf
 ```
-pdf_to_epub_kit/
-├── pdf_to_epub.py            # Ana dönüştürme betiği (çalışır durumda)
-├── book_config.example.json  # Ayar dosyası şablonu
-├── requirements.txt          # Gerekli Python paketleri
-├── tests/                    # Betiğin birim testleri
-└── README.md                 # Bu dosya
+
+### Windows
+
+En sorunsuz yöntem Chocolatey kullanmaktır. PowerShell'i yönetici olarak aç:
+
+```powershell
+choco install python tesseract poppler ghostscript qpdf -y
 ```
 
-Betik Gemini'nin sade yaklaşımı (saf Python, ağır kurulum yok) ile
-ChatGPT'nin eksik olan özelliklerini (bölüm ayırma, kapak, şema/tablo
-sayfalarını görsel olarak koruma) birleştiriyor. OCR isteğe bağlı ve
-kurulu değilse betik çökmeden devam ediyor.
+Tesseract kurulumunda Türkçe dil verisinin bulunduğunu kontrol et:
 
----
+```powershell
+tesseract --list-langs
+```
 
-## 1. Senin yapman gerekenler (Codex'e bırakma)
+Listede `tur` görünmelidir. Görünmüyorsa `tur.traineddata` dosyasını Tesseract'ın `tessdata` klasörüne ekle.
 
-Bunlar ortam kurulumu — bir ajanın yapması senden daha yavaş/riskli
-olur, elle yapman daha sağlıklı:
+### Ubuntu / Debian
 
-1. **Python 3.10+ kurulu olduğunu doğrula**
-   Terminalde: `python3 --version` (Windows'ta `py --version`)
-   Yoksa [python.org](https://python.org)'dan indir.
+```bash
+sudo apt update
+sudo apt install python3-venv tesseract-ocr tesseract-ocr-tur poppler-utils ghostscript qpdf
+```
 
-2. **Bu üç dosyayı indir** (aşağıda paylaşacağım) ve bir klasöre koy,
-   örneğin `pdf_to_epub_kit/`. PDF kitabını da aynı klasöre kopyala.
+## 3. Python ortamını kur
 
-3. **VS Code'da klasörü aç**: `File > Open Folder` → `pdf_to_epub_kit`.
+macOS/Linux:
 
-4. **Sanal ortam kur ve paketleri yükle** (VS Code terminalinde):
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate        # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-5. **`book_config.example.json`'ı kopyalayıp `book_config.json` yap**,
-   kendi kitabına göre doldur:
-   - `title`, `author`
-   - `start_page` / `end_page`: PDF görüntüleyicide gördüğün gerçek
-     PDF sayfa numaraları (kitaptaki basılı numaralarla karışmasın)
-   - `chapters`: her bölümün başladığı sayfa + başlık
-   - `cover_page`: kapak yapılacak sayfa
-   - `diagram_pages`: görsel olarak da korunması gereken tablo/şema
-     sayfaları (varsa)
+Windows PowerShell:
 
-   Bu bilgileri (kaç bölüm var, hangi sayfada başlıyor) sadece sen
-   bilebilirsin — PDF'i açıp bakman gerekiyor, bunu otomatikleştirmek
-   güvenilir değil.
+```powershell
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-6. **İlk denemeyi elle çalıştır**, betiğin gerçekten çalıştığını gör:
-   ```bash
-   python3 pdf_to_epub.py kitap.pdf -c book_config.json
-   ```
+VS Code interpreter sorarsa `.venv` içindeki Python'u seç.
 
-7. **Çıktıyı kontrol et**: EPUB'u Calibre veya Apple Books ile aç,
-   bölümler ve Türkçe karakterler (ç, ğ, ı, ş, ü, ö) doğru mu bak.
+## 4. PDF'yi dönüştür
 
-8. **Kindle'a gönder**: Amazon hesabındaki *Send to Kindle* sayfasından
-   EPUB'u yükle. USB ile kopyalamayı deneme, çoğu Kindle modeli EPUB'u
-   doğrudan açmıyor.
+PDF dosyanı proje klasörüne koy. Örnek:
 
----
+```bash
+python pdf_to_kindle_epub.py kitap.pdf --title "Kitap Adı" --author "Yazar Adı"
+```
 
-## 2. Codex'e bırakabileceğin kısımlar
+Çıktı adını ayrıca belirlemek için:
 
-Elindeki `pdf_to_epub.py`'yi Codex'e **başlangıç noktası** olarak ver,
-sıfırdan yazdırma — üstüne şu tür geliştirmeleri yaptırmak verimli olur:
+```bash
+python pdf_to_kindle_epub.py kitap.pdf -o kitap-kindle.epub --title "Kitap Adı" --author "Yazar Adı"
+```
 
-- Betikte hata çıkarsa (paket sürüm uyuşmazlığı, JSON hatası vb.)
-  debug ettirmek
-- `--force-ocr` gibi seçenekleri genişletmek
-- İki sütunlu PDF'lerde metin sırası karışıyorsa okuma mantığını
-  iyileştirmek
-- Bölüm başlıklarını PDF içinden otomatik tespit etmeye çalışan bir
-  ek mod yazdırmak (elle `chapters` girmek yerine)
-- Çıktı EPUB'un CSS/stilini (yazı tipi, boşluklar) özelleştirmek
-- `.vscode/tasks.json` gibi bir VS Code görevi oluşturup komutu
-  tek tıkla çalıştırılır hale getirmek
+Taranmış PDF algılanırsa Türkçe OCR otomatik uygulanır. 300 sayfalık bir kitap bilgisayara göre birkaç dakika veya daha uzun sürebilir.
 
-Kısacası: **ortamı sen kur, ilk çalıştırmayı sen doğrula; kod
-üzerindeki iyileştirme/hata ayıklama döngüsünü Codex'e devret.**
+## 5. Bölümler yanlış algılanırsa
 
----
+PDF'deki gerçek bölüm başlangıç sayfalarını virgülle ver:
 
-## Sık karşılaşılabilecek sorunlar
+```bash
+python pdf_to_kindle_epub.py kitap.pdf -o kitap.epub --title "Kitap Adı" --author "Yazar" --chapter-pages "6,10,14,19,24"
+```
 
-| Sorun | Çözüm |
-|---|---|
-| `ModuleNotFoundError: fitz` | `pip install pymupdf` (paket adı farklı, import adı `fitz`) |
-| Bölümler içindekilerde yok | `book_config.json`'daki `chapters` listesini kontrol et, JSON virgülleri doğru mu bak |
-| Bazı sayfalar atlandı uyarısı | O sayfalar taranmış/görüntü olabilir; OCR için `pip install pytesseract pillow` + sisteme Tesseract kurmak gerekir |
-| Türkçe karakterler bozuk | `language` alanının `"tr"` olduğundan emin ol |
+Kitap adı/yazar adı her sayfada üstbilgi olarak tekrarlanıyorsa silebilirsin:
 
+```bash
+python pdf_to_kindle_epub.py kitap.pdf -o kitap.epub --header "YAZAR ADI" --header "KİTAP ADI"
+```
 
-hadi kolay gelsin
+`--header` değeri bir düzenli ifadedir. Tam satır eşleşmelerini siler.
+
+## 6. Kindle'a gönder
+
+1. [Send to Kindle](https://www.amazon.com/sendtokindle) sayfasını aç.
+2. EPUB dosyasını yükle.
+3. Kindle cihazını veya uygulamasını eşitle.
+
+USB ile doğrudan kopyalamak yerine Send to Kindle kullanmak EPUB dönüşümünü daha güvenilir yapar.
+
+## Sık karşılaşılan hatalar
+
+### `Eksik programlar` hatası
+
+Sistem paketlerinden biri kurulmamış veya PATH'e eklenmemiştir. Terminalde şunları dene:
+
+```bash
+tesseract --version
+tesseract --list-langs
+pdfinfo -v
+ocrmypdf --version
+```
+
+### Türkçe harfler yanlış çıkıyor
+
+`tesseract --list-langs` çıktısında `tur` olduğundan emin ol. Ardından komutu varsayılan `--language tur` ile çalıştır.
+
+### Yazı boyutu Kindle'da değişmiyor
+
+Bu genellikle PDF'nin sayfa görüntülerinin EPUB içine resim olarak konmasıyla olur. Bu proje ana metni OCR ile gerçek metne dönüştürdüğü için font/punto ayarı çalışır.
+
+### Metin sırası karışıyor
+
+Kaynak sayfa iki sütunluysa veya aynı PDF sayfasında iki kitap sayfası varsa OCR okuma sırası bozulabilir. Böyle dosyalarda önce sayfaları bölmek veya OCR metnini elle düzeltmek gerekir.

@@ -6,6 +6,7 @@ import pytest
 
 from converter import (
     CHUNK_PAGE_SIZE,
+    HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
     ConversionError,
     analyze_pdf,
     clean_text,
@@ -14,6 +15,7 @@ from converter import (
     detect_title_author,
     extract_page_text,
     plan_conversion,
+    process_page_range,
     text_to_html_blocks,
 )
 
@@ -212,3 +214,33 @@ def test_convert_pdf_to_epub_reassembles_chapter_spanning_multiple_chunks(multi_
 
     assert "sayfa 1 " in content.lower()
     assert "sayfa 30 " in content.lower()
+
+
+# --- Kenar payı kalibrasyonuna özgü testler ---------------------------------
+
+def test_detect_header_footer_margins_skips_calibration_for_short_books(sample_pdf_bytes):
+    """20 sayfa altındaki kitaplarda örneklem güvenilmez olduğundan kalibrasyon
+    atlanmalı, sabit varsayılan orana düşülmeli."""
+    plan = plan_conversion(sample_pdf_bytes, {"title": "Kisa Kitap"})
+    assert plan.resolved_config["header_margin_ratio"] == HEADER_FOOTER_DEFAULT_MARGIN_RATIO
+    assert plan.resolved_config["footer_margin_ratio"] == HEADER_FOOTER_DEFAULT_MARGIN_RATIO
+
+
+def test_detect_header_footer_margins_catches_pattern_outside_default_band(
+    pdf_with_recurring_header_footer_bytes,
+):
+    """Sabit %8 varsayılan kenar payının kaçıracağı (~%11'de duran) ama kitap
+    boyunca tekrar eden bir koşu başlığı/sayfa no örüntüsü, dinamik
+    kalibrasyonla tespit edilip her sayfada kırpılmalı."""
+    plan = plan_conversion(pdf_with_recurring_header_footer_bytes, {"title": "Kalibrasyon Testi"})
+
+    assert plan.resolved_config["header_margin_ratio"] > HEADER_FOOTER_DEFAULT_MARGIN_RATIO
+    assert plan.resolved_config["footer_margin_ratio"] > HEADER_FOOTER_DEFAULT_MARGIN_RATIO
+
+    page_results = process_page_range(pdf_with_recurring_header_footer_bytes, 1, 22, plan.resolved_config)
+    combined = "\n".join(pr.html for pr in page_results)
+
+    assert "kosu basligi" not in combined.lower()
+    assert "gercek bir paragraftir" in combined.lower()
+    # Header/footer tamamen kırpılmışsa her sayfadan tam olarak bir <p> kalmalı.
+    assert combined.count("<p>") == 22

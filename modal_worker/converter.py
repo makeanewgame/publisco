@@ -93,30 +93,120 @@ def build_visual_page_html(page_num: int, image_path: str, caption: str | None =
     return "\n".join(parts)
 
 
-def _extract_text_blocks(page) -> list[str]:
+HEADER_FOOTER_DEFAULT_MARGIN_RATIO = 0.08  # kalibrasyon atlanır/başarısız olursa düşülen sabit varsayılan (üst/alt %8)
+HEADER_FOOTER_MAX_CHARS = 60  # bu bölgede yalnızca kısa bloklar (koşu başlığı/sayfa no) filtrelenir
+NOISE_MAX_CHARS = 20  # bu uzunluğa kadar, hiç harf içermeyen bloklar gürültü sayılır
+
+_HAS_LETTER_RE = re.compile(r"[^\W\d_]", re.UNICODE)
+
+
+def _is_in_margin(block: tuple, page_height: float, top_ratio: float, bottom_ratio: float) -> bool:
+    """Blok, sayfanın üst veya alt kenar payı şeridinin tamamen içinde mi?
+    (kısmen taşan bloklar -- ör. normal bir paragrafın ilk satırı -- kenar
+    payına girmiş sayılmaz, yalnızca tamamen şeridin içinde kalanlar sayılır.)
+    `top_ratio`/`bottom_ratio`, plan fazında `detect_header_footer_margins`
+    ile kitaba özel kalibre edilir (bkz. o fonksiyon); kalibrasyon
+    atlanmışsa/başarısızsa `HEADER_FOOTER_DEFAULT_MARGIN_RATIO` kullanılır."""
+    if page_height <= 0:
+        return False
+    y0, y1 = block[1], block[3]
+    top_margin = page_height * top_ratio
+    bottom_margin = page_height * (1 - bottom_ratio)
+    return y1 <= top_margin or y0 >= bottom_margin
+
+
+def _is_noise_block(text: str) -> bool:
+    """Tek karakterlik parçaları (dikey çizgi/süslemenin OCR/metin çıkarıcı
+    tarafından "i", "#" gibi yanlış yorumlanması) ve kısa, hiç harf
+    içermeyen blokları (yalnız rakam/sembol -- ör. başıboş sayfa no,
+    "* * *" bölüm ayracı) gürültü sayar."""
+    if len(text) <= 1:
+        return True
+    if len(text) <= NOISE_MAX_CHARS and not _HAS_LETTER_RE.search(text):
+        return True
+    return False
+
+
+def _normalize_for_match(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip().casefold()
+
+
+def build_header_blacklist(config: dict[str, Any]) -> set[str]:
+    """Plan fazında zaten bilinen kitap başlığı/yazarından, sayfa
+    üstü/altı koşu başlıklarını eleyecek bir kara liste kurar."""
+    blacklist: set[str] = set()
+    for key in ("title", "author"):
+        value = config.get(key)
+        if value and str(value).strip():
+            blacklist.add(_normalize_for_match(str(value)))
+    return blacklist
+
+
+def _is_blacklisted(text: str, blacklist: set[str]) -> bool:
+    if not blacklist:
+        return False
+    normalized = _normalize_for_match(text)
+    if normalized in blacklist:
+        return True
+    # Kısa bloklarda (ör. "HIRS KRALI | 14"), başlık/yazar bir alt dizi olarak da gecebilir.
+    if len(text) <= HEADER_FOOTER_MAX_CHARS:
+        return any(entry in normalized for entry in blacklist if len(entry) >= 3)
+    return False
+
+
+def _extract_text_blocks(
+    page,
+    blacklist: set[str] | None = None,
+    top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+    bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+) -> list[str]:
     """Sayfayı PyMuPDF'in blok bazlı çıkarımıyla okur; her blok görsel olarak ayrı bir
     paragrafa karşılık gelir. `get_text("text")`'in aksine (tüm sayfayı satır satır tek
     bir akışa düzleştirip paragraf sınırlarını kaybediyordu), blok sınırları burada
-    paragraf sınırı olarak korunur."""
+    paragraf sınırı olarak korunur.
+
+    Üç sezgisel filtre uygulanır: (1) sayfanın üst/alt kenar payındaki kısa
+    bloklar (koşu başlığı/sayfa no) atlanır, (2) kitap başlığı/yazarıyla
+    eşleşen bloklar (kara liste) atlanır, (3) hiç harf içermeyen kısa veya
+    tek karakterlik bloklar (gürültü) atlanır."""
     try:
         raw_blocks = page.get_text("blocks", sort=True)
     except Exception:
         return []
+
+    page_height = page.rect.height
 
     blocks: list[str] = []
     for block in raw_blocks:
         if len(block) < 7 or block[6] != 0:  # sadece metin blokları (1 = görsel)
             continue
         text = block[4].strip()
-        if text:
-            blocks.append(text)
+        if not text:
+            continue
+        if _is_in_margin(block, page_height, top_margin_ratio, bottom_margin_ratio) and len(text) <= HEADER_FOOTER_MAX_CHARS:
+            continue
+        if _is_blacklisted(text, blacklist or set()):
+            continue
+        if _is_noise_block(text):
+            continue
+        blocks.append(text)
     return blocks
 
 
-def extract_page_text(page, min_chars: int = 40) -> str | None:
+def extract_page_text(
+    page,
+    min_chars: int = 40,
+    blacklist: set[str] | None = None,
+    top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+    bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+) -> str | None:
     """Sayfadan metin çıkarır (blok sınırları paragraf ayracı `\\n\\n` olarak korunur).
     Metin çok azsa (muhtemelen taranmış sayfa) None döner."""
-    text = "\n\n".join(_extract_text_blocks(page))
+    text = "\n\n".join(
+        _extract_text_blocks(
+            page, blacklist=blacklist, top_margin_ratio=top_margin_ratio, bottom_margin_ratio=bottom_margin_ratio
+        )
+    )
     if len(text.strip()) < min_chars:
         return None
     return text
@@ -464,6 +554,119 @@ def get_image_settings(config: dict) -> tuple[int, int]:
 
 
 # ---------------------------------------------------------------------------
+# Kenar payı kalibrasyonu — yalnızca plan fazında, sabit
+# `HEADER_FOOTER_DEFAULT_MARGIN_RATIO` yerine kitaba özel bir tahmin üretir
+# ---------------------------------------------------------------------------
+
+HEADER_FOOTER_MAX_MARGIN_RATIO = 0.15  # kalibrasyon ne bulursa bulsun, asla bunu aşan bir kenar payı kırpmaz
+HEADER_FOOTER_CANDIDATE_RATIO = 0.20  # kalibrasyon sırasında aday blok aranan bölge (nihai tavandan geniş tutulur)
+HEADER_FOOTER_BAND_PADDING_RATIO = 0.01  # tespit edilen banda eklenen küçük pay
+HEADER_FOOTER_SAMPLE_MIN_PAGES = 20  # bu sayfa sayısının altındaki kitaplarda kalibrasyon atlanır (örneklem güvenilmez)
+HEADER_FOOTER_SAMPLE_COUNT = 10
+HEADER_FOOTER_MIN_REPEAT_RATIO = 0.5  # tekrar eden blok, örneklenen sayfaların en az bu oranında görülmeli
+
+
+def _sample_page_numbers(start_page: int, end_page: int, count: int) -> list[int]:
+    """Kitaba yayılmış (art arda değil) `count` kadar sayfa numarası seçer --
+    ilk/son sayfayı örneklemeden hariç tutar, çünkü bunlar ön/arka madde
+    (kapak, ithaf, boş sayfa) olma ihtimali yüksek, running header/footer
+    genelde onlarda olmaz ve örüntüyü yanıltabilirler."""
+    total = end_page - start_page + 1
+    if total <= 2:
+        return list(range(start_page, end_page + 1))
+
+    inner_start, inner_end = start_page + 1, end_page - 1
+    inner_total = inner_end - inner_start + 1
+    count = min(count, inner_total)
+    step = inner_total / count
+    return sorted({inner_start + int(i * step) for i in range(count)})
+
+
+def _repeat_key(text: str) -> str:
+    """Sayfa no gibi sayfadan sayfaya değişen ama konumu sabit kalan kısa
+    blokları aynı 'şablon' olarak eşlemek için salt rakamlardan oluşan
+    metinleri jenerikleştirir (ör. "13" ve "14" aynı anahtara düşer)."""
+    stripped = text.strip()
+    if stripped.isdigit():
+        return "#"
+    return _normalize_for_match(stripped)
+
+
+def _calibrated_margin_ratio(hits: dict[str, list[float]], min_repeats: int, from_top: bool) -> float | None:
+    """Örnek sayfalar arasında en az `min_repeats` kez tekrar eden bloklardan
+    kenar payı oranını çıkarır; tutarlı bir örüntü yoksa None döner."""
+    recurring_ratios = [ratio for ratios in hits.values() if len(ratios) >= min_repeats for ratio in ratios]
+    if not recurring_ratios:
+        return None
+
+    edge = max(recurring_ratios) if from_top else min(recurring_ratios)
+    margin_ratio = edge if from_top else (1 - edge)
+    return min(margin_ratio + HEADER_FOOTER_BAND_PADDING_RATIO, HEADER_FOOTER_MAX_MARGIN_RATIO)
+
+
+def detect_header_footer_margins(
+    doc, start_page: int, end_page: int, sample_count: int = HEADER_FOOTER_SAMPLE_COUNT
+) -> tuple[float, float]:
+    """Kitaba yayılmış birkaç sayfayı örnekleyip üst/alt kenarlarda -- aynı
+    metinle (koşu başlığı) ya da aynı konumdaki kısa sayısal blokla (sayfa
+    no) -- tutarlı şekilde tekrar eden bir örüntü arar; bulursa gerçek kenar
+    payı oranlarını, bulamazsa (yeterli sayfa yoksa, header/footer yoksa,
+    örüntü tutarsızsa) sabit varsayılanı (`HEADER_FOOTER_DEFAULT_MARGIN_RATIO`)
+    döner. `HEADER_FOOTER_MAX_MARGIN_RATIO` tavanı, kalibrasyon yanlış
+    pozitif üretse bile gerçek içeriği yutmasını engeller."""
+    total_pages = end_page - start_page + 1
+    if total_pages < HEADER_FOOTER_SAMPLE_MIN_PAGES:
+        return HEADER_FOOTER_DEFAULT_MARGIN_RATIO, HEADER_FOOTER_DEFAULT_MARGIN_RATIO
+
+    top_hits: dict[str, list[float]] = {}
+    bottom_hits: dict[str, list[float]] = {}
+    sampled_pages = 0
+
+    for page_num in _sample_page_numbers(start_page, end_page, sample_count):
+        page_index = page_num - 1
+        if not (0 <= page_index < len(doc)):
+            continue
+        page = doc[page_index]
+        page_height = page.rect.height
+        if page_height <= 0:
+            continue
+        try:
+            raw_blocks = page.get_text("blocks", sort=True)
+        except Exception:
+            continue
+
+        sampled_pages += 1
+        candidate_band = page_height * HEADER_FOOTER_CANDIDATE_RATIO
+        for block in raw_blocks:
+            if len(block) < 7 or block[6] != 0:
+                continue
+            text = block[4].strip()
+            if not text or len(text) > HEADER_FOOTER_MAX_CHARS:
+                continue
+            y0, y1 = block[1], block[3]
+            key = _repeat_key(text)
+            if y1 <= candidate_band:
+                top_hits.setdefault(key, []).append(y1 / page_height)
+            elif y0 >= page_height - candidate_band:
+                bottom_hits.setdefault(key, []).append(y0 / page_height)
+
+    if sampled_pages == 0:
+        return HEADER_FOOTER_DEFAULT_MARGIN_RATIO, HEADER_FOOTER_DEFAULT_MARGIN_RATIO
+
+    min_repeats = max(2, round(sampled_pages * HEADER_FOOTER_MIN_REPEAT_RATIO))
+    top_ratio = _calibrated_margin_ratio(top_hits, min_repeats, from_top=True)
+    bottom_ratio = _calibrated_margin_ratio(bottom_hits, min_repeats, from_top=False)
+
+    resolved_top = top_ratio if top_ratio is not None else HEADER_FOOTER_DEFAULT_MARGIN_RATIO
+    resolved_bottom = bottom_ratio if bottom_ratio is not None else HEADER_FOOTER_DEFAULT_MARGIN_RATIO
+    logger.info(
+        "Kenar payı kalibrasyonu: %d sayfa örneklendi, üst=%.3f alt=%.3f (varsayılan=%.3f)",
+        sampled_pages, resolved_top, resolved_bottom, HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+    )
+    return resolved_top, resolved_bottom
+
+
+# ---------------------------------------------------------------------------
 # Plan fazı — tek container, paralelleşmez
 # ---------------------------------------------------------------------------
 
@@ -501,6 +704,11 @@ def plan_conversion(pdf_bytes: bytes, config: dict[str, Any]) -> PlanResult:
 
         start_page = max(1, resolved_config.get("start_page", 1))
         end_page = min(total_pages, resolved_config.get("end_page", total_pages))
+
+        top_margin_ratio, bottom_margin_ratio = detect_header_footer_margins(doc, start_page, end_page)
+        resolved_config = dict(resolved_config)
+        resolved_config["header_margin_ratio"] = top_margin_ratio
+        resolved_config["footer_margin_ratio"] = bottom_margin_ratio
 
         chapters_cfg = resolved_config.get("chapters") or [
             {"start_page": start_page, "title": resolved_config.get("title", "Kitap")}
@@ -552,11 +760,21 @@ class PageResult:
     images: list[tuple[str, bytes]] = field(default_factory=list)
 
 
-def process_page(doc, page_num: int, config: dict[str, Any], force_ocr: bool = False) -> PageResult:
+def process_page(
+    doc,
+    page_num: int,
+    config: dict[str, Any],
+    force_ocr: bool = False,
+    header_blacklist: set[str] | None = None,
+) -> PageResult:
     """Tek bir sayfayı işler (metin/OCR/görsel), sonucu mutlak sayfa numarasıyla
     etiketlenmiş `PageResult` olarak döner — görsel dosya adları da sayfa
     numarasını içerir ki farklı chunk'larda paralel üretilen görseller
-    reduce fazında çakışmasın."""
+    reduce fazında çakışmasın.
+
+    `header_blacklist`, kitap başlığı/yazarından kurulmuş bir küme --
+    `extract_page_text`'e geçirilip koşu başlığı/yazar satırlarının paragraf
+    olarak sızmasını engeller (bkz. `build_header_blacklist`)."""
     page_index = page_num - 1
     diagram_pages = set(config.get("diagram_pages", []))
     ocr_lang = config.get("ocr_language", DEFAULT_OCR_LANGUAGE)
@@ -564,6 +782,8 @@ def process_page(doc, page_num: int, config: dict[str, Any], force_ocr: bool = F
     auto_visual_mode = bool(config.get("auto_visual_mode", False))
     image_dpi, image_quality = get_image_settings(config)
     page_captions = config.get("page_captions", {})
+    top_margin_ratio = config.get("header_margin_ratio", HEADER_FOOTER_DEFAULT_MARGIN_RATIO)
+    bottom_margin_ratio = config.get("footer_margin_ratio", HEADER_FOOTER_DEFAULT_MARGIN_RATIO)
 
     html_parts: list[str] = []
     images: list[tuple[str, bytes]] = []
@@ -573,7 +793,12 @@ def process_page(doc, page_num: int, config: dict[str, Any], force_ocr: bool = F
         images.append((img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality)))
         html_parts.append(f'<img src="{img_name}" alt="Şema/tablo - sayfa {page_num}" />')
 
-    text = extract_page_text(doc[page_index])
+    text = extract_page_text(
+        doc[page_index],
+        blacklist=header_blacklist,
+        top_margin_ratio=top_margin_ratio,
+        bottom_margin_ratio=bottom_margin_ratio,
+    )
     if text is None:
         text = try_ocr_page(doc, page_index, ocr_lang)
         if not text or not text.strip():
@@ -626,12 +851,15 @@ def process_page_range(
 
     skip_pages = set(config.get("skip_pages", []))
     total_pages = len(doc)
+    header_blacklist = build_header_blacklist(config)
     results: list[PageResult] = []
     try:
         for page_num in range(start_page, end_page + 1):
             if page_num < 1 or page_num > total_pages or page_num in skip_pages:
                 continue
-            results.append(process_page(doc, page_num, config, force_ocr=force_ocr))
+            results.append(
+                process_page(doc, page_num, config, force_ocr=force_ocr, header_blacklist=header_blacklist)
+            )
     finally:
         doc.close()
     return results

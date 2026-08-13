@@ -157,6 +157,24 @@ def pdf_with_toc_bytes() -> bytes:
 
 
 @pytest.fixture
+def pdf_with_recurring_header_footer_bytes() -> bytes:
+    """22 sayfalık (kalibrasyon eşiği olan 20 sayfayı aşan), her sayfada aynı
+    konumda tekrar eden bir koşu başlığı ve artan bir sayfa no'su olan bir PDF
+    üretir. Header/footer, sabit %8 varsayılan kenar payının DIŞINDA (~%11)
+    konumlandırılır -- dinamik kalibrasyonun, sabit oranın kaçıracağı bir
+    örüntüyü yakalayabildiğini test etmek için."""
+    doc = pymupdf.open()
+    for i in range(1, 23):
+        page = doc.new_page()
+        page.insert_text((72, 90), "KOSU BASLIGI", fontsize=10)
+        page.insert_text((72, 400), f"Bu sayfa {i} icin gercek bir paragraftir ve icerikte kalmalidir.", fontsize=12)
+        page.insert_text((72, 750), str(i), fontsize=10)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
 def multi_chunk_pdf_bytes() -> bytes:
     """`CHUNK_PAGE_SIZE`'ı (25) aşan, birden fazla chunk'a bölünmesi gereken
     çok sayfalı bir PDF üretir — plan/map/reduce sınır davranışını test eder."""

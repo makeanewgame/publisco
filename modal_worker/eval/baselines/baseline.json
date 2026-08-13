@@ -1,0 +1,270 @@
+{
+  "timestamp": "2026-08-13T12:52:19.968181+00:00",
+  "variant": "local",
+  "book_count": 3,
+  "overall_score": 82.9,
+  "metric_averages": {
+    "text_completeness": 1.0,
+    "structure": 1.0,
+    "cleanliness": 0.819,
+    "ocr_quality": 0.95,
+    "images": 1.0,
+    "reading_order": null
+  },
+  "books": [
+    {
+      "book_id": "smoke-clean-text",
+      "category": "normal-text-novel",
+      "score": 97.1,
+      "category_label": "Excellent",
+      "metric_scores": {
+        "text_completeness": 1.0,
+        "structure": 1.0,
+        "cleanliness": 0.8476190476190477,
+        "ocr_quality": null,
+        "images": 1.0,
+        "reading_order": null
+      },
+      "metric_details": {
+        "text_completeness": {
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
+          "phrase_exclude_violations": [],
+          "word_recall": null,
+          "word_precision": null,
+          "ngram_overlap": null,
+          "missing_words_sample": [],
+          "extra_words_sample": []
+        },
+        "structure": {
+          "paragraph_count": 4,
+          "expected_paragraph_range": [
+            3,
+            6
+          ],
+          "chapter_recall": 1.0,
+          "chapter_precision": 1.0,
+          "unmatched_expected_chapters": [],
+          "unmatched_generated_chapters": [],
+          "heading_count": 2
+        },
+        "duplicates": {
+          "repeated_short_blocks": {},
+          "repeated_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.05714285714285714
+        },
+        "broken_words": {
+          "available": true,
+          "candidate_count": 0,
+          "confirmed_count": 0,
+          "confirmed_samples": [],
+          "per_1000_words": 0.0
+        },
+        "ocr_quality": {
+          "available": true,
+          "scanned_page_count": 0,
+          "avg_confidence": null,
+          "low_confidence_page_pct": null,
+          "low_confidence_block_pct": null
+        },
+        "images": {
+          "pdf_image_count": 0,
+          "epub_content_image_count": 0,
+          "expected_image_count": 0,
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 0
+        },
+        "epub_validity": {
+          "available": true,
+          "error_count": 0,
+          "warning_count": 0,
+          "fatal_count": 0,
+          "messages_sample": [],
+          "execution_failed": false
+        },
+        "chapter_titles": [
+          "First Chapter",
+          "Second Chapter"
+        ],
+        "paragraph_count": 4
+      },
+      "gates_triggered": [],
+      "error": null,
+      "duration_seconds": 0.008709624991752207
+    },
+    {
+      "book_id": "smoke-scanned",
+      "category": "scanned-novel",
+      "score": 59,
+      "category_label": "Poor",
+      "metric_scores": {
+        "text_completeness": 1.0,
+        "structure": null,
+        "cleanliness": 1.0,
+        "ocr_quality": 0.95,
+        "images": 1.0,
+        "reading_order": null
+      },
+      "metric_details": {
+        "text_completeness": {
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
+          "phrase_exclude_violations": [],
+          "word_recall": null,
+          "word_precision": null,
+          "ngram_overlap": null,
+          "missing_words_sample": [],
+          "extra_words_sample": []
+        },
+        "structure": {
+          "paragraph_count": 0,
+          "expected_paragraph_range": null,
+          "chapter_recall": null,
+          "chapter_precision": null,
+          "unmatched_expected_chapters": [],
+          "unmatched_generated_chapters": [],
+          "heading_count": 4
+        },
+        "duplicates": {
+          "repeated_short_blocks": {},
+          "repeated_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0
+        },
+        "broken_words": {
+          "available": true,
+          "candidate_count": 0,
+          "confirmed_count": 0,
+          "confirmed_samples": [],
+          "per_1000_words": 0.0
+        },
+        "ocr_quality": {
+          "available": true,
+          "scanned_page_count": 2,
+          "avg_confidence": 95.0,
+          "low_confidence_page_pct": 0.0,
+          "low_confidence_block_pct": 0.0
+        },
+        "images": {
+          "pdf_image_count": 2,
+          "epub_content_image_count": 1,
+          "expected_image_count": 1,
+          "missing_vs_pdf": 1,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 0
+        },
+        "epub_validity": {
+          "available": true,
+          "error_count": 1,
+          "warning_count": 0,
+          "fatal_count": 0,
+          "messages_sample": [
+            "ERROR: Error while parsing file: value of attribute \"id\" is invalid; must be an XML name without colons"
+          ],
+          "execution_failed": false
+        },
+        "chapter_titles": [
+          "Smoke Scanned Book"
+        ],
+        "paragraph_count": 0
+      },
+      "gates_triggered": [
+        "epub_invalid"
+      ],
+      "error": null,
+      "duration_seconds": 1.3784816670231521
+    },
+    {
+      "book_id": "smoke-header-footer",
+      "category": "complex-headings",
+      "score": 92.7,
+      "category_label": "Excellent",
+      "metric_scores": {
+        "text_completeness": 1.0,
+        "structure": 1.0,
+        "cleanliness": 0.6086235489220564,
+        "ocr_quality": null,
+        "images": 1.0,
+        "reading_order": null
+      },
+      "metric_details": {
+        "text_completeness": {
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
+          "phrase_exclude_violations": [],
+          "word_recall": null,
+          "word_precision": null,
+          "ngram_overlap": null,
+          "missing_words_sample": [],
+          "extra_words_sample": []
+        },
+        "structure": {
+          "paragraph_count": 22,
+          "expected_paragraph_range": [
+            20,
+            24
+          ],
+          "chapter_recall": null,
+          "chapter_precision": null,
+          "unmatched_expected_chapters": [],
+          "unmatched_generated_chapters": [],
+          "heading_count": 1
+        },
+        "duplicates": {
+          "repeated_short_blocks": {},
+          "repeated_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.14676616915422885
+        },
+        "broken_words": {
+          "available": true,
+          "candidate_count": 0,
+          "confirmed_count": 0,
+          "confirmed_samples": [],
+          "per_1000_words": 0.0
+        },
+        "ocr_quality": {
+          "available": true,
+          "scanned_page_count": 0,
+          "avg_confidence": null,
+          "low_confidence_page_pct": null,
+          "low_confidence_block_pct": null
+        },
+        "images": {
+          "pdf_image_count": 0,
+          "epub_content_image_count": 0,
+          "expected_image_count": 0,
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 0
+        },
+        "epub_validity": {
+          "available": true,
+          "error_count": 0,
+          "warning_count": 0,
+          "fatal_count": 0,
+          "messages_sample": [],
+          "execution_failed": false
+        },
+        "chapter_titles": [
+          "Smoke Header Footer Book"
+        ],
+        "paragraph_count": 22
+      },
+      "gates_triggered": [],
+      "error": null,
+      "duration_seconds": 0.007027000014204532
+    }
+  ],
+  "failed_books": [
+    {
+      "book_id": "smoke-scanned",
+      "category": "scanned-novel",
+      "score": 59,
+      "gates": [
+        "epub_invalid"
+      ],
+      "error": null
+    }
+  ],
+  "tool_warnings": []
+}

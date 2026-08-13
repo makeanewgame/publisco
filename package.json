@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "test:conversion": "cd modal_worker && .venv/bin/python -m eval.run"
   },
   "devDependencies": {
     "turbo": "^2.1.3"

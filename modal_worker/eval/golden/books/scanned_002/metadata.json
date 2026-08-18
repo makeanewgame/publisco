@@ -1,0 +1,32 @@
+{
+  "category": "scanned-novel",
+  "language": "tr",
+  "is_scanned": true,
+  "config": {
+    "title": "BİR GÜN KEDİLER DÜNYADAN YOK OLSAYDI",
+    "author": "GENKI KAWAMURA"},
+  "expected_chapters": [
+    "Kısa Bir Giriş",
+    "Pazartesi: Şeytan Görünür",
+    "Salı: Eğer Telefonlar Dünyadan Yok Olsaydı",
+    "Çarşamba: Eğer Sinemalar Dünyadan Yok Olsaydı",
+    "Perşembe: Eğer Saatler Dünyadan Yok Olsaydı",
+    "Cuma: Eğer Kediler Dünyadan Yok Olsaydı",
+    "Cumartesi: Eğer Ben Dünyadan Yok Olsaydım",
+    "Pazar: Elveda Dünya"
+  ],
+  "expected_image_count": 3,
+  "must_include_phrases": [
+    "Ölmeden önce yapmak istediğim on şey bile yoktu.",
+    "Ev arkadaşım bir kediydi.",
+    "Neden hala uyuyorsunuz beyefendi?",
+    "Lahana'yı kucağıma alıp evden çıktım."
+  ],
+  "must_exclude_phrases": [
+    "GENKI KAWAMURA",
+    "BİR GÜN KEDİLER DÜNYADAN YOK OLSAYDI"
+  ],
+  "expected_paragraph_range": [1150, 1550],
+  "unsupported": false,
+  "notes": "Sayfa 3-188 (input.pdf), kaynak: Doğan Egmont Yayıncılık baskısı. is_scanned=true ama PDF'te gömülü metin katmanı var (muhtemelen tarayıcı OCR'ı, bazı yerlerde bozuk: 'Eğer' -> 'Ecer'). Her sayfada tekrarlayan üstbilgi var (kitap adı / yazar adı, sayfaya göre değişiyor) -- must_exclude_phrases bunu kapsıyor. Paragraf-şişmesi bug'ı (3448'e kadar çıkan sahte paragraf sayısı) düzeltildi (bkz. TAMAMLANANLAR.md) -- fix sonrası gerçek paragraph_count 1343, expected_paragraph_range buna ~%15 tolerans ile ayarlandı. Bölüm başlığı (chapter) tespiti hâlâ ayrı, çözülmemiş bir konu (bkz. NOTES.md) -- expected_chapters bilinçli olarak kalsın diye TOC recall düşük çıkmaya devam edecek, bu beklenen."
+}

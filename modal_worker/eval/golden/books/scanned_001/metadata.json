@@ -1,0 +1,16 @@
+{
+  "category": "scanned-novel",
+  "language": "TODO: tr/en/... (langdetect ISO 639-1 kodu)",
+  "is_scanned": false,
+  "config": {
+    "title": "TODO",
+    "author": "TODO"
+  },
+  "expected_chapters": null,
+  "expected_image_count": null,
+  "must_include_phrases": [],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": null,
+  "unsupported": false,
+  "notes": "TODO: kaynak, sayfa aralığı, bilinen özellikler"
+}

@@ -30,6 +30,7 @@ import html
 import io
 import logging
 import re
+import statistics
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
@@ -51,7 +52,7 @@ class ConversionError(Exception):
 
 def clean_text(text: str) -> str:
     """PDF'e özgü satır sonu / tireleme sorunlarını temizler."""
-    text = re.sub(r"-\s*\n\s*", "", text)
+    text = re.sub(r"[-\xad]\s*\n\s*", "", text)
     text = re.sub(r"\r\n?", "\n", text)
     text = re.sub(r"(?<!\n)\n(?!\n)", " ", text)
     text = re.sub(r"[ \t]+", " ", text)
@@ -154,16 +155,71 @@ def _is_blacklisted(text: str, blacklist: set[str]) -> bool:
     return False
 
 
+PARAGRAPH_INDENT_MIN_PT = 4.0  # indent-sinyali icin taban esik (cok kucuk fontlarda bile anlamli)
+PARAGRAPH_INDENT_LINE_HEIGHT_RATIO = 0.4  # esik, satir yuksekliginin bu oranindan da az olamaz
+PARAGRAPH_GAP_MULTIPLIER = 1.8  # tipik satir-ici bosluktan bu kat fazla dikey bosluk = yeni paragraf
+
+
+def _merge_blocks_into_paragraphs(blocks: list[tuple[float, float, float, float, str]]) -> list[str]:
+    """Bir sayfadaki (x0, y0, x1, y1, metin) bloklarini gercek paragraflara birlestirir.
+
+    PyMuPDF'in blok tespiti, gomulu/OCR metin katmani satir-satir yerlestirilmis
+    (ozellikle taranmis kitaplarda yaygin) PDF'lerde her fiziksel SATIRI ayri bir
+    "blok" olarak dondurebiliyor -- bu bloklari dogrudan ayri paragraf sayarsak
+    (`extract_page_text`'in eski davranisi), sarmali (wrap) tek bir paragraf
+    onlarca sahte paragrafa bolunur.
+
+    Iki bagimsiz sinyalle gercek paragraf sinirlarini yeniden kurar:
+    (1) girinti -- bir satirin sol baslangici, sayfadaki en soldaki (bosluksuz)
+    hizaya gore belirgin sekilde icerideyse, bu yeni bir paragrafin ilk satiridir
+    (klasik roman dizgisinde standart paragraf-basi girintisi);
+    (2) anormal dikey bosluk -- girinti kullanmayan (bos-satir ile ayrilan) dizgi
+    stillerini de yakalamak icin ikincil bir agdir."""
+    if not blocks:
+        return []
+
+    heights = [y1 - y0 for _, y0, _, y1, _ in blocks]
+    line_height = statistics.median(heights)
+
+    gaps = [blocks[i][1] - blocks[i - 1][3] for i in range(1, len(blocks))]
+    normal_gaps = [g for g in gaps if g <= line_height * 1.5]
+    typical_gap = statistics.median(normal_gaps) if normal_gaps else line_height * 0.6
+
+    flush_x0 = min(x0 for x0, _, _, _, _ in blocks)
+    indent_threshold = flush_x0 + max(PARAGRAPH_INDENT_MIN_PT, line_height * PARAGRAPH_INDENT_LINE_HEIGHT_RATIO)
+
+    paragraphs: list[str] = []
+    current_lines: list[str] = []
+    prev_y1: float | None = None
+
+    for x0, y0, _x1, y1, text in blocks:
+        is_new_paragraph = not current_lines
+        if not is_new_paragraph:
+            indented = x0 > indent_threshold
+            big_gap = (y0 - prev_y1) > typical_gap * PARAGRAPH_GAP_MULTIPLIER
+            is_new_paragraph = indented or big_gap
+
+        if is_new_paragraph and current_lines:
+            paragraphs.append("\n".join(current_lines))
+            current_lines = []
+
+        current_lines.append(text)
+        prev_y1 = y1
+
+    if current_lines:
+        paragraphs.append("\n".join(current_lines))
+
+    return paragraphs
+
+
 def _extract_text_blocks(
     page,
     blacklist: set[str] | None = None,
     top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
     bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
 ) -> list[str]:
-    """Sayfayı PyMuPDF'in blok bazlı çıkarımıyla okur; her blok görsel olarak ayrı bir
-    paragrafa karşılık gelir. `get_text("text")`'in aksine (tüm sayfayı satır satır tek
-    bir akışa düzleştirip paragraf sınırlarını kaybediyordu), blok sınırları burada
-    paragraf sınırı olarak korunur.
+    """Sayfayı PyMuPDF'in blok bazlı çıkarımıyla okur, filtrelenmiş blokları
+    gerçek paragraflara birleştirir (bkz. `_merge_blocks_into_paragraphs`).
 
     Üç sezgisel filtre uygulanır: (1) sayfanın üst/alt kenar payındaki kısa
     bloklar (koşu başlığı/sayfa no) atlanır, (2) kitap başlığı/yazarıyla
@@ -176,7 +232,7 @@ def _extract_text_blocks(
 
     page_height = page.rect.height
 
-    blocks: list[str] = []
+    kept: list[tuple[float, float, float, float, str]] = []
     for block in raw_blocks:
         if len(block) < 7 or block[6] != 0:  # sadece metin blokları (1 = görsel)
             continue
@@ -189,8 +245,9 @@ def _extract_text_blocks(
             continue
         if _is_noise_block(text):
             continue
-        blocks.append(text)
-    return blocks
+        kept.append((block[0], block[1], block[2], block[3], text))
+
+    return _merge_blocks_into_paragraphs(kept)
 
 
 def extract_page_text(

@@ -1,4 +1,15 @@
 {
   "_comment": "Gerçek golden kitaplar burada tanımlanır. PDF'ler git'e girmez (bkz. books/.gitignore) -- her girdi books/<id>/input.pdf + metadata.json bekler. Eklemek için eval/README.md'deki 'Kitap ekleme' bölümüne bakın.",
-  "books": []
+  "books": [
+    {
+      "id": "scanned_001",
+      "category": "scanned-novel",
+      "sha256": "fb0d609b8024ab337187e7315f18b11452cb20b387cad440c6ea98195c88d820"
+    },
+    {
+      "id": "scanned_002",
+      "category": "scanned-novel",
+      "sha256": "889363380f58ac12a8c4428b43c89eafac37d6743a1b2f6e77119ea2c5131617"
+    }
+  ]
 }

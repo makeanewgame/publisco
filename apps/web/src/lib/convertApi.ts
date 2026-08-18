@@ -6,25 +6,29 @@ export type QuotaErrorCode = 'CONVERTER_QUOTA_EXCEEDED' | 'STORAGE_QUOTA_EXCEEDE
 interface QuotaErrorPayload {
   code: QuotaErrorCode;
   message: string;
-  usedBytes: number;
-  limitBytes: number;
-  requestedBytes: number;
+  unit: 'bytes' | 'pages';
+  used: number;
+  limit: number;
+  requested: number;
 }
 
 // POST /api/convert (apps/api/src/convert) kota aşımında bu şekli döner —
-// bkz. apps/api/src/quota/quota.exceptions.ts.
+// bkz. apps/api/src/quota/quota.exceptions.ts. Converter kotası sayfa,
+// storage kotası bayt bazlı olduğu için `unit` alanı hangisi olduğunu belirtir.
 export class QuotaExceededError extends Error {
   code: QuotaErrorCode;
-  usedBytes: number;
-  limitBytes: number;
-  requestedBytes: number;
+  unit: 'bytes' | 'pages';
+  used: number;
+  limit: number;
+  requested: number;
 
   constructor(payload: QuotaErrorPayload) {
     super(payload.message);
     this.code = payload.code;
-    this.usedBytes = payload.usedBytes;
-    this.limitBytes = payload.limitBytes;
-    this.requestedBytes = payload.requestedBytes;
+    this.unit = payload.unit;
+    this.used = payload.used;
+    this.limit = payload.limit;
+    this.requested = payload.requested;
   }
 }
 
@@ -202,6 +206,7 @@ export interface AnalyzeResult {
   author: string | null;
   chapters: DetectedChapter[];
   warnings: AnalyzeWarning[];
+  page_count: number;
 }
 
 // Dönüşümden önce, dosya seçilir seçilmez tetiklenir. `startConvertJob`daki gibi

@@ -516,6 +516,7 @@ def analyze_pdf(pdf_bytes: bytes) -> dict[str, Any]:
     try:
         title, author = detect_title_author(doc)
         chapters = detect_chapters(doc)
+        page_count = doc.page_count
     finally:
         doc.close()
 
@@ -527,7 +528,13 @@ def analyze_pdf(pdf_bytes: bytes) -> dict[str, Any]:
     if not chapters:
         warnings.append("chapters")
 
-    return {"title": title, "author": author, "chapters": chapters, "warnings": warnings}
+    return {
+        "title": title,
+        "author": author,
+        "chapters": chapters,
+        "warnings": warnings,
+        "page_count": page_count,
+    }
 
 
 # ---------------------------------------------------------------------------

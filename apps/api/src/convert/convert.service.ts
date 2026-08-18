@@ -41,6 +41,7 @@ export interface ConvertStatus {
 type PendingJob = {
   userId: string;
   fileSizeBytes: number;
+  pageCount: number;
   released: boolean;
   status: ConvertJobStatus;
   epubUrl: string | null;
@@ -86,8 +87,8 @@ export class ConvertService {
     }
 
     const usage = await this.quotaService.getUsageSummary(userId);
-    if (usage.converter.limitBytes !== null && usage.converter.usedBytes >= usage.converter.limitBytes) {
-      throw new ConverterQuotaExceededException(usage.converter.usedBytes, usage.converter.limitBytes, 0);
+    if (usage.converter.usedPages >= usage.converter.limitPages) {
+      throw new ConverterQuotaExceededException(usage.converter.usedPages, usage.converter.limitPages, 0);
     }
 
     const pathname = `convert-uploads/${userId}/${randomUUID()}-${this.sanitizeFileName(fileName)}`;
@@ -146,6 +147,41 @@ export class ConvertService {
     return { url: result.url, size: result.size };
   }
 
+  // Dönüşüm kotası artık sayfa bazlı (bkz. quota.constants.ts), o yüzden
+  // rezervasyondan önce sayfa sayısı bilinmeli. Modal'ın zaten var olan
+  // `/analyze` endpoint'i PDF'i açarken `page_count`'u neredeyse bedavaya
+  // hesaplıyor (bkz. converter.py — analyze_pdf), o yüzden yeni bir endpoint
+  // eklemek yerine burada da o çağrılıyor. Client'ın kendi `/analyze`
+  // çağrısına güvenilmiyor — o çağrı hiç yapılmamış ya da atlatılmış olabilir,
+  // bu yüzden kota rezervasyonundan hemen önce sunucu tarafında bağımsızca
+  // tekrar hesaplanıyor.
+  private async fetchPageCount(pdfUrl: string): Promise<number> {
+    let response: Response;
+    try {
+      response = await fetch(`${this.modalEndpointUrl}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.modalWebhookSecret}`,
+        },
+        body: JSON.stringify({ pdf_url: pdfUrl }),
+      });
+    } catch {
+      throw new BadGatewayException('Dönüştürme servisine ulaşılamadı.');
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new BadRequestException(errorBody?.detail || 'PDF analiz edilirken bir hata oluştu.');
+    }
+
+    const body: { page_count?: number } = await response.json();
+    if (typeof body.page_count !== 'number' || body.page_count <= 0) {
+      throw new BadRequestException('PDF sayfa sayısı belirlenemedi.');
+    }
+    return body.page_count;
+  }
+
   // Modal kotayı rezerve ettikten sonra çağrılır; asıl ağır işi `.spawn()` ile
   // arka plana devredip anında 202 döner (bkz. modal_worker/main.py — convert
   // web_endpoint'i). Job daha sonra webhook ile (bkz. handleModalWebhook)
@@ -196,17 +232,18 @@ export class ConvertService {
     await this.cleanupExpiredJobs();
 
     const uploaded = await this.resolveUploadedBlob(dto.pathname);
-    await this.quotaService.reserveConversionQuota(userId, uploaded.size);
+    const pageCount = await this.fetchPageCount(uploaded.url);
+    await this.quotaService.reserveConversionQuota(userId, uploaded.size, pageCount);
 
     const jobId = randomUUID();
     try {
       await this.startModalPipeline(jobId, uploaded.url, dto);
       await this.prisma.convertJob.create({
-        data: { id: jobId, userId, fileSizeBytes: uploaded.size },
+        data: { id: jobId, userId, fileSizeBytes: uploaded.size, pageCount },
       });
       return { jobId };
     } catch (error) {
-      await this.quotaService.releaseConversionQuota(userId, uploaded.size);
+      await this.quotaService.releaseConversionQuota(userId, pageCount);
       throw error;
     }
   }
@@ -266,13 +303,13 @@ export class ConvertService {
   // çeker; `updateMany`'ın etkilediği satır sayısı, kotayı bu çağrının gerçekten
   // serbest bırakması gerekip gerekmediğini söyler — aynı job için eşzamanlı iki
   // webhook/status isteği kotayı iki kez serbest bırakmasın diye.
-  private async releaseIfNeeded(jobId: string, userId: string, fileSizeBytes: number): Promise<void> {
+  private async releaseIfNeeded(jobId: string, userId: string, pageCount: number): Promise<void> {
     const { count } = await this.prisma.convertJob.updateMany({
       where: { id: jobId, released: false },
       data: { released: true },
     });
     if (count > 0) {
-      await this.quotaService.releaseConversionQuota(userId, fileSizeBytes);
+      await this.quotaService.releaseConversionQuota(userId, pageCount);
     }
   }
 
@@ -312,7 +349,7 @@ export class ConvertService {
     });
 
     if (count > 0 && payload.status === 'FAILED') {
-      await this.releaseIfNeeded(payload.job_id, job.userId, job.fileSizeBytes);
+      await this.releaseIfNeeded(payload.job_id, job.userId, job.pageCount);
     }
   }
 
@@ -325,11 +362,11 @@ export class ConvertService {
     const cutoff = new Date(Date.now() - PENDING_JOB_TTL_MS);
     const expired = await this.prisma.convertJob.findMany({
       where: { createdAt: { lt: cutoff } },
-      select: { userId: true, fileSizeBytes: true, released: true, epubUrl: true },
+      select: { userId: true, pageCount: true, released: true, epubUrl: true },
     });
     for (const job of expired) {
       if (!job.released) {
-        await this.quotaService.releaseConversionQuota(job.userId, job.fileSizeBytes).catch(() => {
+        await this.quotaService.releaseConversionQuota(job.userId, job.pageCount).catch(() => {
           // best-effort — bir sonraki cleanup denemesinde tekrar denenir
         });
       }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthProvider, MembershipTier } from '../generated/prisma/client';
-import { CONVERTER_QUOTA_BYTES, STORAGE_QUOTA_BYTES } from '../quota/quota.constants';
+import { CONVERTER_QUOTA_PAGES, STORAGE_QUOTA_BYTES } from '../quota/quota.constants';
 
 @Injectable()
 export class UsersService {
@@ -82,7 +82,6 @@ export class UsersService {
 export function defaultQuotaData(tier: MembershipTier) {
   return {
     storageQuotaBytes: BigInt(STORAGE_QUOTA_BYTES[tier]),
-    converterQuotaBytes:
-      CONVERTER_QUOTA_BYTES[tier] === null ? null : BigInt(CONVERTER_QUOTA_BYTES[tier] as number),
+    converterQuotaPages: CONVERTER_QUOTA_PAGES[tier],
   };
 }

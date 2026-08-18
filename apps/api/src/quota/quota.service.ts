@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MembershipTier, Prisma } from '../generated/prisma/client';
-import { CONVERTER_QUOTA_BYTES, STORAGE_QUOTA_BYTES } from './quota.constants';
+import { CONVERTER_QUOTA_PAGES, STORAGE_QUOTA_BYTES } from './quota.constants';
 import {
   ConverterQuotaExceededException,
   StorageQuotaExceededException,
@@ -12,10 +12,15 @@ export interface QuotaBucketUsage {
   limitBytes: number | null;
 }
 
+export interface QuotaPageUsage {
+  usedPages: number;
+  limitPages: number;
+}
+
 export interface QuotaUsageSummary {
   membershipTier: MembershipTier;
   storage: QuotaBucketUsage;
-  converter: QuotaBucketUsage;
+  converter: QuotaPageUsage;
 }
 
 @Injectable()
@@ -36,14 +41,14 @@ export class QuotaService {
   async getUsageSummary(userId: string): Promise<QuotaUsageSummary> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { membershipTier: true, convertedBytesTotal: true, quota: true },
+      select: { membershipTier: true, convertedPagesTotal: true, quota: true },
     });
     if (!user) {
       throw new NotFoundException('Kullanıcı bulunamadı.');
     }
 
     const storageUsedBytes = await this.getStorageUsedBytes(userId);
-    const { storageQuotaBytes, converterQuotaBytes } = this.resolveLimits(user);
+    const { storageQuotaBytes, converterQuotaPages } = this.resolveLimits(user);
 
     return {
       membershipTier: user.membershipTier,
@@ -52,8 +57,8 @@ export class QuotaService {
         limitBytes: storageQuotaBytes,
       },
       converter: {
-        usedBytes: Number(user.convertedBytesTotal),
-        limitBytes: converterQuotaBytes,
+        usedPages: Number(user.convertedPagesTotal),
+        limitPages: converterQuotaPages,
       },
     };
   }
@@ -62,38 +67,37 @@ export class QuotaService {
   // tier'a göre varsayılan sabitlere düşer.
   private resolveLimits(user: {
     membershipTier: MembershipTier;
-    quota: { storageQuotaBytes: bigint; converterQuotaBytes: bigint | null } | null;
-  }): { storageQuotaBytes: number; converterQuotaBytes: number | null } {
+    quota: { storageQuotaBytes: bigint; converterQuotaPages: number | null } | null;
+  }): { storageQuotaBytes: number; converterQuotaPages: number } {
     if (user.quota) {
       return {
         storageQuotaBytes: Number(user.quota.storageQuotaBytes),
-        converterQuotaBytes:
-          user.quota.converterQuotaBytes === null ? null : Number(user.quota.converterQuotaBytes),
+        converterQuotaPages: user.quota.converterQuotaPages ?? CONVERTER_QUOTA_PAGES[user.membershipTier],
       };
     }
     return {
       storageQuotaBytes: STORAGE_QUOTA_BYTES[user.membershipTier],
-      converterQuotaBytes: CONVERTER_QUOTA_BYTES[user.membershipTier],
+      converterQuotaPages: CONVERTER_QUOTA_PAGES[user.membershipTier],
     };
   }
 
-  // Bir dönüştürme isteğinden önce çağrılır. Önce dönüşüm (converter) kotasını,
-  // ardından depolama kotasını kontrol eder; ikisi de uygunsa converter kotasını
-  // rezerve eder (sayaç artırılır). Worker'a giden istek başarısız olursa
-  // releaseConversionQuota ile geri alınmalıdır.
-  async reserveConversionQuota(userId: string, fileSizeBytes: number): Promise<void> {
+  // Bir dönüştürme isteğinden önce çağrılır. Önce dönüşüm (converter) kotasını
+  // (sayfa bazlı), ardından depolama kotasını (bayt bazlı) kontrol eder; ikisi
+  // de uygunsa converter kotasını rezerve eder (sayaç artırılır). Worker'a
+  // giden istek başarısız olursa releaseConversionQuota ile geri alınmalıdır.
+  async reserveConversionQuota(userId: string, fileSizeBytes: number, pageCount: number): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      // "users" satırı kilitleniyor (convertedBytesTotal'a yazacağız); user_quotas
+      // "users" satırı kilitleniyor (convertedPagesTotal'a yazacağız); user_quotas
       // sadece okunuyor, o yüzden join'e FOR UPDATE gerekmiyor.
       const rows = await tx.$queryRaw<
         {
           membershipTier: MembershipTier;
-          convertedBytesTotal: bigint;
+          convertedPagesTotal: bigint;
           storageQuotaBytes: bigint | null;
-          converterQuotaBytes: bigint | null;
+          converterQuotaPages: number | null;
         }[]
-      >`SELECT u."membershipTier", u."convertedBytesTotal",
-               q."storageQuotaBytes", q."converterQuotaBytes"
+      >`SELECT u."membershipTier", u."convertedPagesTotal",
+               q."storageQuotaBytes", q."converterQuotaPages"
         FROM "users" u
         LEFT JOIN "user_quotas" q ON q."userId" = u."id"
         WHERE u."id" = ${userId} FOR UPDATE OF u`;
@@ -103,17 +107,17 @@ export class QuotaService {
         throw new NotFoundException('Kullanıcı bulunamadı.');
       }
 
-      const { storageQuotaBytes, converterQuotaBytes } = this.resolveLimits({
+      const { storageQuotaBytes, converterQuotaPages } = this.resolveLimits({
         membershipTier: user.membershipTier,
         quota:
           user.storageQuotaBytes === null
             ? null
-            : { storageQuotaBytes: user.storageQuotaBytes, converterQuotaBytes: user.converterQuotaBytes },
+            : { storageQuotaBytes: user.storageQuotaBytes, converterQuotaPages: user.converterQuotaPages },
       });
 
-      const converterUsed = Number(user.convertedBytesTotal);
-      if (converterQuotaBytes !== null && converterUsed + fileSizeBytes > converterQuotaBytes) {
-        throw new ConverterQuotaExceededException(converterUsed, converterQuotaBytes, fileSizeBytes);
+      const converterUsed = Number(user.convertedPagesTotal);
+      if (converterUsed + pageCount > converterQuotaPages) {
+        throw new ConverterQuotaExceededException(converterUsed, converterQuotaPages, pageCount);
       }
 
       const storageUsed = await this.getStorageUsedBytes(userId, tx);
@@ -123,7 +127,7 @@ export class QuotaService {
 
       await tx.user.update({
         where: { id: userId },
-        data: { convertedBytesTotal: { increment: fileSizeBytes } },
+        data: { convertedPagesTotal: { increment: pageCount } },
       });
     });
   }
@@ -152,10 +156,10 @@ export class QuotaService {
           {
             membershipTier: MembershipTier;
             storageQuotaBytes: bigint | null;
-            converterQuotaBytes: bigint | null;
+            converterQuotaPages: number | null;
           }[]
         >`SELECT u."membershipTier",
-               q."storageQuotaBytes", q."converterQuotaBytes"
+               q."storageQuotaBytes", q."converterQuotaPages"
         FROM "users" u
         LEFT JOIN "user_quotas" q ON q."userId" = u."id"
         WHERE u."id" = ${userId} FOR UPDATE OF u`;
@@ -170,7 +174,7 @@ export class QuotaService {
           quota:
             user.storageQuotaBytes === null
               ? null
-              : { storageQuotaBytes: user.storageQuotaBytes, converterQuotaBytes: user.converterQuotaBytes },
+              : { storageQuotaBytes: user.storageQuotaBytes, converterQuotaPages: user.converterQuotaPages },
         });
 
         const storageUsed = await this.getStorageUsedBytes(userId, tx);
@@ -184,11 +188,11 @@ export class QuotaService {
     );
   }
 
-  // Rezerve edilmiş dönüşüm kotasını geri verir (worker isteği başarısız olduğunda).
-  async releaseConversionQuota(userId: string, fileSizeBytes: number): Promise<void> {
+  // Rezerve edilmiş dönüşüm kotasını (sayfa) geri verir (worker isteği başarısız olduğunda).
+  async releaseConversionQuota(userId: string, pageCount: number): Promise<void> {
     await this.prisma.user.update({
       where: { id: userId },
-      data: { convertedBytesTotal: { decrement: fileSizeBytes } },
+      data: { convertedPagesTotal: { decrement: pageCount } },
     });
   }
 }

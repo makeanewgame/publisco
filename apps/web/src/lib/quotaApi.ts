@@ -7,10 +7,15 @@ export interface QuotaBucketUsage {
   limitBytes: number | null;
 }
 
+export interface QuotaPageUsage {
+  usedPages: number;
+  limitPages: number;
+}
+
 export interface QuotaUsageSummary {
   membershipTier: MembershipTier;
   storage: QuotaBucketUsage;
-  converter: QuotaBucketUsage;
+  converter: QuotaPageUsage;
 }
 
 export async function getQuota(): Promise<QuotaUsageSummary> {

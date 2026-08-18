@@ -60,22 +60,24 @@ interface FileAnalysisState {
 
 function QuotaBar({
   label,
-  usedBytes,
-  limitBytes,
+  used,
+  limit,
+  formatValue,
 }: {
   label: string;
-  usedBytes: number;
-  limitBytes: number | null;
+  used: number;
+  limit: number | null;
+  formatValue: (value: number) => string;
 }) {
-  const isUnlimited = limitBytes === null;
-  const pct = isUnlimited ? 100 : Math.min(100, (usedBytes / limitBytes) * 100);
+  const isUnlimited = limit === null;
+  const pct = isUnlimited ? 100 : Math.min(100, (used / limit) * 100);
   const isNearLimit = !isUnlimited && pct >= 90;
   return (
     <div>
       <div className="flex items-center justify-between text-xs text-[#6e6257]">
         <span>{label}</span>
         <span>
-          {formatBytes(usedBytes)} / {isUnlimited ? '∞' : formatBytes(limitBytes)}
+          {formatValue(used)} / {isUnlimited ? '∞' : formatValue(limit)}
         </span>
       </div>
       <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#ead8c6]">
@@ -383,13 +385,15 @@ export default function ConvertPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <QuotaBar
                 label={t('convert.quota.storageLabel')}
-                usedBytes={quota.storage.usedBytes}
-                limitBytes={quota.storage.limitBytes}
+                used={quota.storage.usedBytes}
+                limit={quota.storage.limitBytes}
+                formatValue={formatBytes}
               />
               <QuotaBar
                 label={t('convert.quota.converterLabel')}
-                usedBytes={quota.converter.usedBytes}
-                limitBytes={quota.converter.limitBytes}
+                used={quota.converter.usedPages}
+                limit={quota.converter.limitPages}
+                formatValue={(value) => `${value} ${t('convert.quota.pagesUnit')}`}
               />
             </div>
             {quota.membershipTier === 'FREE' && (

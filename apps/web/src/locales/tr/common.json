@@ -179,6 +179,7 @@
       "tierPremium": "Premium",
       "storageLabel": "Depolama",
       "converterLabel": "Dönüştürme",
+      "pagesUnit": "sayfa",
       "upgradeLink": "Daha fazla kota için premium'a geç →",
       "converterExceededTitle": "Dönüştürme kotanız doldu",
       "converterExceededDescription": "Ücretsiz üyelikteki dönüştürme kotanızı kullandınız. Daha fazla dosya dönüştürmek için premium üyeliğe geçebilirsiniz.",

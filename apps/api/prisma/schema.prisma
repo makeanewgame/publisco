@@ -34,10 +34,10 @@ model User {
   locale String @default("tr")
 
   membershipTier MembershipTier @default(FREE)
-  // Kullanıcının hesabı boyunca dönüştürdüğü toplam kaynak dosya boyutu (bayt).
-  // Free kullanıcılar için 200MB'lık dönüşüm kotasına karşı kontrol edilir;
-  // premium'da limit yok ama sayaç yine de tutulur. Hiçbir zaman resetlenmez.
-  convertedBytesTotal BigInt @default(0)
+  // Kullanıcının hesabı boyunca dönüştürdüğü toplam sayfa sayısı.
+  // Free kullanıcılar için 500, premium için 5000 sayfalık dönüşüm kotasına
+  // karşı kontrol edilir (bkz. quota.constants.ts). Hiçbir zaman resetlenmez.
+  convertedPagesTotal BigInt @default(0)
 
   // Lemon Squeezy'deki müşteri kaydına karşılık gelir; ilk checkout webhook'unda
   // doldurulur. Aynı kullanıcının sonraki webhook'larını (custom_data.user_id
@@ -67,8 +67,10 @@ model UserQuota {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   storageQuotaBytes   BigInt
-  // null = sınırsız (premium dönüşüm kotası)
-  converterQuotaBytes BigInt?
+  // Dönüşüm kotası artık sayfa bazlı (free=500, premium=5000, bkz.
+  // quota.constants.ts); null bırakılırsa tier sabitine düşülür (bkz.
+  // QuotaService.resolveLimits).
+  converterQuotaPages Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -171,6 +173,9 @@ model ConvertJob {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   fileSizeBytes Int
+  // Dönüşüm kotası bu alan üzerinden takip edilir (bkz. QuotaService) —
+  // job başarısız olur/süresi dolarsa rezervasyon bu sayı kadar geri verilir.
+  pageCount     Int              @default(0)
   released      Boolean          @default(false)
   status        ConvertJobStatus @default(PENDING)
   epubUrl       String?

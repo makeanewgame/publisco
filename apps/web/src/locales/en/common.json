@@ -179,6 +179,7 @@
       "tierPremium": "Premium",
       "storageLabel": "Storage",
       "converterLabel": "Conversion",
+      "pagesUnit": "pages",
       "upgradeLink": "Get more quota with premium →",
       "converterExceededTitle": "Your conversion quota is used up",
       "converterExceededDescription": "You've used your free plan's conversion quota. Upgrade to premium to convert more files.",

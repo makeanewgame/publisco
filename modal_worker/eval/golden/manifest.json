@@ -2,6 +2,156 @@
   "_comment": "Gerçek golden kitaplar burada tanımlanır. PDF'ler git'e girmez (bkz. books/.gitignore) -- her girdi books/<id>/input.pdf + metadata.json bekler. Eklemek için eval/README.md'deki 'Kitap ekleme' bölümüne bakın.",
   "books": [
     {
+      "id": "book-with-images_966108",
+      "category": "book-with-images",
+      "sha256": "f161beeeead4e25e91300f9893fc47257519623725dfc677273849801f8319b6"
+    },
+    {
+      "id": "book-with-images_active-skills-for-reading-4",
+      "category": "book-with-images",
+      "sha256": "2ba6ed1dc4602e679ee25aeb6191451ed1b15ee836fb7b45a81b42ec3f259cee"
+    },
+    {
+      "id": "book-with-images_ankaranin-trekking-rotalari",
+      "category": "book-with-images",
+      "sha256": "65892ad532874bcc038c4e11bcd18a3630af8f37ff3ff82546e38b8386aff3dc"
+    },
+    {
+      "id": "book-with-images_astronomi-alfa-yayinlari",
+      "category": "book-with-images",
+      "sha256": "c762fb4086d6b533d56ae6c31d6b1f45ab2c47274407b69d9d763377f0319471"
+    },
+    {
+      "id": "book-with-images_bilim-kitabi-alfa-yayinlari",
+      "category": "book-with-images",
+      "sha256": "9f398dc0869250f014892a755e7fe684d0dfe1d1e75a71637faf60780e91bbb3"
+    },
+    {
+      "id": "book-with-images_dunya-tarihi-alfa-yayinlari",
+      "category": "book-with-images",
+      "sha256": "736c415a085dbbbbaa8d4420eae0b960383540be5ff1e2176443379e8c3f6d20"
+    },
+    {
+      "id": "book-with-images_haritalarla-cografya",
+      "category": "book-with-images",
+      "sha256": "3b2bad7e5181c40f513697f6c40b04bd45b2493069e8802a29a2abbe8ccb5312"
+    },
+    {
+      "id": "book-with-images_mitoloji-kitabi-alfa-yayinlari",
+      "category": "book-with-images",
+      "sha256": "ad610f511596731c6a7c7d0ae06d2a117ec2698c2903c294502f71c19645b9a2"
+    },
+    {
+      "id": "book-with-images_sanat-kitabi-alfa-yayinlari",
+      "category": "book-with-images",
+      "sha256": "cfbd14f840cd7e72486065b95533cdc413ea0a7ee5647d9e92a5443b53fb2011"
+    },
+    {
+      "id": "book-with-images_sinema-kitabi-alfa-yayinlari",
+      "category": "book-with-images",
+      "sha256": "16b0e0e1d8f8b2f292f5667d7645824deb021e4e514bd1a93ac3ea0a9f8a9d6f"
+    },
+    {
+      "id": "book-with-images_tarih-kitabi-alfa-yayinlari",
+      "category": "book-with-images",
+      "sha256": "40305ecc557f24ecf9fc3bcf0446fb9970ece9f327c965c37414a377730a565f"
+    },
+    {
+      "id": "book-with-tables_introductory-statistics",
+      "category": "book-with-tables",
+      "sha256": "a79a953b75e570030c74ea6f700b8bd70f41dc8c01bf4e9618e6a0adba3a382a"
+    },
+    {
+      "id": "book-with-tables_table",
+      "category": "book-with-tables",
+      "sha256": "37408073f43726a357b37f03b2a339405cec4fa7099617301b196630754f1048"
+    },
+    {
+      "id": "complex-headings_tu-rkiye-sigorta-klavuz",
+      "category": "complex-headings",
+      "sha256": "5ae8c0a9ab609a033c1cd726307c0f84c55b8c265ba44ca555143b49fc5b26f7"
+    },
+    {
+      "id": "english_molecules",
+      "category": "english",
+      "sha256": "d7c5625a0fb241d3e25cca4f29d247d4bb7192ecd548f5a55ef62f8a65950870"
+    },
+    {
+      "id": "mathematical_franctional",
+      "category": "mathematical",
+      "sha256": "20293d92a9c9985cc293d83da452530a170bfaae63cadddcd83fd7efddfe5b66"
+    },
+    {
+      "id": "mathematical_gumusfenbil",
+      "category": "mathematical",
+      "sha256": "c4157ef3f20f922a59b8c084297273e7a4b5b79e3807cf8000cc6ecf01e6a5d7"
+    },
+    {
+      "id": "mathematical_integral",
+      "category": "mathematical",
+      "sha256": "162b94b76ab0b338c9679ac6eb34210f5d1529863d30edcb8e9e85fbb6472345"
+    },
+    {
+      "id": "mathematical_matematik-ders",
+      "category": "mathematical",
+      "sha256": "005761d5d4cd73bc8be6e08155e4073c76b127527a08e297e490c6054c8fd62b"
+    },
+    {
+      "id": "mathematical_order-integrations",
+      "category": "mathematical",
+      "sha256": "273dbf898a87016540dff5bb346013b387fa7bcc732cb5c30532fb84739fd4fe"
+    },
+    {
+      "id": "mathematical_perelman-poincare",
+      "category": "mathematical",
+      "sha256": "945e278613c45ea1ab617b28c3095783d0e68958dc0546dfcfa9b42b9674fbe1"
+    },
+    {
+      "id": "mathematical_singular-integrals",
+      "category": "mathematical",
+      "sha256": "9c2438e40c8135f624164a7eb3fb878ce464488d491df8f0087cbe0f03dd8f23"
+    },
+    {
+      "id": "mathematical_test-soruolar",
+      "category": "mathematical",
+      "sha256": "a4ec2db1dad774196f5a2eecdd0dde5fd29d62699c0101ca8c651914c550d8ef"
+    },
+    {
+      "id": "mathematical_ujma",
+      "category": "mathematical",
+      "sha256": "b0da9cc5ab405c85c752e6cb3927ef27265c54c1aafcbea4e67a2f82635b4b5f"
+    },
+    {
+      "id": "multilingual_arapc-a-kitap",
+      "category": "multilingual",
+      "sha256": "595516d1021494248836ade6dec60d6c2c7f90b272eded4a976522ca1286a101"
+    },
+    {
+      "id": "multilingual_azerice-kitap",
+      "category": "multilingual",
+      "sha256": "ce5c184c65a0ba0d20122f5cce09a0027e3c2e628bf5a98e0fe688a31f00ff98"
+    },
+    {
+      "id": "multilingual_azerice-kitap-2",
+      "category": "multilingual",
+      "sha256": "0af4a2b5034da246c2ab351ec4967d5caff40788ed7bf1202755b741fc8cecad"
+    },
+    {
+      "id": "normal-text-novel_son-sans",
+      "category": "normal-text-novel",
+      "sha256": "d08159dc39427e566be4b6908047d2c5c95b78280f806342c7a3f271a357be2a"
+    },
+    {
+      "id": "poor-quality-scan_dikenler-sehri",
+      "category": "poor-quality-scan",
+      "sha256": "d758040b3198944797bbb06d88c96cb7817da249cbbd0c526f7a8ac3dbd119aa"
+    },
+    {
+      "id": "scanned-novel_sevgili-tas-kalbim",
+      "category": "scanned-novel",
+      "sha256": "41f4cf111494281d6ba66915296ad16f6ff13cba8cf50bb4cc2130c111d05a90"
+    },
+    {
       "id": "scanned_001",
       "category": "scanned-novel",
       "sha256": "fb0d609b8024ab337187e7315f18b11452cb20b387cad440c6ea98195c88d820"
@@ -10,6 +160,81 @@
       "id": "scanned_002",
       "category": "scanned-novel",
       "sha256": "889363380f58ac12a8c4428b43c89eafac37d6743a1b2f6e77119ea2c5131617"
+    },
+    {
+      "id": "scanned_003",
+      "category": "bad-ocr-layer",
+      "sha256": "64f40471e9eaacc396974690d5b80bb2a14229fc25051d291bf3c9e0f60d44e8"
+    },
+    {
+      "id": "scanned_004",
+      "category": "bad-ocr-layer",
+      "sha256": "9941726e3cda150ccda5816e80e49cbc60dcf48f97d244de9aef856f48ae8dd0"
+    },
+    {
+      "id": "scanned_005",
+      "category": "bad-ocr-layer",
+      "sha256": "af6aac33211ed53e9207ce3ac79b21c76873eb2408d015160bb5e6c2581ea06d"
+    },
+    {
+      "id": "scanned_006",
+      "category": "book-with-footnotes",
+      "sha256": "b1330275566d9847623394ad29173f9a6f1c9f9270279e00cd5da2ac366ea5c8"
+    },
+    {
+      "id": "technical-with-code_c-primer-plus",
+      "category": "technical-with-code",
+      "sha256": "6a2c5da6b810f2858f246f7c8aa3af07dcd057815e31974e8fa1ddac115b0a40"
+    },
+    {
+      "id": "technical-with-code_cplus-conherince",
+      "category": "technical-with-code",
+      "sha256": "2402ba668980672544efc6c68d7b14f22b720c1ba395721504277d9456c24fc0"
+    },
+    {
+      "id": "technical-with-code_functional-programing",
+      "category": "technical-with-code",
+      "sha256": "24880a611d34ab5877df3a2c8a3a645cffecd4bb493205d0a8b64d90e9215191"
+    },
+    {
+      "id": "technical-with-code_progit",
+      "category": "technical-with-code",
+      "sha256": "403f4051cdca2c585361d85f6e87d5dd87d8c544fc91dced007711babe81e8ef"
+    },
+    {
+      "id": "turkish_bilimsel-makale-nasil-yazilir",
+      "category": "turkish",
+      "sha256": "d739686d1c23e7272a640066a80507badd7a4613271d1ebff5a76bea0bc23d8d"
+    },
+    {
+      "id": "turkish_carpik-ask",
+      "category": "turkish",
+      "sha256": "1baedd8371ff566947643180d807aab318f1eb26aeaeb376023da89858b8e2c6"
+    },
+    {
+      "id": "two-column-academic_arastima-makalesi",
+      "category": "two-column-academic",
+      "sha256": "1c648d4b4a524349364214bea30e040c098ded31505c1a9d1a56abd4603051a0"
+    },
+    {
+      "id": "two-column-academic_attention-is-all-you-need",
+      "category": "two-column-academic",
+      "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+    },
+    {
+      "id": "two-column-academic_elektrofarazi",
+      "category": "two-column-academic",
+      "sha256": "70db15bdb500f952a7cdef050888a58f47c1d5e0a36ff717c220d4b3509bd2bf"
+    },
+    {
+      "id": "two-column-academic_farkindalik-gelistirme-programi",
+      "category": "two-column-academic",
+      "sha256": "fda9545facc8b18089ef8f0297ec5109389f9baaaf5bd1d4eded8d50e7dc4d84"
+    },
+    {
+      "id": "two-column-academic_vibe-coding",
+      "category": "two-column-academic",
+      "sha256": "2bd67ff02b90f17dd98de83031a1aa40e5746142a0c745f4edfe19ef94777383"
     }
   ]
 }

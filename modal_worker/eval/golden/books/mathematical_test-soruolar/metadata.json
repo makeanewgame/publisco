@@ -1,0 +1,26 @@
+{
+  "category": "mathematical",
+  "language": "az",
+  "is_scanned": true,
+  "config": {
+    "title": "Aşkar Operatorlar - Test Sualları (Risky Operators - Test Questions)",
+    "author": "Unknown"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 440,
+  "must_include_phrases": [
+    "Aşkar operatorlar",
+    "a ⊕ b=a² - b",
+    "a ⊕ b=b² - a",
+    "Scanned by CamScanner"
+  ],
+  "must_exclude_phrases": [
+    "Scanned by CamScanner"
+  ],
+  "expected_paragraph_range": [
+    350,
+    420
+  ],
+  "unsupported": true,
+  "notes": "440-page fully scanned math textbook (no embedded text layer, 100% image-based). Contains operator algebra test questions with mathematical notation. Actual content rendered as page images in PNG. All 440 pages are rendered images with multiple choice answers (A, B, C, D, E). Paragraph estimate (~385) from block-counting on visual samples. Marked unsupported: mathematical content, fully scanned, heavy reliance on mathematical notation."
+}

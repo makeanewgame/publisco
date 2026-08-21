@@ -1,0 +1,27 @@
+{
+  "category": "english",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "From Plant Compounds to Botanicals and Back: A Current Snapshot",
+    "author": "Alessandra Durazzo, Laura D'Addezio, Emanuela Camilli, et al."
+  },
+  "expected_chapters": null,
+  "expected_image_count": 5,
+  "must_include_phrases": [
+    "This work aims at giving an updated picture of the strict interaction between main plant biologically active compounds and botanicals.",
+    "Botanicals are made of single herbs or by mixing different herbs, from raw material of whole plants or parts of them",
+    "herbal medicines include herbs, herbal materials, herbal preparations and finished herbal products",
+    "The need for categorization of botanicals as well as for the implementation of specific and dedicated databases"
+  ],
+  "must_exclude_phrases": [
+    "Molecules 2018",
+    "of 11"
+  ],
+  "expected_paragraph_range": [
+    73,
+    111
+  ],
+  "unsupported": false,
+  "notes": "11-page academic article (Molecules journal 2018). text_density=1.0 indicates full embedded text layer. 5 embedded images detected (some may be figures/diagrams). Paragraph estimate ~92 from avg 8.4 blocks/page with ~20% tolerance. Language confirmed as English from cover pages and samples. No table of contents visible; expected_chapters set to null."
+}

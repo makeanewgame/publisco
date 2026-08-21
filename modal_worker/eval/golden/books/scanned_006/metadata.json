@@ -1,0 +1,24 @@
+{
+  "category": "book-with-footnotes",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "American History Survey",
+    "author": "Unknown"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 600,
+  "must_include_phrases": [
+    "The exchange of pelts for European goods including copper kettles, knives, and guns played a significant role in changing the material cultures of native peoples.",
+    "Shays' Rebellion strongly suggested the republic was falling into anarchy and chaos.",
+    "The Adams-Onís Treaty upset many American expansionists, who criticized Adams for not laying claim to all of Texas.",
+    "Vanderbilt consolidated several smaller railroad lines, called trunk lines, to create the powerful New York Central Railroad Company."
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    7896.0,
+    11844.0
+  ],
+  "unsupported": false,
+  "notes": "Sayfa 1-987 (input.pdf), American history textbook. text_density_ratio_sampled 0.9 indicates clean OCR text layer, not scanned. Category is 'book-with-footnotes' per manifest. Estimated 9870 paragraphs (profil tahmini, örneklenmiş sayfalardan) – expected_paragraph_range %20 toleransla. Verilen images count (606 gömülü xref) EPUB'da dedup nedeniyle azalabilir. No TOC visible in samples, expected_chapters null bırakıldı."
+}

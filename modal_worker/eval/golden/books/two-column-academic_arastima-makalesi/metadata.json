@@ -1,0 +1,26 @@
+{
+  "category": "two-column-academic",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "The Effectiveness of Interferential Current Therapy on Salivary Gland Function in Individuals with Primary Sjögren's Syndrome: Single-Blind Randomized, Controlled Trial",
+    "author": "Keskin A., Başakcı Çalık B., Gür Kabul E., Taşcı M., Çobankara V."
+  },
+  "expected_chapters": null,
+  "expected_image_count": 5,
+  "must_include_phrases": [
+    "Primary Sjogren syndrome (pSS) is an autoimmune disease characterized by lymphocytic infiltration of all exocrine glands, mainly the lacrimal and salivary glands",
+    "In this study, 8 weeks of IFC therapy was applied to individuals with pSS as active and sham-based methods together with clinical Pilates exercises",
+    "salivary flow rate in individuals with pSS increased significantly compared to sham",
+    "The sample loss was 33% in our study"
+  ],
+  "must_exclude_phrases": [
+    "Turk J Physiother Rehabil",
+    "Keskin A., Başakcı Çalık B., Gür Kabul E., Taşcı M., Çobankara V.",
+    "ORIGINAL ARTICLE / ARAŞTIRMA MAKALESİ",
+    "Current Therapy in pSS"
+  ],
+  "expected_paragraph_range": [229, 344],
+  "unsupported": false,
+  "notes": "Published in Turkish Journal of Physiotherapy and Rehabilitation (Turk J Physiother Rehabil 2025;36(2):164-176). Clinical research article on interferential current therapy for Sjögren's syndrome. Text density 1.0 (full embedded text layer). Two-column academic format with body text in English; journal and some headers bilingual (TR/EN). Estimated 287 paragraphs based on sampled pages; range calculated with ±20% tolerance. Contains 5 embedded images (tables, figures). Page range: 164-176 in journal. No distinct chapter structure detected (typical for medical journal article). Note: This is likely page 1-13 of extracted PDF. Header/footer repetition (journal name, issue, page numbers) managed by must_exclude_phrases."
+}

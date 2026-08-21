@@ -1,0 +1,27 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Dünya Tarihi Kitabı",
+    "author": "Alfa Yayınları"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 518,
+  "must_include_phrases": [
+    "WillendorfVenüsü",
+    "Mısır Horus gözü",
+    "Geç 5. yüzyılda Meksika şehri Monte Alban",
+    "ROMA CUMHURİYETİNDEKİ iki toplumsal sınıf"
+  ],
+  "must_exclude_phrases": [
+    "Dünya Tarihi",
+    "Alfa Yayınları"
+  ],
+  "expected_paragraph_range": [
+    25486,
+    38228
+  ],
+  "unsupported": false,
+  "notes": "Alfa Yayınları world history textbook, 513 pages, text_density=1.0, 518 images. Tahmini: estimated_paragraphs=31857 (%20 tolerans ile 25486-38228). Tarih ve kültür öğretim kitabı."
+}

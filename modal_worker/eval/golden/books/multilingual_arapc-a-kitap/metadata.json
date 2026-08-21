@@ -1,0 +1,28 @@
+{
+  "category": "multilingual",
+  "language": "ar",
+  "is_scanned": false,
+  "config": {
+    "title": "عرض حول الوكالة - الحلقة التكوينية",
+    "author": "مصطفى عالوي المستشار"
+  },
+  "expected_chapters": null,
+  "expected_image_count": null,
+  "must_include_phrases": [
+    "عرض حول الوكالة",
+    "الحلقة التكوينية لفائدة الفوج العدول",
+    "محكمة الاستئناف بفاس",
+    "إذا أعطيت الوَكالة من عدة أشخاص",
+    "عزل الوكيل الأصلي أو موته يؤدي"
+  ],
+  "must_exclude_phrases": [
+    "مصطفى عالوي",
+    "محكمة الاستئناف بفاس"
+  ],
+  "expected_paragraph_range": [
+    2650,
+    3150
+  ],
+  "unsupported": false,
+  "notes": "131-page Arabic legal document (training session on agency law). Authored by Mostafa Alaoui, Advisor at Court of Appeal in Fes, 2018. Contains articles (فصل) about legal representation, proxy laws, and judicial procedures. Estimated ~2895 paragraphs from dense legal text (22 blocks/page × 131 pages). No embedded images. Original source: Moroccan legal/judicial context."
+}

@@ -1,0 +1,23 @@
+{
+  "category": "scanned-novel",
+  "language": "tr",
+  "is_scanned": true,
+  "config": {
+    "title": "Sevgili Taş Kalbim",
+    "author": "Adriana TRIGIANI"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 330,
+  "must_include_phrases": [
+    "Virginia dağlarında ufak bir kasaba olan Big Stone Gap ülkenin en ihtiyar insanları barındırırken Eve Maria Mulligan, 'dağ kızı' vücudu ve yaşa rağımda kabasının kendini kız kuruşu ilan eden 35 yasındaki eczacısıdır.",
+    "Birçok hobisi ve iyi arkadaşıyla güzel bir yaşamı vardır.",
+    "Sevgili Taş Kalbim küçük kasaba hayatına mizahi ve zekâ dolu bir bakış sunuyor."
+  ],
+  "must_exclude_phrases": [
+    "Sevgili Taş Kalbim",
+    "Adriana TRIGIANI"
+  ],
+  "expected_paragraph_range": null,
+  "unsupported": false,
+  "notes": "Adriana Trigiani'nin romanının Türkçe çevirisi (361 sayfa, 361 gömülü görsel). Metin katmanı yok, tamamen taranmış PDF. is_scanned=true. BROSÍS çevirmen, Opsilon yayınevi. Resim sayısı tahminî (EPUB'ta dedup sonrası 300-350 olabilir)."
+}

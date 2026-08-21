@@ -1,0 +1,24 @@
+{
+  "category": "mathematical",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "The Poincaré Conjecture and Perelman's Proof",
+    "author": "Unknown (technical article)"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 0,
+  "must_include_phrases": [
+    "Poincaré Conjecture",
+    "Ricci flow",
+    "three-dimensional manifolds",
+    "geometric analysis"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    312,
+    468
+  ],
+  "unsupported": true,
+  "notes": "39-page long mathematical/technical article on Poincaré conjecture and Perelman's proof. text_density=1.0. 0 embedded images. Language: English. Paragraph estimate ~390 from avg ~10 blocks/page. Heavily mathematical content with advanced topology notation. Marked unsupported due to mathematical notation and specialized terminology not in pipeline scope."
+}

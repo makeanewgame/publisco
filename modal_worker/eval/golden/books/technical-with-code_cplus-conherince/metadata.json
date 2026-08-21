@@ -1,0 +1,28 @@
+{
+  "category": "technical-with-code",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "C++ Concurrency in Action",
+    "author": "Anthony Williams"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 4,
+  "must_include_phrases": [
+    "When we were designing the C++ Thread Library we foresaw this need, and so each thread has a unique identifier.",
+    "Alternative ways of returning results from threads are addressed through the use of futures in chapter 4.",
+    "If you wish to store an exception rather than a value, you call the set_exception() member function rather than set_value().",
+    "Code is said to be scalable if the performance increases as more processing cores are added to the system."
+  ],
+  "must_exclude_phrases": [
+    "C++ Concurrency in Action",
+    "Anthony Williams",
+    "MANNING"
+  ],
+  "expected_paragraph_range": [
+    4664.0,
+    6996.0
+  ],
+  "unsupported": false,
+  "notes": "Sayfa 1-530 (input.pdf), practical multithreading guide by Manning. text_density_ratio 1.0 (perfect text layer). Title verified from cover pages. Must_include_phrases from explanatory sections, not code samples. Estimated 5830 paragraphs with ~20% tolerance. 4 embedded images."
+}

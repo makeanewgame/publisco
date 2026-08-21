@@ -1,0 +1,27 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Astronomi Kitabı",
+    "author": "Alfa Yayınları"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 1309,
+  "must_include_phrases": [
+    "COPERNICUS MODELİ",
+    "Ptolemaios'un Dünya­merkezli Evren modeli",
+    "TELESKOP DEVRİMİ",
+    "Henry Cavendish bir burma terazi kullanarak kütleçekim sabitini ölçtü"
+  ],
+  "must_exclude_phrases": [
+    "Alfa Yayınları",
+    "Astronomi"
+  ],
+  "expected_paragraph_range": [
+    4731,
+    7096
+  ],
+  "unsupported": false,
+  "notes": "Alfa Yayınları astronomy textbook, 352 pages, text_density=0.9, 1309 embedded images. Tahmini: estimated_paragraphs=5914 (%20 tolerans ile 4731-7096). Eğitim kitabı."
+}

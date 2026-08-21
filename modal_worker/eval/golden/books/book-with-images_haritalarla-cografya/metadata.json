@@ -1,0 +1,23 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": true,
+  "config": {
+    "title": "Haritalarla Coğrafya 2022",
+    "author": "Bayram Meral / Benim Hocam"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 177,
+  "must_include_phrases": [
+    "HARİTALARLA COĞRAFYA",
+    "TÜRKİYE'NİN İKLİMİ",
+    "3D HARİTALARLA ETKİN ÖĞRENME"
+  ],
+  "must_exclude_phrases": [
+    "Benim Hocam",
+    "Bayram Meral"
+  ],
+  "expected_paragraph_range": null,
+  "unsupported": false,
+  "notes": "Türkçe coğrafya öğretim kitabı (Benim Hocam yayınevi), 2022 baskısı. 177 sayfa, text_density=0.0 — TAMAMEN TARANMIŞ, metin katmanı yok. 177 gömülü görsel (her sayfa muhtemelen bir tam harita/görsel). OCR gerçekleştirilmedi, pipeline'a OCR/Tesseract gerekmez. is_scanned=true çünkü metin katmanı yok."
+}

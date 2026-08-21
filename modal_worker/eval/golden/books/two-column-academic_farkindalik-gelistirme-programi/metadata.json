@@ -1,0 +1,25 @@
+{
+  "category": "two-column-academic",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Farkındalık Geliştirme Programının Normal Gelişim Gösteren Akranların Özel Gereksinimli Çocuklara Yönelik Tutumlarına Etkisi",
+    "author": "Not specified in cover (Araştırmacı tarafından uygulanmış)"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 1,
+  "must_include_phrases": [
+    "Bu araştırma, özel gereksinimli akranları ile birlikte bütünleşik fiziksel aktivite (BUFA) temelli farkındalık geliştirme programına katılan normal gelişim gösteren (NGG) öğrencilerin, özel gereksinimli akranlarına yönelik tutumlarındaki değişimin incelenmesi amacı ile yapılmıştır",
+    "özel gereksinimli bireylere yönelik tutumların davranışa dönüştürülmesinin özel gereksinimli bireylere yönelik farkındalık düzeyi ile yakından ilişkisi olduğu düşünülebilir",
+    "Araştırmaya konu olan tüm veri toplama araçları araştırmacı tarafından yüz yüze görüşme yöntemi aracılığı ile uygulanmıştır",
+    "BUFA temelli farkındalık geliştirme programı sonrasında UG'nin tutum puan ortalamaları, başlangıçta 28,32±8,90 iken, etkinliğe katılım sonrasında 38,01±10,92 olarak bulunmuştur (p<0,05)"
+  ],
+  "must_exclude_phrases": [
+    "DOI: 10.5152/rss.2019.0001",
+    "Orijinal Araştırma / Original Article",
+    "The Effect of Awareness Pro"
+  ],
+  "expected_paragraph_range": [77, 116],
+  "unsupported": false,
+  "notes": "Educational/behavioral research article published with DOI 10.5152/rss.2019.0001, appearing as 4-page study. Text density 1.0 (full embedded text layer). Two-column Turkish academic format examining effects of integrated physical activity (BUFA)-based awareness program on attitudes of typically developing (NGG) students toward children with special needs (ÖGB). Study design: quasi-experimental with pre-test/post-test control group (N=346 elementary students, split into intervention and control groups). Estimated 97 paragraphs based on page sampling; ±20% tolerance applied. Contains 1 embedded image/table. Methodology includes SPSS 20 statistical analysis and Friendship Activity Attitude Scale (AAÖ). Header/footer with DOI and article type managed by must_exclude_phrases. Note: Bilingual headers (TR/EN) present; must_exclude_phrases capture Turkish-language markers."
+}

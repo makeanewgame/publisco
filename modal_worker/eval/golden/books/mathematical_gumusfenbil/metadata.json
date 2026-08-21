@@ -1,0 +1,27 @@
+{
+  "category": "mathematical",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Hermite-Hadamard Tipi Bazı İntegral Eşitsizlikleri",
+    "author": "Serap Özcan"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 0,
+  "must_include_phrases": [
+    "Bu çalışmada, öncelikle, çarpımsal P-fonksiyonlar için çarpımsal kalkülüs ortamında Hermite-Hadamard tipi bazı integral eşitsizlikleri",
+    "The classical or the usual convexity is defined as follows",
+    "A function ψ: ℑ→(0, ∞) is said to be multiplicatively or log convex",
+    "Riemann integrable on [v1, v2], then ψ is multiplicative integrable"
+  ],
+  "must_exclude_phrases": [
+    "GUFBED",
+    "Özcan"
+  ],
+  "expected_paragraph_range": [
+    403,
+    605
+  ],
+  "unsupported": true,
+  "notes": "6-page mathematical journal article (Gümüşhane Üniversitesi Fen Bilimleri Dergisi). text_density=1.0. Language: Turkish (confirmed from cover/title), though English text in body. Formula-heavy (convex functions, Hermite-Hadamard inequalities, multiplicative calculus). 0 embedded images. Paragraph estimate ~504 from avg 84 blocks/page (formulas counted as blocks). Marked unsupported due to heavy mathematical notation."
+}

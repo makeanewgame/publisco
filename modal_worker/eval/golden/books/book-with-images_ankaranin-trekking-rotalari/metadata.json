@@ -1,0 +1,35 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Ankara'nın Trekking Rotaları",
+    "author": "Ankara İl Kültür ve Turizm Müdürlüğü / Ankara Kalkınma Ajansı"
+  },
+  "expected_chapters": [
+    "Giriş",
+    "Ankara: Anadolu'nun Kavşak Noktası",
+    "Çamlıdere: Yeşil Sığınak",
+    "Çubuk: Doğaya Yolculuk",
+    "Güdül: Doğanın Mucizesi",
+    "Nallıhan: Tarihin Gülümseyen Yüzü",
+    "Beypazarı"
+  ],
+  "expected_image_count": 228,
+  "must_include_phrases": [
+    "Ankara'nın Trekking Rotaları",
+    "Ankara Yürüyüş Rotaları",
+    "Yürüyüşçüler İçin Önemli Uyarılar",
+    "Alakoç Köyü- Çamkoru Tabiat Parkı"
+  ],
+  "must_exclude_phrases": [
+    "Trekking Rotaları",
+    "Yürüyüş"
+  ],
+  "expected_paragraph_range": [
+    865,
+    1298
+  ],
+  "unsupported": false,
+  "notes": "Ankara turizm/doğa rehberi, Ankara Kalkınma Ajansı projesi. Türkçe, 88 sayfa, 228 görsel. İçindekiler sayfası bulunuyor. Text_density=1.0, tahmini paragraphs=1082 (%20 tolerans ile 865-1298)."
+}

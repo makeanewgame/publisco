@@ -1,0 +1,29 @@
+{
+  "category": "mathematical",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "On the Approximation of Singular Integrals",
+    "author": "Mostefa Nadir, B. Lakehali"
+  },
+  "expected_chapters": null,
+  "expected_image_count": null,
+  "must_include_phrases": [
+    "singular integral operators of the first kind",
+    "the Hölder condition has to be satisfied",
+    "the density has to satisfy",
+    "density represents a given function on the curve",
+    "Consider that n is an arbitrary natural number"
+  ],
+  "must_exclude_phrases": [
+    "FEN DERGİSİ (E-DERGİ)",
+    "MOSTEFA NADIR, B. LAKEHALI",
+    "SDÜ FEN EDEBİYAT FAKÜLTESİ"
+  ],
+  "expected_paragraph_range": [
+    240,
+    320
+  ],
+  "unsupported": true,
+  "notes": "5-page mathematics research paper from SDÜ FEN DERGİSİ journal (2007). Focuses on approximation theory for singular integrals and Muskhelishvili theory. Paragraph count is estimated (~271 based on 54 blocks/page × 5 pages). Marked unsupported: mathematical research content with heavy notation (Hölder conditions, parametric curves, integral operators)."
+}

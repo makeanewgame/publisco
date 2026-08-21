@@ -1,0 +1,26 @@
+{
+  "category": "bad-ocr-layer",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "RÜZGÂRLAR",
+    "author": "Bilinmiyor"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 2500,
+  "must_include_phrases": [
+    "Günümüzde rüzgâr değişim ve özgürlük simgesi haline gelmiştir ama geleneksel olarak dört ana yön, tanrılar, hatta iblislerle ilişkilidir.",
+    "Beyni barındırdığından çoğu kültürde baş insan bedeninin en önemli parçası olarak görülür.",
+    "İçteki yaşam gücünün simgesidir.",
+    "Amerika yerlileri Apaçiler, parmak izlerindeki kabarıklıkların, rüzgârın yaradılış sırasında bedene girerken izlediği yolu temsil ettiğine inanırdı."
+  ],
+  "must_exclude_phrases": [
+    "RÜZGÂRLAR",
+    "ZEPHYRUS",
+    "EURUS",
+    "NOTUS"
+  ],
+  "expected_paragraph_range": [10700, 14100],
+  "unsupported": false,
+  "notes": "Akademik/referans kitabı, tanrı ve semboller hakkında (338 sayfa, 2675 gömülü görsel). Metin katmanı var (text_density 0.70) ama OCR kalitesi düşük. is_scanned=false ama OCR bozulması sık (eksik harf, eksik kelime, satırlar bölünüyor). Paragraf tahminî (~20% tolerans, estimated_total=13419). Must_exclude_phrases bölüm başlıklarından seçildi, pipeline tarafından tekrarlanacak başlıklar için."
+}

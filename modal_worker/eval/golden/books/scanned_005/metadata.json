@@ -1,0 +1,23 @@
+{
+  "category": "bad-ocr-layer",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "SADECE İŞ İLİŞKİSİ",
+    "author": "Bilinmiyor"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 340,
+  "must_include_phrases": [
+    "Bizden istediğin anlayışa aynı şekilde talip olduğumuzu bilmeni isterim.",
+    "Çok ince bir çalışma yaptığıma emin olabilirsin.",
+    "Hem dergi için hem de çalışanlar için en doğru kararı almaya gayret gösterdim.",
+    "Sanırım sevdiğim işi yaptığım için şanslı azınlıktandım."
+  ],
+  "must_exclude_phrases": [
+    "SADECE İŞ İLİŞKİSİ"
+  ],
+  "expected_paragraph_range": [4150, 6200],
+  "unsupported": false,
+  "notes": "Roman, 'SADECE İŞ İLİŞKİSİ' adlı bölümü içeriyor (344 sayfa, 350 gömülü görsel). Metin katmanı var (text_density 0.90) ve OCR kalitesi nispeten iyi ama bazı kelimeler bölünmüş veya eksik (tire-ayrımı, çizgi karakterleri). is_scanned=false. Paragraf tahminî (~20% tolerans, estimated_total=5194). Karakterler: Kathy, Cat, yazım editörü vs. göre contemporary ofis romanı."
+}

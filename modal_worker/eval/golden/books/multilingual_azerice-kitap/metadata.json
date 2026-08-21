@@ -1,0 +1,28 @@
+{
+  "category": "multilingual",
+  "language": "az",
+  "is_scanned": true,
+  "config": {
+    "title": "2007-2015 Məntiq Qəbul Sualları",
+    "author": "Ayşən Qasımova"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 96,
+  "must_include_phrases": [
+    "2007-2015",
+    "Məntiq Qəbul Sualları",
+    "Ayşən Qasımova",
+    "Bu vasaitin elektron surati"
+  ],
+  "must_exclude_phrases": [
+    "Ayşən Qasımova",
+    "@n4hkro",
+    "Elektron Vasaitler"
+  ],
+  "expected_paragraph_range": [
+    50,
+    150
+  ],
+  "unsupported": false,
+  "notes": "96-page fully scanned Azerbaijani textbook (no embedded text layer, 100% image-based). Logic and reasoning problem questions from 2007-2015 entrance exams. Authored by Ayşən Qasımova. Title page shows distribution info: '@n4hkro' Telegram channel 'Elektron Vasaitler' (Electronic Resources). Each page is a rendered image. Estimated ~0 paragraphs from visual block-counting but actual text content exists in rendered pages. Marked as is_scanned=true due to 0.0 text_density_ratio."
+}

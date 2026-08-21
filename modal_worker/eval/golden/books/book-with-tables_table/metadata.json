@@ -1,0 +1,24 @@
+{
+  "category": "book-with-tables",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "CodelessML: A Beginner's Web Application for Getting Started with Machine Learning",
+    "author": "Hanif Noer Rofiq, Galuh Mafela Mutiara Sujak"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 44,
+  "must_include_phrases": [
+    "Building machine learning models requires intensive coding and installation of certain software",
+    "CodelessML, a reproducible web-based application designed for Machine Learning beginners",
+    "coding-free and installation-free design",
+    "users can get a walkthrough and interactive experience of building machine learning"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    376,
+    564
+  ],
+  "unsupported": false,
+  "notes": "CodelessML: A Beginner's Web Application for Getting Started with Machine Learning. 18 sayfa, English. text_density=1.0. Profil: 44 gömülü görsel, ~470 paragraf tahmini (%20 tolerans). Makine öğrenmesi başlangıç kılavuzu, web tabanlı araç tanıtıyor. Akademik araştırma makalesi formatta."
+}

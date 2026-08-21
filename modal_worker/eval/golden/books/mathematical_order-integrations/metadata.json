@@ -1,0 +1,24 @@
+{
+  "category": "mathematical",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "Fractional Order Integration: A New Perspective based on Karcı's Fractional Order Derivative",
+    "author": "Unknown (journal article)"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 1,
+  "must_include_phrases": [
+    "Fractional Order Integration: A New Perspective based on Karcı's Fractional",
+    "The Karcı's derivative obeys the rules and properties of classical derivative",
+    "Definition 1: Assume that f(x):R→R is a function, αR and L(.) be a L'Hospital process",
+    "The fractional order integrals defined by many researchers"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    150,
+    225
+  ],
+  "unsupported": true,
+  "notes": "4-page short mathematical article. text_density=1.0. Focus on fractional order integration using Karcı method. 1 embedded image. Paragraph estimate ~187 from avg 46.75 blocks/page (formulas and definitions counted as blocks). Language: English. Marked unsupported due to heavy mathematical notation and formula content."
+}

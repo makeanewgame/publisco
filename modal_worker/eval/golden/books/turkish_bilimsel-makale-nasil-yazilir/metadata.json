@@ -1,0 +1,30 @@
+{
+  "category": "turkish",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Bilimsel Bir Makale Nasıl Yazılır ve Yayımlanır",
+    "author": "Robert A. Day"
+  },
+  "expected_chapters": [
+    "Bilimsel Yazım Nedir?",
+    "Kısa Özet Nasıl Hazırlanır?"
+  ],
+  "expected_image_count": 16,
+  "must_include_phrases": [
+    "Bilimsel yazım nedir? Bilimsel yazımın anahtarının açıklık olduğuna inanıyorum.",
+    "İdeal olarak, açıklığın her çeşit iletişimin bir karakteristiği olması gerekir.",
+    "Kısa Özet'e, makalenin küçültülmüş bir biçimi olarak bakılmalıdır.",
+    "İyi hazırlanmış bir Kısa Özet, okuyucunun, dokümanın içeriğini kısa zamanda ve hassasiyetle belirlemesine imkân verir."
+  ],
+  "must_exclude_phrases": [
+    "Robert A. Day",
+    "Bilimsel Bir Makale Nasıl Yazılır"
+  ],
+  "expected_paragraph_range": [
+    1395.2,
+    2092.7999999999997
+  ],
+  "unsupported": false,
+  "notes": "Sayfa 1-196 (input.pdf), Turkish translation by Gülay Ağkar Altay. text_density 1.0 (perfect). Title/author/translator from cover pages. Language verified as Turkish (ISO 639-1: tr). Chapter headings visible in samples. Estimated 1744 paragraphs with ~20% tolerance. 16 images (figures, diagrams)."
+}

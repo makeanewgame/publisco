@@ -1,0 +1,24 @@
+{
+  "category": "book-with-tables",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "Introductory Statistics",
+    "author": "OpenStax"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 343,
+  "must_include_phrases": [
+    "Age groups Proportion (%) of TikTok users",
+    "The population in Park City is made up of children, working-age adults, and retirees",
+    "Table 2.10 shows the three age groups, the number of people in the town from each age group",
+    "Create a bar graph showing the proportions"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    11113,
+    16669
+  ],
+  "unsupported": false,
+  "notes": "Introductory Statistics. 847 sayfa, English. text_density=0.9. Profil: 343 gömülü görsel, ~13891 paragraf tahmini (%20 tolerans). İstatistik ders kitabı, tablolar ve grafiklerle dolu, veri analizi konularını kapsar. TikTok kullanıcıları yaş dağılımı gibi çağdaş veriler kullanıyor."
+}

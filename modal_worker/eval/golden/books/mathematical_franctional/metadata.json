@@ -1,0 +1,24 @@
+{
+  "category": "mathematical",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "Fractional Order Derivatives and Applications",
+    "author": "Unknown (journal article)"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 0,
+  "must_include_phrases": [
+    "Fractional Order Integration: A New Perspective based on Karcı's Fractional Order Derivative",
+    "The Karcı's derivative obeys the rules and properties of classical derivative",
+    "Definition 1: Assume that f(x):R→R is a function",
+    "The fractional order integrals defined by many researchers"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    216,
+    324
+  ],
+  "unsupported": true,
+  "notes": "13-page mathematical article. text_density=1.0 indicates full text layer. Heavily formula-oriented (fractional calculus, derivatives, integrals). 0 embedded images. Paragraph estimate ~260 from avg 20 blocks/page. Marked unsupported due to heavy mathematical notation pipeline does not support. Language: English (confirmed from samples), though subject is mathematics."
+}

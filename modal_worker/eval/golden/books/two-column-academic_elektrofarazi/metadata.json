@@ -1,0 +1,26 @@
+{
+  "category": "two-column-academic",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Providencia stuartii'nin moleküler tiplemesi için pulsed-field jel elektroforezinin optimizasyonu",
+    "author": "A. Karagöz ve ark."
+  },
+  "expected_chapters": null,
+  "expected_image_count": null,
+  "must_include_phrases": [
+    "pulsed-field jel elektroforezi (PFGE) gibi yöntemlere ihtiyaç vardır",
+    "P. stuartii suşlarının moleküler analizi ve suşlar arasındaki farklılıkların tespiti, uygulanan yöntemin değerlendirilmesi açısından son derece önemlidir",
+    "%10'luk sodyum dodezil sülfattan (SDS-50°C'de ısıtılmış) 1 ml eklenerek iyice karıştırılır",
+    "Tris-EDTA (TE) buffer (pH=7.4-8.0) çözeltisi"
+  ],
+  "must_exclude_phrases": [
+    "A. Karagöz ve ark. Providencia stuartii'nin moleküler tiplemesi",
+    "Dicle Tıp Derg / Dicle Med J",
+    "Dicle Medical Journal",
+    "Cilt / Vol 40, No 3, 436-440"
+  ],
+  "expected_paragraph_range": [90, 135],
+  "unsupported": false,
+  "notes": "Published in Dicle Medical Journal / Dicle Tıp Dergisi (2013; 40(3): 436-440), pages 436-440 (5 pages total in extracted PDF). Molecular microbiology research article from Turkish Ministry of Health (Türkiye Halk Sağlığı Kurumu). Text density 1.0 (full embedded text layer). Two-column Turkish academic format with technical protocols. Estimated 113 paragraphs based on page sampling; ±20% tolerance applied. No images detected in embedded layer. Main focus on protocol optimization for pulsed-field gel electrophoresis (PFGE) for molecular typing of Providencia stuartii. Contains detailed chemical protocols with specific volumes and temperatures. Header/footer repetition (journal name, volume/issue, page numbers) managed by must_exclude_phrases."
+}

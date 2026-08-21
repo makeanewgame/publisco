@@ -1,0 +1,24 @@
+{
+  "category": "mathematical",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "Fractional Integration Methods",
+    "author": "Unknown (journal article)"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 4,
+  "must_include_phrases": [
+    "Fractional Order Integration: A New Perspective based on Karcı's Fractional",
+    "Some properties of fractional order derivative defined by Karcı are as follow",
+    "The fractional order integrals defined by many researchers",
+    "Definition 1: Assume that f(x):R→R is a function"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    160,
+    240
+  ],
+  "unsupported": true,
+  "notes": "10-page mathematical article. text_density=1.0. Content focuses on fractional order integration and derivatives (Karcı method, Riemann-Liouville). 4 embedded images (likely mathematical diagrams). Paragraph estimate ~187 from avg ~18.7 blocks/page. Language: English. Marked unsupported due to mathematical notation not supported in pipeline."
+}

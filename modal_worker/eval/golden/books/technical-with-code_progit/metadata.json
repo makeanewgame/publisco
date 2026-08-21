@@ -1,0 +1,28 @@
+{
+  "category": "technical-with-code",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "Pro Git",
+    "author": "Scott Chacon, Ben Straub"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 188,
+  "must_include_phrases": [
+    "The --author option allows you to filter on a specific author, and the --grep option lets you search for keywords in the commit messages.",
+    "The easiest way to integrate the branches, as we've already covered, is the merge command.",
+    "It performs a three-way merge between the two latest branch snapshots and the most recent common ancestor of the two.",
+    "Collaborating on the Pull Request, you can now have a conversation with the person who opened the Pull Request."
+  ],
+  "must_exclude_phrases": [
+    "Pro Git",
+    "Scott Chacon",
+    "Ben Straub"
+  ],
+  "expected_paragraph_range": [
+    7896.0,
+    11844.0
+  ],
+  "unsupported": false,
+  "notes": "Sayfa 1-501 (input.pdf), official Git documentation book (open-source). text_density 0.9, 188 images (diagrams+screenshots). Title/author verified from cover page 2. Must_include_phrases from explanatory sections. Estimated 9870 paragraphs. High image count typical for Git visual guides."
+}

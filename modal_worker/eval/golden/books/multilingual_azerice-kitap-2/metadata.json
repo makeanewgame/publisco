@@ -1,0 +1,26 @@
+{
+  "category": "multilingual",
+  "language": "az",
+  "is_scanned": false,
+  "config": {
+    "title": "Magistr, Müəllim, Dövlət Qulluqçusu Kurs Məteriyyatı",
+    "author": "Unknown"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 650,
+  "must_include_phrases": [
+    "Magistr, Müəllim, Dövlət Qulluqçusu",
+    "bilikliol.a",
+    "Tel & WP : 070 611 33 00",
+    "OL"
+  ],
+  "must_exclude_phrases": [
+    "Tel & WP : 070 611 33 00"
+  ],
+  "expected_paragraph_range": [
+    5600,
+    6900
+  ],
+  "unsupported": false,
+  "notes": "254-page multilingual document with high image density (685 embedded images, ~2.7 images/page). Text density 0.9 suggests significant textual content mixed with visuals. langdetect detected 'hu' (Hungarian) but actual text is Azerbaijani/Turkish (Magistr=Master, Müəllim=Teacher, Dövlət Qulluqçusu=Civil Servant). Appears to be course/training material. Contains contact info (Tel & WP: 070 611 33 00). Estimated ~6274 paragraphs (24.7 blocks/page × 254 pages). Multilingual classification: mixed script/language elements suggest Turkish and Azerbaijani mix."
+}

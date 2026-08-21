@@ -1,0 +1,26 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Süreksizliklerde Dolgunun Kesme Dayanımına Etkisinin Nicelleştirilmesi",
+    "author": "Aylin Fidan Üzgün"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 57,
+  "must_include_phrases": [
+    "Kaya kütlesi dayanımını etkileyen en önemli iki faktör",
+    "Barajın inşası sırasında üç test sondajı yapılmış olup",
+    "ASTM D 7012 standartlarına uygun tek eksenli sıkışma dayanımı"
+  ],
+  "must_exclude_phrases": [
+    "Ankara Üniversitesi",
+    "Jeoloji Mühendisliği Anabilim Dalı"
+  ],
+  "expected_paragraph_range": [
+    3051,
+    4576
+  ],
+  "unsupported": false,
+  "notes": "Ankara Üniversitesi Fen Bilimleri Enstitüsü doktora tezi (2025). Teknik/jeoloji alanı, resmi akademik belge. PDF metin katmanı var (text_density=1.0). Tahmini: total_embedded_images=57, estimated_paragraphs=3814 (%20 tolerans ile 3051-4576)."
+}

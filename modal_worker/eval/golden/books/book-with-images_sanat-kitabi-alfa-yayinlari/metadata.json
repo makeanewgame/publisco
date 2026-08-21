@@ -1,0 +1,24 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Sanat Kitabı",
+    "author": "Alfa Yayınları"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 352,
+  "must_include_phrases": [
+    "Camii'nin mihrabında bunların tümü görülebilir",
+    "Dört temel şekille -daire, kare, yıldız ve çokgen- başlayan Müslüman sanatçılar",
+    "karmaşık tasarımlarda iç içe geçen ve tekrarlayan geometrik örüntüler geliştirdiler",
+    "Müslüman sanatçıların geliştirdiği tasarımlar, Allah'ın yarattığı evrenin birliğini ve düzenini sembol"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    7378,
+    11066
+  ],
+  "unsupported": false,
+  "notes": "Sanat Kitabı, Alfa Yayınları. 352 sayfa, Turkish. text_density=0.8. Profil: 352 gömülü görsel, ~9222 paragraf tahmini (%20 tolerans). İslam sanatı, geometrik örüntüler, sanat tarihi konularını kapsar. Raffaello ve İslam sanatı örnekleri içerir."
+}

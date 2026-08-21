@@ -1,0 +1,24 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Tarih Kitabı",
+    "author": "Alfa Yayınları"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 1239,
+  "must_include_phrases": [
+    "ANTİK UYGARLIKLAR 37",
+    "Aynca bakınız: Çatalhöyük'te Yerleşim 30-31",
+    "Ebu Simbel'in Tapınakları 38-39",
+    "Knossos'taki Saray 42-43"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    4646,
+    6970
+  ],
+  "unsupported": false,
+  "notes": "Tarih Kitabı, Alfa Yayınları. 352 sayfa, Turkish. text_density=0.8. Profil: 1239 gömülü görsel, ~5808 paragraf tahmini (%20 tolerans). Antik medeniyetler, mimari yapılar ve tarihi önemli yerler hakkında bilgi verir. Çatalhöyük, Knossos gibi antik yerleşimlere referans."
+}

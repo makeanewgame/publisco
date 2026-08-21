@@ -1,0 +1,23 @@
+{
+  "category": "book-with-images",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "Active Skills for Reading",
+    "author": "Unknown (Educational Publisher)"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 716,
+  "must_include_phrases": [
+    "A Look at the definitions for the words complement and compliment",
+    "Travel can inform and educate, as well as connect people from all over the world",
+    "complete or enhance by providing something additional"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    3064,
+    4597
+  ],
+  "unsupported": false,
+  "notes": "İngilizce dil öğretim kitabı (reading comprehension), text_density=0.9. 244 sayfa, 716 gömülü görsel. Tahmini: estimated_paragraphs=3831 (%20 tolerans ile 3064-4597). Ticari eğitim yayını."
+}

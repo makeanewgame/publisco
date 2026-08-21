@@ -1,0 +1,28 @@
+{
+  "category": "turkish",
+  "language": "tr",
+  "is_scanned": true,
+  "config": {
+    "title": "Çarpıklı Aşk",
+    "author": "Ana Huang"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 447,
+  "must_include_phrases": [
+    "Korkunç bir insandı ama yine de insandı.",
+    "Terli avuçlarını uyluklarının kenarlarına sildir.",
+    "En sonunda, gittikçe yaklaşan ayak sesleri duydum ve kapı açıldığında kendimi Alex'le yüz yüze buldum.",
+    "Zili çalıp Alex'in kapıyı açmasını beklerken çıldırıyordu."
+  ],
+  "must_exclude_phrases": [
+    "ANA HUANG",
+    "çarpıklı ASK",
+    "TWISTED SERİSİ"
+  ],
+  "expected_paragraph_range": [
+    400,
+    500
+  ],
+  "unsupported": false,
+  "notes": "Sayfa 1-447 (input.pdf), Turkish contemporary romance novel, part of 'Twisted Series', book 1. text_density_ratio 0.0 = completely scanned/rendered as images, no OCR text layer. Title/author verified from cover page images. Language: Turkish (tr). Must_include_phrases extracted manually from page images. is_scanned=true. Paragraph estimation rough due to full-page rendering (447 pages ≈ estimated 400-500 paragraphs for narrative fiction). Image count = 447 (one per page, full-page renders)."
+}

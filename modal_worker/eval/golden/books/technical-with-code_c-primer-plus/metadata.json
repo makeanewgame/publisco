@@ -1,0 +1,27 @@
+{
+  "category": "technical-with-code",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "C++ Primer Plus",
+    "author": "Stephen Prata"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 3,
+  "must_include_phrases": [
+    "In the expression lbs / Lbs_per_stn, both operands are type int, so the computer performs integer division.",
+    "C++ converts values when you assign a value of one arithmetic type to a variable of another arithmetic type.",
+    "Let's compare using references and using pointers in a common computer problem: swapping the values of two variables.",
+    "Like a constructor, a destructor has a special name: It is formed from the class name preceded by a tilde (~)."
+  ],
+  "must_exclude_phrases": [
+    "C++ Primer Plus",
+    "Stephen Prata"
+  ],
+  "expected_paragraph_range": [
+    12936.0,
+    19404.0
+  ],
+  "unsupported": false,
+  "notes": "Sayfa 1-1225 (input.pdf), C++ programming textbook, 5. Edition. text_density 0.9. Must_include_phrases from non-code sections (explanatory text); code blocks avoided due to OCR line-break unreliability. Estimated 16170 paragraphs with ~20% tolerance. Very few images (3 total)."
+}

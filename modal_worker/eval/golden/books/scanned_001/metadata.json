@@ -1,16 +1,24 @@
 {
   "category": "scanned-novel",
-  "language": "TODO: tr/en/... (langdetect ISO 639-1 kodu)",
-  "is_scanned": false,
+  "language": "tr",
+  "is_scanned": true,
   "config": {
-    "title": "TODO",
-    "author": "TODO"
+    "title": "HEDEF",
+    "author": "ELLE KENNEDY"
   },
-  "expected_chapters": null,
-  "expected_image_count": null,
-  "must_include_phrases": [],
-  "must_exclude_phrases": [],
+  "expected_chapters": [
+    "Sabrina"
+  ],
+  "expected_image_count": 650,
+  "must_include_phrases": [
+    "Lanet olsun. Lanet olsun. Lanet olsun. LANET OLSUN. Anahtarlarının nerede?",
+    "Dar koridordaki saate bakılırsa, partiye zamanında ulaşmak istiyorsam altmış sekiz dakikalık yolu elli iki dakikada gitmem gerekiyordu."
+  ],
+  "must_exclude_phrases": [
+    "HEDEF",
+    "ELLE KENNEDY"
+  ],
   "expected_paragraph_range": null,
   "unsupported": false,
-  "notes": "TODO: kaynak, sayfa aralığı, bilinen özellikler"
+  "notes": "Elle Kennedy'nin fantezi/romance romanının Türkçe çevirisi (374 sayfa, 748 gömülü görsel). Metin katmanı yok, tamamen taranmış PDF. is_scanned=true. İçinde 'Sabrina' bölümü tespit edilmiş (sayfa 7 civarında). Resim sayısı tahminî (EPUB'ta dedup sonrası 600-700 olabilir)."
 }

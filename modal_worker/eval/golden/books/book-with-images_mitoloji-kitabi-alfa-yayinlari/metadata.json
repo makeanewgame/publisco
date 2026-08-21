@@ -1,0 +1,24 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Mitoloji Kitabı",
+    "author": "Alfa Yayınları"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 1386,
+  "must_include_phrases": [
+    "Aynca Bakınız: Olympos tanrıları 24-31",
+    "Tanrılar ile Titanların savaşı 32-33",
+    "Bu mağaranın sahibi, korkunç Kykloplardan biridir: Dev koyunlardan oluşan bir sürüye çobanlık eden, tek gözlü Polyphemos adlı bir canavardır",
+    "Bu Polyphemos, deniz tanrısı Poseidon'un oğludur"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    4361,
+    6541
+  ],
+  "unsupported": false,
+  "notes": "Mitoloji Kitabı, Alfa Yayınları. 345 sayfa, Turkish. text_density=0.7 (hepsi metin katmanına sahip). Profil: 1386 gömülü görsel, ~5451 paragraf tahmini (%20 tolerans). Antik Yunan ve Roman mitolojisini konu alan eğitim kitabı. Örneklerde mitoloji karakterleri ve hikaye özeti belirtildi."
+}

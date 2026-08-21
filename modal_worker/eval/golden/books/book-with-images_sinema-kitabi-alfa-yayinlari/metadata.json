@@ -1,0 +1,24 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Sinema Kitabı",
+    "author": "Alfa Yayınları"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 1197,
+  "must_include_phrases": [
+    "Tarihi dram",
+    "YÖNETMEN Cari Theodor Dreyer",
+    "YAZARLAR Joseph Delteil, Cari Theodor Dreyer",
+    "Jeanne d'Arc'ın veya Orleans bakiresinin hikayesi"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    5492,
+    8238
+  ],
+  "unsupported": false,
+  "notes": "Sinema Kitabı, Alfa Yayınları. 345 sayfa, Turkish. text_density=0.9. Profil: 1197 gömülü görsel, ~6865 paragraf tahmini (%20 tolerans). Sinema tarihi, yönetmenler ve filmler hakkında eğitim kitabı. Film özetleri ve yönetmen biyografileri içerir."
+}

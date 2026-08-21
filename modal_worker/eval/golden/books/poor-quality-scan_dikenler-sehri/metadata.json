@@ -1,0 +1,24 @@
+{
+  "category": "poor-quality-scan",
+  "language": "tr",
+  "is_scanned": true,
+  "config": {
+    "title": "DİKENLER ŞEHRİ",
+    "author": "C.N. CRAWFORD"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 250,
+  "must_include_phrases": [
+    "Bir zindanda kendi kendime doğum günü şarkısı söyleyeceğim hiç aklıma gelmezdi.",
+    "O iblis, Kaos Lordu olarak tanınıyordu ve beni, bana ikizim kadar benzeyen biriyle karıştırıyordu.",
+    "Ama akıl almaz derecede seksi bir iblis içine içmeye gittiğim barı basınca tam da öyle oldu.",
+    "İyi ki doğdum."
+  ],
+  "must_exclude_phrases": [
+    "DİKENLER ŞEHRİ",
+    "C.N. CRAWFORD"
+  ],
+  "expected_paragraph_range": null,
+  "unsupported": false,
+  "notes": "Düşük çözünürlü tarama, C.N. Crawford'un 'DİKENLER ŞEHRİ' adlı fantezi romanının Türkçe çevirisi (272 sayfa, 279 gömülü görsel). Metin katmanı yok, tamamen taranmış PDF. Kalite düşük (rendition gürültü, blur). is_scanned=true. Resim sayısı tahminî (EPUB dönüştürmede dedup/satır-içi mantığı yüzünden gerçek sayı 250-280 arasında olabilir)."
+}

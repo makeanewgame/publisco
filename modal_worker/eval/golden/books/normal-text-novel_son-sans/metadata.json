@@ -1,0 +1,28 @@
+{
+  "category": "normal-text-novel",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Son Şans",
+    "author": "T. L. Swan"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 552,
+  "must_include_phrases": [
+    "T. L. SWAN",
+    "kollarım da uyumasına",
+    "Ancak zaman geçtikçe planla ilgili bir sorun olduğunu kırk ettim",
+    "Hayden tenimin altına işleyen tek kişiydi",
+    "YETİŞKİN OKURLAR İÇİNDİ"
+  ],
+  "must_exclude_phrases": [
+    "T. L. SWAN",
+    "YETİŞKİN OKURLAR İÇİNDİ"
+  ],
+  "expected_paragraph_range": [
+    14200,
+    17200
+  ],
+  "unsupported": false,
+  "notes": "541-page Turkish novel by T. L. Swan. Text density 0.9 indicates well-formed text layer with abundant illustrations (552 embedded images, ~1 image per page). Estimated ~15689 paragraphs from dense literary text (29 blocks/page × 541 pages). Title page shows '= T L S W A N' formatting. Contains adult reader content ('YETİŞKİN OKURLAR İÇİNDİ'). Narrative fragments in samples mention planning issues, character interactions, and romantic/dramatic elements. High paragraph count typical of novels with extended dialogue and scene descriptions."
+}

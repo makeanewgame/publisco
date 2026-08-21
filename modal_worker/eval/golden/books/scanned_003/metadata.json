@@ -1,0 +1,18 @@
+{
+  "category": "bad-ocr-layer",
+  "language": "tr",
+  "is_scanned": true,
+  "config": {
+    "title": "Avucundaki Öpücük",
+    "author": "AUDREY PENN"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 14,
+  "must_include_phrases": [
+    "Avucundaki Öpücük"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": null,
+  "unsupported": false,
+  "notes": "Audrey Penn'in çocuk kitabının Türkçe versiyonu (14 sayfa, 14 gömülü görsel). Metin katmanı yok, tamamen taranmış PDF. is_scanned=true. Çok kısa kitap, resimlerin başında başlık olarak kategorilendirilmiş. Kategori bad-ocr-layer ama metin içeriği yok (görsel-ağır)."
+}

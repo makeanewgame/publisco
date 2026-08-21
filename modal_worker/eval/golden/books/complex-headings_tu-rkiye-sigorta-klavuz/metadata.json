@@ -1,0 +1,24 @@
+{
+  "category": "complex-headings",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Müşteri Platformu - Sağlık Kullanıcı Kılavuzu",
+    "author": "Türkiye Sigorta"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 59,
+  "must_include_phrases": [
+    "Müşteri Platformu Sağlık Kullanıcı Kılavuzu",
+    "www.turkiyesigorta.com.tr",
+    "Poliçe Bilgileri",
+    "Sağlık Harcaması Talebi (Hızlı İşlemler)"
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    58,
+    86
+  ],
+  "unsupported": false,
+  "notes": "Müşteri Platformu - Sağlık Kullanıcı Kılavuzu, Türkiye Sigorta. 16 sayfa, Turkish. text_density=1.0. Profil: 59 gömülü görsel, ~72 paragraf tahmini. KATEGORİ: complex-headings — Mobil uygulama kullanım kılavuzu, İçindekiler sayfası mevcut. Başlık hiyerarşisi: 1. Ana başlık (Müşteri Platformu), 2. Alt başlıklar (Intro, Giriş, Kayıt Ekranı, Ana sayfa, Poliçe Bilgileri, Tekliflerim, vb.), 3. Hızlı İşlemler alt kategorileri (Sağlık Harcaması Talebi, Anlaşmalı Kurumlar, İletişim). Navigasyon yapısı açık ve çok seviyeli (multi-level) hiyerarşi."
+}

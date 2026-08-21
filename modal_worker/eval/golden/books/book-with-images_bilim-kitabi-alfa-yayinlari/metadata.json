@@ -1,0 +1,26 @@
+{
+  "category": "book-with-images",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Bilim Kitabı",
+    "author": "Alfa Yayınları"
+  },
+  "expected_chapters": null,
+  "expected_image_count": 345,
+  "must_include_phrases": [
+    "yalpalar, ama yalpalama, Newton denklemleri kullanılarak tam açıklanamaz",
+    "Bu, 1859'da bir sorun olarak kabul edildi",
+    "Einstein'ın Genel Görelilik Teorisi"
+  ],
+  "must_exclude_phrases": [
+    "Bilim Kitabı",
+    "Alfa Yayınları"
+  ],
+  "expected_paragraph_range": [
+    7017,
+    10527
+  ],
+  "unsupported": false,
+  "notes": "Alfa Yayınları science textbook, 344 pages, text_density=0.7, 345 images. Tahmini: estimated_paragraphs=8772 (%20 tolerans ile 7017-10527). Matematik/fizik teorileri ağırlıklı."
+}

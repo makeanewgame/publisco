@@ -1,0 +1,32 @@
+{
+  "category": "technical-with-code",
+  "language": "en",
+  "is_scanned": false,
+  "config": {
+    "title": "Mastering Functional Programming (JavaScript)",
+    "author": "Unknown"
+  },
+  "expected_chapters": [
+    "The Powers of JavaScript's Functional Side",
+    "Fundamentals of Functional Programming",
+    "Setting Up the Functional Programming Environment",
+    "Implementing Functional Programming Techniques in JavaScript",
+    "Category Theory",
+    "Advanced Topics and Pitfalls in JavaScript",
+    "Functional and Object-oriented Programming in JavaScript"
+  ],
+  "expected_image_count": 12,
+  "must_include_phrases": [
+    "Lazy evaluation, also known as non-strict evaluation, call-by-need and deffered execution, is an evaluation strategy that waits until the value is needed to compute the result of a function.",
+    "This makes adding a new size or a new coffee type as simple as shown in the following code snippet.",
+    "JavaScript is a general-purpose language, meaning it's fully capable of multiple programming styles.",
+    "The two paradigms can complement each other and coexist side by side."
+  ],
+  "must_exclude_phrases": [],
+  "expected_paragraph_range": [
+    1608.0,
+    2412.0
+  ],
+  "unsupported": false,
+  "notes": "Sayfa 1-261 (input.pdf), JavaScript functional programming handbook. text_density 0.8 (some pages lighter, possibly code-heavy). Cover pages empty but Chapter titles visible in samples. Expected_chapters extracted from 'What this book covers' section. Must_include_phrases from explanatory prose. Estimated 2010 paragraphs with ~20% tolerance. 12 images."
+}

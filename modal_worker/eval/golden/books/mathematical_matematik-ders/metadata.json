@@ -1,0 +1,27 @@
+{
+  "category": "mathematical",
+  "language": "tr",
+  "is_scanned": false,
+  "config": {
+    "title": "Ders Kitabı İncelemesi (Matematik Ders Kitapları)",
+    "author": "Bekiroğlu, D., & Yalçın, D."
+  },
+  "expected_chapters": null,
+  "expected_image_count": 32,
+  "must_include_phrases": [
+    "Ders Kitabı İncelemesi",
+    "Temel Eğitim Dergisi / Journal of Primary Education",
+    "students can be shown how mathematics is used in the real world and how problems are solved",
+    "Yunanistan 6. sınıf matematik ders kitabındaki matematik tarihini içeren madde sayısı"
+  ],
+  "must_exclude_phrases": [
+    "Bekiroğlu",
+    "Yalçın"
+  ],
+  "expected_paragraph_range": [
+    146,
+    218
+  ],
+  "unsupported": true,
+  "notes": "11-page academic article on mathematics textbook analysis (Turkish/English bilingual). text_density=1.0. Language detected as 'en' by langdetect but actual content is Turkish (Bekiroğlu & Yalçın study of Turkish vs Greek math textbooks). 32 embedded images (likely textbook sample pages/diagrams). Paragraph estimate ~182 from avg 16.5 blocks/page. Marked unsupported due to educational content mixing textbook excerpts and mathematical content."
+}

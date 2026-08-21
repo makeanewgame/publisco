@@ -62,6 +62,24 @@ def ocr_scanned_page_bytes() -> bytes:
 
 
 @pytest.fixture
+def pdf_with_embedded_image_bytes() -> bytes:
+    """Metinle karışık, sayfanın yalnızca bir kısmını kaplayan gerçek gömülü bir
+    görsel içeren (ikon-boyutu filtresini geçecek kadar büyük) bir PDF üretir —
+    normal metin sayfalarındaki gömülü görsellerin artık çıkarıldığını test eder."""
+    image = Image.new("RGB", (300, 200), color="red")
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Bu sayfada hem metin hem gomulu bir gorsel var. " * 6, fontsize=12)
+    page.insert_image(pymupdf.Rect(72, 300, 372, 500), stream=buffer.getvalue())
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
 def blank_pdf_bytes() -> bytes:
     """Ne metni ne metadata'sı olan, boş bir sayfalık bir PDF üretir."""
     doc = pymupdf.open()

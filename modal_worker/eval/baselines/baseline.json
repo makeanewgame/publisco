@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-08-21T10:48:31.387751+00:00",
+  "timestamp": "2026-08-21T17:14:14.599737+00:00",
   "variant": "local",
   "book_count": 50,
-  "overall_score": 47.6,
+  "overall_score": 52.8,
   "metric_averages": {
-    "text_completeness": 0.348,
+    "text_completeness": 0.383,
     "structure": 0.526,
     "cleanliness": 0.6,
     "ocr_quality": 0.765,
-    "images": 0.492,
+    "images": 0.828,
     "reading_order": null
   },
   "books": [
@@ -91,7 +91,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.0064497079874854535
+      "duration_seconds": 0.005842957994900644
     },
     {
       "book_id": "smoke-scanned",
@@ -168,7 +168,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 1.308746416005306
+      "duration_seconds": 1.1420395000022836
     },
     {
       "book_id": "smoke-header-footer",
@@ -248,19 +248,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.006313124991720542
+      "duration_seconds": 0.006790125014958903
     },
     {
       "book_id": "book-with-images_966108",
       "category": "book-with-images",
-      "score": 16.9,
+      "score": 23.0,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.17633562766306132,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 0.7834146341463414,
         "reading_order": null
       },
       "metric_details": {
@@ -354,11 +354,11 @@
         },
         "images": {
           "pdf_image_count": 205,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 205,
           "expected_image_count": 57,
-          "missing_vs_pdf": 205,
-          "missing_vs_expected": 57,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 148
         },
         "epub_validity": {
           "available": true,
@@ -375,19 +375,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.24974779100739397
+      "duration_seconds": 0.5856623329746071
     },
     {
       "book_id": "book-with-images_active-skills-for-reading-4",
       "category": "book-with-images",
-      "score": 76.9,
+      "score": 83.4,
       "category_label": "Good",
       "metric_scores": {
         "text_completeness": 1.0,
         "structure": 0.8234334203655352,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.7746743295019158,
-        "images": 0.3,
+        "images": 0.8856145251396648,
         "reading_order": null
       },
       "metric_details": {
@@ -463,10 +463,10 @@
         },
         "images": {
           "pdf_image_count": 716,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 599,
           "expected_image_count": 716,
-          "missing_vs_pdf": 716,
-          "missing_vs_expected": 716,
+          "missing_vs_pdf": 117,
+          "missing_vs_expected": 117,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -484,19 +484,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 4.19523037498584
+      "duration_seconds": 9.65982204102329
     },
     {
       "book_id": "book-with-images_ankaranin-trekking-rotalari",
       "category": "book-with-images",
-      "score": 21.0,
+      "score": 27.8,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.18208092485549132,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.5220510476190476,
-        "images": 0.306140350877193,
+        "images": 0.9201754385964911,
         "reading_order": null
       },
       "metric_details": {
@@ -591,10 +591,10 @@
         },
         "images": {
           "pdf_image_count": 605,
-          "epub_content_image_count": 2,
+          "epub_content_image_count": 202,
           "expected_image_count": 228,
-          "missing_vs_pdf": 603,
-          "missing_vs_expected": 226,
+          "missing_vs_pdf": 403,
+          "missing_vs_expected": 26,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -612,19 +612,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 2.7276414160151035
+      "duration_seconds": 2.939740959001938
     },
     {
       "book_id": "book-with-images_astronomi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 44.2,
+      "score": 49.2,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.25,
         "structure": 0.7040794757979285,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.672581047932437,
-        "images": 0.3181818181818182,
+        "images": 0.7727272727272727,
         "reading_order": null
       },
       "metric_details": {
@@ -688,10 +688,10 @@
         },
         "images": {
           "pdf_image_count": 1325,
-          "epub_content_image_count": 34,
+          "epub_content_image_count": 884,
           "expected_image_count": 1309,
-          "missing_vs_pdf": 1291,
-          "missing_vs_expected": 1275,
+          "missing_vs_pdf": 441,
+          "missing_vs_expected": 425,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -709,19 +709,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 46.19423920797999
+      "duration_seconds": 54.65815908298828
     },
     {
       "book_id": "book-with-images_bilim-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 50.4,
+      "score": 57.1,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.3333333333333333,
         "structure": 0.8338321219894542,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.6252752205882353,
-        "images": 0.37304347826086953,
+        "images": 0.9776811594202899,
         "reading_order": null
       },
       "metric_details": {
@@ -795,10 +795,10 @@
         },
         "images": {
           "pdf_image_count": 345,
-          "epub_content_image_count": 36,
+          "epub_content_image_count": 334,
           "expected_image_count": 345,
-          "missing_vs_pdf": 309,
-          "missing_vs_expected": 309,
+          "missing_vs_pdf": 11,
+          "missing_vs_expected": 11,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -816,19 +816,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 34.97900054199272
+      "duration_seconds": 36.3911974169896
     },
     {
       "book_id": "book-with-images_dunya-tarihi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 52.3,
+      "score": 59.6,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.5,
         "structure": 0.5986031546731538,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.7496333281296268,
-        "images": 0.31216216216216214,
+        "images": 0.9689189189189189,
         "reading_order": null
       },
       "metric_details": {
@@ -971,10 +971,10 @@
         },
         "images": {
           "pdf_image_count": 518,
-          "epub_content_image_count": 9,
+          "epub_content_image_count": 495,
           "expected_image_count": 518,
-          "missing_vs_pdf": 509,
-          "missing_vs_expected": 509,
+          "missing_vs_pdf": 23,
+          "missing_vs_expected": 23,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -992,7 +992,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 137.73396820799098
+      "duration_seconds": 194.16429020799114
     },
     {
       "book_id": "book-with-images_haritalarla-cografya",
@@ -1085,19 +1085,19 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 260.11409570800606
+      "duration_seconds": 258.40124345800723
     },
     {
       "book_id": "book-with-images_mitoloji-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 78.5,
+      "score": 83.2,
       "category_label": "Good",
       "metric_scores": {
         "text_completeness": 1.0,
         "structure": 0.9548268745700528,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.6429845052083333,
-        "images": 0.31616161616161614,
+        "images": 0.7348484848484849,
         "reading_order": null
       },
       "metric_details": {
@@ -1159,10 +1159,10 @@
         },
         "images": {
           "pdf_image_count": 1386,
-          "epub_content_image_count": 32,
+          "epub_content_image_count": 861,
           "expected_image_count": 1386,
-          "missing_vs_pdf": 1354,
-          "missing_vs_expected": 1354,
+          "missing_vs_pdf": 525,
+          "missing_vs_expected": 525,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -1180,19 +1180,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 17.32530549998046
+      "duration_seconds": 16.964659417018993
     },
     {
       "book_id": "book-with-images_sanat-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 51.9,
+      "score": 59.0,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.5,
         "structure": 0.8079425318514503,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.24803333333333327,
-        "images": 0.3556818181818182,
+        "images": 0.9940340909090908,
         "reading_order": null
       },
       "metric_details": {
@@ -1255,10 +1255,10 @@
         },
         "images": {
           "pdf_image_count": 352,
-          "epub_content_image_count": 28,
+          "epub_content_image_count": 349,
           "expected_image_count": 352,
-          "missing_vs_pdf": 324,
-          "missing_vs_expected": 324,
+          "missing_vs_pdf": 3,
+          "missing_vs_expected": 3,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -1276,19 +1276,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 32.89892050001072
+      "duration_seconds": 72.07647983299103
     },
     {
       "book_id": "book-with-images_sinema-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 64.0,
+      "score": 70.2,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.75,
         "structure": 0.682083029861617,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.7554121031746031,
-        "images": 0.31929824561403514,
+        "images": 0.8725146198830409,
         "reading_order": null
       },
       "metric_details": {
@@ -1358,10 +1358,10 @@
         },
         "images": {
           "pdf_image_count": 1197,
-          "epub_content_image_count": 33,
+          "epub_content_image_count": 979,
           "expected_image_count": 1197,
-          "missing_vs_pdf": 1164,
-          "missing_vs_expected": 1164,
+          "missing_vs_pdf": 218,
+          "missing_vs_expected": 218,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -1379,19 +1379,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 27.209616082982393
+      "duration_seconds": 28.141106499999296
     },
     {
       "book_id": "book-with-images_tarih-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 68.4,
+      "score": 74.0,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.75,
         "structure": 0.8715023676280671,
         "cleanliness": 0.4658780919872364,
         "ocr_quality": 0.774182935913232,
-        "images": 0.31468926553672316,
+        "images": 0.8163841807909604,
         "reading_order": null
       },
       "metric_details": {
@@ -1449,10 +1449,10 @@
         },
         "images": {
           "pdf_image_count": 1267,
-          "epub_content_image_count": 26,
+          "epub_content_image_count": 914,
           "expected_image_count": 1239,
-          "missing_vs_pdf": 1241,
-          "missing_vs_expected": 1213,
+          "missing_vs_pdf": 353,
+          "missing_vs_expected": 325,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -1470,19 +1470,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 32.28645137499552
+      "duration_seconds": 43.00819224998122
     },
     {
       "book_id": "book-with-tables_introductory-statistics",
       "category": "book-with-tables",
-      "score": 62.8,
+      "score": 70.1,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.75,
         "structure": 0.5705929991901377,
         "cleanliness": 0.4663483879181387,
         "ocr_quality": 0.8536400246578818,
-        "images": 0.3306122448979592,
+        "images": 0.988235294117647,
         "reading_order": null
       },
       "metric_details": {
@@ -1615,11 +1615,11 @@
         },
         "images": {
           "pdf_image_count": 407,
-          "epub_content_image_count": 15,
+          "epub_content_image_count": 357,
           "expected_image_count": 343,
-          "missing_vs_pdf": 392,
-          "missing_vs_expected": 328,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 50,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 14
         },
         "epub_validity": {
           "available": true,
@@ -1636,19 +1636,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 8.6449406669999
+      "duration_seconds": 11.785400791995926
     },
     {
       "book_id": "book-with-tables_table",
       "category": "book-with-tables",
-      "score": 62.5,
+      "score": 69.8,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.75,
         "structure": 0.38829787234042556,
         "cleanliness": 0.8666666666666667,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 0.8833333333333333,
         "reading_order": null
       },
       "metric_details": {
@@ -1699,11 +1699,11 @@
         },
         "images": {
           "pdf_image_count": 92,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 72,
           "expected_image_count": 44,
-          "missing_vs_pdf": 92,
-          "missing_vs_expected": 44,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 20,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 28
         },
         "epub_validity": {
           "available": true,
@@ -1720,19 +1720,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.07187225000234321
+      "duration_seconds": 0.1619093749905005
     },
     {
       "book_id": "complex-headings_tu-rkiye-sigorta-klavuz",
       "category": "complex-headings",
-      "score": 51.6,
+      "score": 58.8,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.5,
         "structure": 0.4482758620689655,
         "cleanliness": 0.7866666666666667,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 0.877,
         "reading_order": null
       },
       "metric_details": {
@@ -1785,11 +1785,11 @@
         },
         "images": {
           "pdf_image_count": 104,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 100,
           "expected_image_count": 59,
-          "missing_vs_pdf": 104,
-          "missing_vs_expected": 59,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 4,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 41
         },
         "epub_validity": {
           "available": true,
@@ -1806,19 +1806,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.030633167014457285
+      "duration_seconds": 0.39014729199698195
     },
     {
       "book_id": "english_molecules",
       "category": "english",
-      "score": 53.4,
-      "category_label": "Poor",
+      "score": 62.2,
+      "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.5,
         "structure": 0.36986301369863017,
         "cleanliness": 0.9893455098934552,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 1.0,
         "reading_order": null
       },
       "metric_details": {
@@ -1867,10 +1867,10 @@
         },
         "images": {
           "pdf_image_count": 5,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 5,
           "expected_image_count": 5,
-          "missing_vs_pdf": 5,
-          "missing_vs_expected": 5,
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -1888,7 +1888,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.09978854100336321
+      "duration_seconds": 0.08103137501166202
     },
     {
       "book_id": "mathematical_franctional",
@@ -1991,7 +1991,7 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 0.07907820798573084
+      "duration_seconds": 0.03777187500963919
     },
     {
       "book_id": "mathematical_gumusfenbil",
@@ -2111,19 +2111,19 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 0.05716645799111575
+      "duration_seconds": 0.02608416700968519
     },
     {
       "book_id": "mathematical_integral",
       "category": "mathematical",
-      "score": 31.7,
+      "score": 39,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.7666666666666666,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 1.0,
         "reading_order": null
       },
       "metric_details": {
@@ -2192,10 +2192,10 @@
         },
         "images": {
           "pdf_image_count": 4,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 4,
           "expected_image_count": 4,
-          "missing_vs_pdf": 4,
-          "missing_vs_expected": 4,
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -2215,19 +2215,19 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 0.10616612498415634
+      "duration_seconds": 0.2757147910015192
     },
     {
       "book_id": "mathematical_matematik-ders",
       "category": "mathematical",
-      "score": 31.9,
+      "score": 36.8,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.595890410958904,
         "cleanliness": 0.7066666666666667,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 0.69375,
         "reading_order": null
       },
       "metric_details": {
@@ -2279,10 +2279,10 @@
         },
         "images": {
           "pdf_image_count": 32,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 18,
           "expected_image_count": 32,
-          "missing_vs_pdf": 32,
-          "missing_vs_expected": 32,
+          "missing_vs_pdf": 14,
+          "missing_vs_expected": 14,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -2300,19 +2300,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.10760745898005553
+      "duration_seconds": 0.07100220798747614
     },
     {
       "book_id": "mathematical_order-integrations",
       "category": "mathematical",
-      "score": 49.4,
+      "score": 58.1,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.5,
         "structure": 0.31999999999999995,
         "cleanliness": 0.84,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 1.0,
         "reading_order": null
       },
       "metric_details": {
@@ -2365,10 +2365,10 @@
         },
         "images": {
           "pdf_image_count": 1,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 1,
           "expected_image_count": 1,
-          "missing_vs_pdf": 1,
-          "missing_vs_expected": 1,
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -2386,7 +2386,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.0436199999821838
+      "duration_seconds": 0.02133545800461434
     },
     {
       "book_id": "mathematical_perelman-poincare",
@@ -2474,7 +2474,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.25330229199607857
+      "duration_seconds": 0.11548620800022036
     },
     {
       "book_id": "mathematical_singular-integrals",
@@ -2583,7 +2583,7 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 0.03129045802052133
+      "duration_seconds": 0.014465458982158452
     },
     {
       "book_id": "mathematical_test-soruolar",
@@ -2809,19 +2809,19 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 626.8868055839848
+      "duration_seconds": 619.0487204589881
     },
     {
       "book_id": "mathematical_ujma",
       "category": "mathematical",
-      "score": 29.2,
+      "score": 37.6,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.3,
         "structure": 0.1428571428571429,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 0.97,
         "reading_order": null
       },
       "metric_details": {
@@ -2919,11 +2919,11 @@
         },
         "images": {
           "pdf_image_count": 11,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 10,
           "expected_image_count": 9,
-          "missing_vs_pdf": 11,
-          "missing_vs_expected": 9,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 1,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 1
         },
         "epub_validity": {
           "available": true,
@@ -2940,7 +2940,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.041095416992902756
+      "duration_seconds": 0.159104207996279
     },
     {
       "book_id": "multilingual_arapc-a-kitap",
@@ -3029,7 +3029,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 1.9497404999856371
+      "duration_seconds": 1.948875667003449
     },
     {
       "book_id": "multilingual_azerice-kitap",
@@ -3118,19 +3118,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 450.77133237500675
+      "duration_seconds": 444.80508637498133
     },
     {
       "book_id": "multilingual_azerice-kitap-2",
       "category": "multilingual",
-      "score": 27.7,
+      "score": 34.8,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.3492857142857143,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.7951851851851852,
-        "images": 0.3,
+        "images": 0.9369380315917375,
         "reading_order": null
       },
       "metric_details": {
@@ -3233,11 +3233,11 @@
         },
         "images": {
           "pdf_image_count": 1364,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 823,
           "expected_image_count": 650,
-          "missing_vs_pdf": 1364,
-          "missing_vs_expected": 650,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 541,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 173
         },
         "epub_validity": {
           "available": true,
@@ -3254,19 +3254,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 3.5676513749931473
+      "duration_seconds": 5.962042833009036
     },
     {
       "book_id": "normal-text-novel_son-sans",
       "category": "normal-text-novel",
-      "score": 35.6,
+      "score": 39,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.1,
         "structure": 0.5292957746478874,
         "cleanliness": 0.46565962818700707,
         "ocr_quality": 0.8,
-        "images": 0.30126811594202896,
+        "images": 0.9987318840579709,
         "reading_order": null
       },
       "metric_details": {
@@ -3397,10 +3397,10 @@
         },
         "images": {
           "pdf_image_count": 552,
-          "epub_content_image_count": 1,
+          "epub_content_image_count": 551,
           "expected_image_count": 552,
-          "missing_vs_pdf": 551,
-          "missing_vs_expected": 551,
+          "missing_vs_pdf": 1,
+          "missing_vs_expected": 1,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -3420,15 +3420,15 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 2.190552874992136
+      "duration_seconds": 32.66393783298554
     },
     {
       "book_id": "poor-quality-scan_dikenler-sehri",
       "category": "poor-quality-scan",
-      "score": 40.1,
+      "score": 52.6,
       "category_label": "Poor",
       "metric_scores": {
-        "text_completeness": 0.25,
+        "text_completeness": 0.5,
         "structure": null,
         "cleanliness": 0.46483964634106556,
         "ocr_quality": 0.9303835071951969,
@@ -3442,9 +3442,7 @@
             "Bir zindanda kendi kendime doğum günü şarkısı söyleyeceğim hiç aklıma gelmezdi.",
             "Ama akıl almaz derecede seksi bir iblis içine içmeye gittiğim barı basınca tam da öyle oldu."
           ],
-          "phrase_exclude_violations": [
-            "DİKENLER ŞEHRİ"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -3508,7 +3506,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 299.83948162500747
+      "duration_seconds": 294.6945057910052
     },
     {
       "book_id": "scanned-novel_sevgili-tas-kalbim",
@@ -3614,15 +3612,15 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 224.9301008330076
+      "duration_seconds": 224.06060054100817
     },
     {
       "book_id": "scanned_001",
       "category": "scanned-novel",
-      "score": 31.2,
-      "category_label": "Failed",
+      "score": 40.9,
+      "category_label": "Poor",
       "metric_scores": {
-        "text_completeness": 0.25,
+        "text_completeness": 0.5,
         "structure": 0.0,
         "cleanliness": 0.4605873489398104,
         "ocr_quality": 0.9434506052320737,
@@ -3635,9 +3633,7 @@
           "phrase_include_misses": [
             "Lanet olsun. Lanet olsun. Lanet olsun. LANET OLSUN. Anahtarlarının nerede?"
           ],
-          "phrase_exclude_violations": [
-            "HEDEF"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -3713,28 +3709,26 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 344.47856141699594
+      "duration_seconds": 339.94410879097995
     },
     {
       "book_id": "scanned_002",
       "category": "scanned-novel",
-      "score": 63.5,
-      "category_label": "Fair",
+      "score": 82.4,
+      "category_label": "Good",
       "metric_scores": {
-        "text_completeness": 0.5,
+        "text_completeness": 1.0,
         "structure": 0.7375,
         "cleanliness": 0.4508017451413678,
         "ocr_quality": 0.8858410493827161,
-        "images": 0.9249999999999999,
+        "images": 0.8799999999999999,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
           "phrase_include_recall": 1.0,
           "phrase_include_misses": [],
-          "phrase_exclude_violations": [
-            "BİR GÜN KEDİLER DÜNYADAN YOK OLSAYDI"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -3796,11 +3790,11 @@
         },
         "images": {
           "pdf_image_count": 15,
-          "epub_content_image_count": 4,
+          "epub_content_image_count": 5,
           "expected_image_count": 3,
-          "missing_vs_pdf": 11,
+          "missing_vs_pdf": 10,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 1
+          "unexpected_vs_expected": 2
         },
         "epub_validity": {
           "available": true,
@@ -3817,7 +3811,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 2.652478832984343
+      "duration_seconds": 2.636467709002318
     },
     {
       "book_id": "scanned_003",
@@ -3894,19 +3888,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 9.421324583003297
+      "duration_seconds": 9.318456250010058
     },
     {
       "book_id": "scanned_004",
       "category": "bad-ocr-layer",
-      "score": 25.2,
+      "score": 32.8,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.4805607476635514,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.3079701430143014,
-        "images": 0.3028,
+        "images": 0.9852795739825028,
         "reading_order": null
       },
       "metric_details": {
@@ -4009,11 +4003,11 @@
         },
         "images": {
           "pdf_image_count": 2675,
-          "epub_content_image_count": 10,
+          "epub_content_image_count": 2629,
           "expected_image_count": 2500,
-          "missing_vs_pdf": 2665,
-          "missing_vs_expected": 2490,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 46,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 129
         },
         "epub_validity": {
           "available": true,
@@ -4030,19 +4024,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 29.53015433298424
+      "duration_seconds": 140.13660083399736
     },
     {
       "book_id": "scanned_005",
       "category": "bad-ocr-layer",
-      "score": 27.6,
-      "category_label": "Failed",
+      "score": 69.0,
+      "category_label": "Fair",
       "metric_scores": {
-        "text_completeness": 0.0,
+        "text_completeness": 0.75,
         "structure": 0.3624096385542168,
         "cleanliness": 0.7866666666666667,
         "ocr_quality": null,
-        "images": 0.3041176470588235,
+        "images": 0.9889518413597733,
         "reading_order": null
       },
       "metric_details": {
@@ -4051,9 +4045,7 @@
           "phrase_include_misses": [
             "Bizden istediğin anlayışa aynı şekilde talip olduğumuzu bilmeni isterim."
           ],
-          "phrase_exclude_violations": [
-            "SADECE İŞ İLİŞKİSİ"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -4096,11 +4088,11 @@
         },
         "images": {
           "pdf_image_count": 355,
-          "epub_content_image_count": 2,
+          "epub_content_image_count": 353,
           "expected_image_count": 340,
-          "missing_vs_pdf": 353,
-          "missing_vs_expected": 338,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 2,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 13
         },
         "epub_validity": {
           "available": true,
@@ -4117,7 +4109,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 2.8933807499997783
+      "duration_seconds": 24.52139841701137
     },
     {
       "book_id": "scanned_006",
@@ -4129,7 +4121,7 @@
         "structure": 0.4399696048632219,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.8827714157187841,
-        "images": 0.3245,
+        "images": 0.9870813397129186,
         "reading_order": null
       },
       "metric_details": {
@@ -4189,11 +4181,11 @@
         },
         "images": {
           "pdf_image_count": 606,
-          "epub_content_image_count": 21,
+          "epub_content_image_count": 627,
           "expected_image_count": 600,
-          "missing_vs_pdf": 585,
-          "missing_vs_expected": 579,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 27
         },
         "epub_validity": {
           "available": true,
@@ -4212,7 +4204,7 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 11.937259833008284
+      "duration_seconds": 18.75940283300588
     },
     {
       "book_id": "technical-with-code_c-primer-plus",
@@ -4224,7 +4216,7 @@
         "structure": 0.8213512677798392,
         "cleanliness": 0.4662053649390917,
         "ocr_quality": 0.9475,
-        "images": 0.7642857142857142,
+        "images": 0.7599999999999999,
         "reading_order": null
       },
       "metric_details": {
@@ -4446,11 +4438,11 @@
         },
         "images": {
           "pdf_image_count": 3,
-          "epub_content_image_count": 14,
+          "epub_content_image_count": 15,
           "expected_image_count": 3,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 11
+          "unexpected_vs_expected": 12
         },
         "epub_validity": {
           "available": true,
@@ -4467,19 +4459,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 7.399224166991189
+      "duration_seconds": 7.409793416998582
     },
     {
       "book_id": "technical-with-code_cplus-conherince",
       "category": "technical-with-code",
-      "score": 42.5,
+      "score": 41.7,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.6423670668953687,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.9004761904761903,
-        "images": 0.94,
+        "images": 0.8714285714285713,
         "reading_order": null
       },
       "metric_details": {
@@ -4550,11 +4542,11 @@
         },
         "images": {
           "pdf_image_count": 4,
-          "epub_content_image_count": 5,
+          "epub_content_image_count": 7,
           "expected_image_count": 4,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 1
+          "unexpected_vs_expected": 3
         },
         "epub_validity": {
           "available": true,
@@ -4571,7 +4563,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 3.551289208990056
+      "duration_seconds": 3.646451667009387
     },
     {
       "book_id": "technical-with-code_functional-programing",
@@ -4583,7 +4575,7 @@
         "structure": 0.3579068941009239,
         "cleanliness": 0.8133333333333332,
         "ocr_quality": 0.816459656084656,
-        "images": 0.7749999999999999,
+        "images": 0.7610169491525424,
         "reading_order": null
       },
       "metric_details": {
@@ -4644,11 +4636,11 @@
         },
         "images": {
           "pdf_image_count": 12,
-          "epub_content_image_count": 48,
+          "epub_content_image_count": 59,
           "expected_image_count": 12,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 36
+          "unexpected_vs_expected": 47
         },
         "epub_validity": {
           "available": true,
@@ -4667,19 +4659,19 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 20.08867245799047
+      "duration_seconds": 20.245579333015485
     },
     {
       "book_id": "technical-with-code_progit",
       "category": "technical-with-code",
-      "score": 31.3,
+      "score": 39,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.5027862208713272,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": 0.8120707070707069,
-        "images": 0.3,
+        "images": 0.9962765957446809,
         "reading_order": null
       },
       "metric_details": {
@@ -4757,10 +4749,10 @@
         },
         "images": {
           "pdf_image_count": 188,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 187,
           "expected_image_count": 188,
-          "missing_vs_pdf": 188,
-          "missing_vs_expected": 188,
+          "missing_vs_pdf": 1,
+          "missing_vs_expected": 1,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -4780,19 +4772,19 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 2.1641938329848927
+      "duration_seconds": 6.6056225830107
     },
     {
       "book_id": "turkish_bilimsel-makale-nasil-yazilir",
       "category": "turkish",
-      "score": 39,
+      "score": 38.5,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.16556766055045868,
         "cleanliness": 0.92,
         "ocr_quality": 0.9246938775510205,
-        "images": 0.9181818181818181,
+        "images": 0.8263157894736841,
         "reading_order": null
       },
       "metric_details": {
@@ -4805,8 +4797,7 @@
             "İyi hazırlanmış bir Kısa Özet, okuyucunun, dokümanın içeriğini kısa zamanda ve hassasiyetle belirlemesine imkân verir."
           ],
           "phrase_exclude_violations": [
-            "Robert A. Day",
-            "Bilimsel Bir Makale Nasıl Yazılır"
+            "Robert A. Day"
           ],
           "word_recall": null,
           "word_precision": null,
@@ -4854,11 +4845,11 @@
         },
         "images": {
           "pdf_image_count": 16,
-          "epub_content_image_count": 22,
+          "epub_content_image_count": 38,
           "expected_image_count": 16,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 6
+          "unexpected_vs_expected": 22
         },
         "epub_validity": {
           "available": true,
@@ -4877,7 +4868,7 @@
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 9.177431124990107
+      "duration_seconds": 9.078506791993277
     },
     {
       "book_id": "turkish_carpik-ask",
@@ -4980,19 +4971,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 508.91482716600876
+      "duration_seconds": 506.76994804199785
     },
     {
       "book_id": "two-column-academic_arastima-makalesi",
       "category": "two-column-academic",
-      "score": 67.0,
+      "score": 73.3,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.75,
         "structure": 0.5109170305676856,
         "cleanliness": 0.7866666666666667,
         "ocr_quality": 0.9065853658536586,
-        "images": 0.3,
+        "images": 0.8599999999999999,
         "reading_order": null
       },
       "metric_details": {
@@ -5044,10 +5035,10 @@
         },
         "images": {
           "pdf_image_count": 5,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 4,
           "expected_image_count": 5,
-          "missing_vs_pdf": 5,
-          "missing_vs_expected": 5,
+          "missing_vs_pdf": 1,
+          "missing_vs_expected": 1,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -5065,19 +5056,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 1.395843625010457
+      "duration_seconds": 1.985668750014156
     },
     {
       "book_id": "two-column-academic_attention-is-all-you-need",
       "category": "two-column-academic",
-      "score": 19.6,
+      "score": 28.4,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.285377358490566,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 1.0,
         "reading_order": null
       },
       "metric_details": {
@@ -5152,10 +5143,10 @@
         },
         "images": {
           "pdf_image_count": 3,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 3,
           "expected_image_count": 3,
-          "missing_vs_pdf": 3,
-          "missing_vs_expected": 3,
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -5173,7 +5164,7 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.062051374989096075
+      "duration_seconds": 0.3475309999776073
     },
     {
       "book_id": "two-column-academic_elektrofarazi",
@@ -5259,19 +5250,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.03178950000437908
+      "duration_seconds": 0.0577545830165036
     },
     {
       "book_id": "two-column-academic_farkindalik-gelistirme-programi",
       "category": "two-column-academic",
-      "score": 46.9,
+      "score": 55.6,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.25,
         "structure": 0.5844155844155844,
         "cleanliness": 0.9377722464219042,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 1.0,
         "reading_order": null
       },
       "metric_details": {
@@ -5323,10 +5314,10 @@
         },
         "images": {
           "pdf_image_count": 1,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 1,
           "expected_image_count": 1,
-          "missing_vs_pdf": 1,
-          "missing_vs_expected": 1,
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -5344,19 +5335,19 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.02572041700477712
+      "duration_seconds": 0.04963504199986346
     },
     {
       "book_id": "two-column-academic_vibe-coding",
       "category": "two-column-academic",
-      "score": 43.6,
+      "score": 49.6,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": 0.8745247148288974,
         "cleanliness": 0.9595845136921625,
         "ocr_quality": null,
-        "images": 0.3,
+        "images": 0.7818181818181817,
         "reading_order": null
       },
       "metric_details": {
@@ -5410,11 +5401,11 @@
         },
         "images": {
           "pdf_image_count": 22,
-          "epub_content_image_count": 0,
+          "epub_content_image_count": 22,
           "expected_image_count": 6,
-          "missing_vs_pdf": 22,
-          "missing_vs_expected": 6,
-          "unexpected_vs_expected": 0
+          "missing_vs_pdf": 0,
+          "missing_vs_expected": 0,
+          "unexpected_vs_expected": 16
         },
         "epub_validity": {
           "available": true,
@@ -5431,42 +5422,42 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.1257220000261441
+      "duration_seconds": 0.25900658301543444
     }
   ],
   "failed_books": [
     {
       "book_id": "book-with-images_966108",
       "category": "book-with-images",
-      "score": 16.9,
+      "score": 23.0,
       "gates": [],
       "error": null
     },
     {
       "book_id": "book-with-images_ankaranin-trekking-rotalari",
       "category": "book-with-images",
-      "score": 21.0,
+      "score": 27.8,
       "gates": [],
       "error": null
     },
     {
       "book_id": "book-with-images_astronomi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 44.2,
+      "score": 49.2,
       "gates": [],
       "error": null
     },
     {
       "book_id": "book-with-images_bilim-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 50.4,
+      "score": 57.1,
       "gates": [],
       "error": null
     },
     {
       "book_id": "book-with-images_dunya-tarihi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 52.3,
+      "score": 59.6,
       "gates": [],
       "error": null
     },
@@ -5482,21 +5473,14 @@
     {
       "book_id": "book-with-images_sanat-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 51.9,
+      "score": 59.0,
       "gates": [],
       "error": null
     },
     {
       "book_id": "complex-headings_tu-rkiye-sigorta-klavuz",
       "category": "complex-headings",
-      "score": 51.6,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "english_molecules",
-      "category": "english",
-      "score": 53.4,
+      "score": 58.8,
       "gates": [],
       "error": null
     },
@@ -5521,7 +5505,7 @@
     {
       "book_id": "mathematical_integral",
       "category": "mathematical",
-      "score": 31.7,
+      "score": 39,
       "gates": [
         "text_completeness_below_threshold"
       ],
@@ -5530,14 +5514,14 @@
     {
       "book_id": "mathematical_matematik-ders",
       "category": "mathematical",
-      "score": 31.9,
+      "score": 36.8,
       "gates": [],
       "error": null
     },
     {
       "book_id": "mathematical_order-integrations",
       "category": "mathematical",
-      "score": 49.4,
+      "score": 58.1,
       "gates": [],
       "error": null
     },
@@ -5562,7 +5546,7 @@
     {
       "book_id": "mathematical_ujma",
       "category": "mathematical",
-      "score": 29.2,
+      "score": 37.6,
       "gates": [],
       "error": null
     },
@@ -5576,14 +5560,14 @@
     {
       "book_id": "multilingual_azerice-kitap-2",
       "category": "multilingual",
-      "score": 27.7,
+      "score": 34.8,
       "gates": [],
       "error": null
     },
     {
       "book_id": "normal-text-novel_son-sans",
       "category": "normal-text-novel",
-      "score": 35.6,
+      "score": 39,
       "gates": [
         "text_completeness_below_threshold"
       ],
@@ -5592,7 +5576,7 @@
     {
       "book_id": "poor-quality-scan_dikenler-sehri",
       "category": "poor-quality-scan",
-      "score": 40.1,
+      "score": 52.6,
       "gates": [],
       "error": null
     },
@@ -5608,21 +5592,14 @@
     {
       "book_id": "scanned_001",
       "category": "scanned-novel",
-      "score": 31.2,
+      "score": 40.9,
       "gates": [],
       "error": null
     },
     {
       "book_id": "scanned_004",
       "category": "bad-ocr-layer",
-      "score": 25.2,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "scanned_005",
-      "category": "bad-ocr-layer",
-      "score": 27.6,
+      "score": 32.8,
       "gates": [],
       "error": null
     },
@@ -5645,7 +5622,7 @@
     {
       "book_id": "technical-with-code_cplus-conherince",
       "category": "technical-with-code",
-      "score": 42.5,
+      "score": 41.7,
       "gates": [],
       "error": null
     },
@@ -5661,7 +5638,7 @@
     {
       "book_id": "technical-with-code_progit",
       "category": "technical-with-code",
-      "score": 31.3,
+      "score": 39,
       "gates": [
         "text_completeness_below_threshold"
       ],
@@ -5670,7 +5647,7 @@
     {
       "book_id": "turkish_bilimsel-makale-nasil-yazilir",
       "category": "turkish",
-      "score": 39,
+      "score": 38.5,
       "gates": [
         "text_completeness_below_threshold"
       ],
@@ -5686,7 +5663,7 @@
     {
       "book_id": "two-column-academic_attention-is-all-you-need",
       "category": "two-column-academic",
-      "score": 19.6,
+      "score": 28.4,
       "gates": [],
       "error": null
     },
@@ -5700,14 +5677,14 @@
     {
       "book_id": "two-column-academic_farkindalik-gelistirme-programi",
       "category": "two-column-academic",
-      "score": 46.9,
+      "score": 55.6,
       "gates": [],
       "error": null
     },
     {
       "book_id": "two-column-academic_vibe-coding",
       "category": "two-column-academic",
-      "score": 43.6,
+      "score": 49.6,
       "gates": [],
       "error": null
     }

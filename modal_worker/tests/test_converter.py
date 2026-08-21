@@ -62,9 +62,36 @@ def test_convert_pdf_to_epub_falls_back_to_page_image_when_no_text_found(scanned
         assert image_entries, "Metni çıkarılamayan sayfa görsel olarak eklenmeli, atlanmamalı"
 
 
+def test_convert_pdf_to_epub_extracts_embedded_image_from_text_page(pdf_with_embedded_image_bytes):
+    """Metinle karışık, normal bir metin sayfasındaki gömülü görsel artık
+    çıkarılıp EPUB'a ekleniyor olmalı (hem metin hem görsel korunmalı).
+
+    Regresyon testi: eskiden `_extract_text_blocks` görsel blokları
+    (`block[6] != 0`) atlıyordu ve metin yolunda hiç görsel çıkarımı
+    yapılmıyordu — görseller yalnızca `diagram_pages`/tam-sayfa-görsel
+    fallback'inde korunuyordu (bkz. NOTES.md)."""
+    config = {"title": "Gorselli Kitap"}
+    result = convert_pdf_to_epub(pdf_with_embedded_image_bytes, config)
+
+    with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        image_entries = [name for name in archive.namelist() if "_img_" in name]
+        assert image_entries, "Metinle karışık gömülü görsel çıkarılıp eklenmeli"
+        assert image_entries[0].endswith(".png")
+
+        chapter_html = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
+        assert "gomulu bir gorsel var" in chapter_html.lower(), "Görsel eklenirken sayfanın metni kaybolmamalı"
+        assert "<img" in chapter_html
+
+
 def test_convert_pdf_to_epub_ocr_recovers_text_from_scanned_page(ocr_scanned_page_bytes):
     """Metin katmanı olmayan ama görselde okunabilir metin bulunan bir sayfada,
-    OCR kuruluysa gerçek metin çıkarılmalı — sayfa sessizce görsele düşmemeli."""
+    OCR kuruluysa gerçek metin çıkarılmalı — sayfa sessizce görsele düşmemeli.
+
+    Ayrıca (regresyon): taranmış bir sayfanın PDF içindeki "gömülü görseli"
+    genelde taramanın kendisi (tüm sayfayı kaplayan tek bir raster) olduğundan,
+    gömülü görsel çıkarımı (`extract_embedded_page_images`) bu sayfada
+    ÇALIŞMAMALI — yoksa OCR'lanan metnin altına aynı sayfanın gereksiz bir
+    kopyası eklenir."""
     config = {"title": "OCR Kitap"}
     result = convert_pdf_to_epub(ocr_scanned_page_bytes, config)
 
@@ -72,8 +99,8 @@ def test_convert_pdf_to_epub_ocr_recovers_text_from_scanned_page(ocr_scanned_pag
         chapter_html = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
         assert "hello" in chapter_html.lower(), "OCR ile çıkarılan metin bölüm HTML'inde görünmeli"
 
-        image_entries = [name for name in archive.namelist() if name.endswith(".jpg")]
-        assert not image_entries, "Gerçek OCR metni bulunduğunda sayfa görsele düşmemeli"
+        image_entries = [name for name in archive.namelist() if name.startswith("EPUB/images/")]
+        assert not image_entries, "Gerçek OCR metni bulunduğunda sayfa görsele/gömülü-görsele düşmemeli"
 
 
 def test_detect_chapters_reads_embedded_toc(pdf_with_toc_bytes):

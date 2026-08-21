@@ -491,6 +491,77 @@ def page_to_image_bytes(doc, page_index: int, dpi: int = 200, quality: int = 90)
     return output.getvalue()
 
 
+MIN_EMBEDDED_IMAGE_DIMENSION = 40  # bu boyuttan (piksel) küçük gömülü görseller ikon/madde imi/süsleme sayılıp atlanır
+
+_EPUB_CORE_IMAGE_MEDIA_TYPES = {
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "gif": "image/gif",
+}
+
+
+def extract_embedded_page_images(doc, page_index: int, page_num: int) -> list[tuple[str, bytes, str]]:
+    """Sayfadaki, metinle karışık gömülü görselleri (fotoğraf/figür/diyagram)
+    çıkarır -- `(dosya adı, bayt, media_type)` üçlüleri döner.
+
+    Önceden `_extract_text_blocks` yalnızca metin bloklarını işliyordu
+    (`block[6] != 0` filtresiyle görsel bloklar atlanıyordu) ve normal metin
+    sayfalarındaki gömülü görseller hiç çıkarılmıyordu (yalnızca
+    `diagram_pages`/tam-sayfa-görsel fallback'inde korunuyorlardı) — bkz.
+    NOTES.md. Bu fonksiyon o boşluğu dolduruyor.
+
+    İki savunma: (1) küçük ikon/madde imi/süsleme görselleri
+    (`MIN_EMBEDDED_IMAGE_DIMENSION` altı) atlanır -- her sayfada onlarca
+    küçük dekoratif görsel olabilir, bunları birer `<img>` yapmak gürültü
+    yaratır. (2) EPUB'ın çekirdek medya tiplerinde olmayan formatlar (ör.
+    JP2/JPX, CMYK JPEG) Pillow ile JPEG'e yeniden kodlanır; Pillow da
+    açamazsa (bozuk/desteklenmeyen kodek) o görsel sessizce atlanır -- tek
+    bozuk bir görsel yüzünden tüm sayfanın metni kaybolmamalı."""
+    images: list[tuple[str, bytes, str]] = []
+    seen_xrefs: set[int] = set()
+    page = doc[page_index]
+
+    for img_index, img in enumerate(page.get_images(full=True)):
+        xref = img[0]
+        if xref in seen_xrefs:
+            continue
+        seen_xrefs.add(xref)
+
+        width, height = img[2], img[3]
+        if width < MIN_EMBEDDED_IMAGE_DIMENSION or height < MIN_EMBEDDED_IMAGE_DIMENSION:
+            continue
+
+        try:
+            extracted = doc.extract_image(xref)
+        except Exception as exc:
+            logger.warning("Sayfa %s: gömülü görsel (xref=%s) çıkarılamadı: %s", page_num, xref, exc)
+            continue
+
+        ext = (extracted.get("ext") or "").lower()
+        image_bytes = extracted["image"]
+        media_type = _EPUB_CORE_IMAGE_MEDIA_TYPES.get(ext)
+        if media_type is None:
+            try:
+                pil_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+                buf = io.BytesIO()
+                pil_image.save(buf, format="JPEG", quality=90, optimize=True)
+                image_bytes = buf.getvalue()
+                ext = "jpg"
+                media_type = "image/jpeg"
+            except Exception as exc:
+                logger.warning(
+                    "Sayfa %s: gömülü görsel (xref=%s, format=%s) Pillow ile açılamadı, atlandı: %s",
+                    page_num, xref, ext or "bilinmiyor", exc,
+                )
+                continue
+
+        img_name = f"images/page_{page_num}_img_{img_index}.{ext}"
+        images.append((img_name, image_bytes, media_type))
+
+    return images
+
+
 # ---------------------------------------------------------------------------
 # Otomatik tespit (bölümler / başlık / yazar) — `/analyze` ve plan fazı kullanır
 # ---------------------------------------------------------------------------
@@ -888,7 +959,7 @@ def plan_conversion(pdf_bytes: bytes, config: dict[str, Any]) -> PlanResult:
 class PageResult:
     page_num: int
     html: str
-    images: list[tuple[str, bytes]] = field(default_factory=list)
+    images: list[tuple[str, bytes, str]] = field(default_factory=list)  # (dosya adı, bayt, media_type)
 
 
 def process_page(
@@ -917,11 +988,11 @@ def process_page(
     bottom_margin_ratio = config.get("footer_margin_ratio", HEADER_FOOTER_DEFAULT_MARGIN_RATIO)
 
     html_parts: list[str] = []
-    images: list[tuple[str, bytes]] = []
+    images: list[tuple[str, bytes, str]] = []
 
     if page_num in diagram_pages:
         img_name = f"images/page_{page_num}_diagram.jpg"
-        images.append((img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality)))
+        images.append((img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality), "image/jpeg"))
         html_parts.append(f'<img src="{img_name}" alt="Şema/tablo - sayfa {page_num}" />')
 
     text = extract_page_text(
@@ -930,6 +1001,12 @@ def process_page(
         top_margin_ratio=top_margin_ratio,
         bottom_margin_ratio=bottom_margin_ratio,
     )
+    # Gömülü metin katmanı yoksa (taranmış sayfa) OCR'a düşülüyor -- bu durumda
+    # sayfanın PDF içindeki "gömülü görseli" genelde taramanın kendisi (tek,
+    # tüm sayfayı kaplayan bir raster XObject) olduğundan, aşağıdaki gömülü
+    # görsel çıkarımı bu sayfalarda ATLANMALI -- yoksa OCR'lanan metnin hemen
+    # altına aynı sayfanın gereksiz bir kopyası (tam sayfa görsel) eklenir.
+    is_scanned_page = text is None
     if text is None:
         text = try_ocr_page(
             doc,
@@ -944,7 +1021,9 @@ def process_page(
             # kurulu değil vb.) — sayfayı atlarsak içerik tamamen kaybolur,
             # bu yüzden visual_mode ayarından bağımsız olarak görsel ekliyoruz.
             img_name = f"images/page_{page_num}.jpg"
-            images.append((img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality)))
+            images.append(
+                (img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality), "image/jpeg")
+            )
             caption = page_captions.get(str(page_num))
             html_parts.append(build_visual_page_html(page_num, img_name, caption=caption))
             logger.info(
@@ -967,7 +1046,9 @@ def process_page(
     use_visual = visual_mode or (auto_visual_mode and should_use_visual_page(config, text, page_num))
     if use_visual:
         img_name = f"images/page_{page_num}.jpg"
-        images.append((img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality)))
+        images.append(
+            (img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality), "image/jpeg")
+        )
         caption = page_captions.get(str(page_num))
         html_parts.append(build_visual_page_html(page_num, img_name, caption=caption))
         return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
@@ -976,6 +1057,17 @@ def process_page(
     block_html = text_to_html_blocks(cleaned)
     if block_html:
         html_parts.append(block_html)
+
+    # Sayfa normal metin olarak işlendi (görsele düşmedi) -- ama metinle
+    # karışık gömülü görseller (fotoğraf/figür/diyagram) olabilir, bunlar
+    # `extract_page_text`'in metin-blok filtresinde hiç görünmüyordu (bkz.
+    # NOTES.md). `diagram_pages`'te zaten tüm sayfa görsel olarak eklendiği
+    # için, taranmış sayfalarda da (yukarıdaki `is_scanned_page` notuna bkz.)
+    # burada tekrar çıkarmıyoruz.
+    if not is_scanned_page and page_num not in diagram_pages:
+        for img_name, img_bytes, media_type in extract_embedded_page_images(doc, page_index, page_num):
+            images.append((img_name, img_bytes, media_type))
+            html_parts.append(f'<img src="{img_name}" alt="Sayfa {page_num} görseli" />')
 
     return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
 
@@ -1054,10 +1146,10 @@ def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
             pr = by_page.get(page_num)
             if pr is None:
                 continue
-            for img_name, img_bytes in pr.images:
+            for img_name, img_bytes, media_type in pr.images:
                 book.add_item(
                     epub.EpubItem(
-                        uid=img_name.replace("/", "_"), file_name=img_name, media_type="image/jpeg", content=img_bytes
+                        uid=img_name.replace("/", "_"), file_name=img_name, media_type=media_type, content=img_bytes
                     )
                 )
             if pr.html:

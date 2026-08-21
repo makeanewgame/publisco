@@ -323,14 +323,81 @@ def _ocr_with_retry(doc, page_index: int, ocr_fn, dpi: int = 300) -> Any | None:
     return None
 
 
-def try_ocr_page(doc, page_index: int, lang: str = "tur+eng", dpi: int = 300) -> str | None:
-    """pytesseract kuruluysa OCR dener; kurulu değilse sessizce None döner."""
+def _extract_ocr_text_blocks(
+    image: Any,
+    lang: str,
+    blacklist: set[str] | None = None,
+    top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+    bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+) -> list[str]:
+    """OCR çıktısını (`image_to_data`, satır+koordinat+confidence) okuyup gömülü-metin
+    yolundaki (`_extract_text_blocks`) ile aynı kenar payı/kara liste/gürültü
+    filtrelerini uygular. `image_to_string` (eski davranış) hiç filtre uygulamadığı
+    için koşu başlığı/yazar OCR sayfalarında sızıyordu (bkz. NOTES.md)."""
+    import pytesseract
+    from pytesseract import Output
+
+    data = pytesseract.image_to_data(image, lang=lang, output_type=Output.DICT)
+    image_height = image.height
+
+    lines: dict[tuple[int, int, int], list[tuple[int, int, int, int, str]]] = {}
+    for i in range(len(data.get("text", []))):
+        text = data["text"][i].strip()
+        if not text:
+            continue
+        try:
+            if float(data["conf"][i]) < 0:
+                continue
+        except (TypeError, ValueError):
+            continue
+        key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
+        left, top, width, height = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
+        lines.setdefault(key, []).append((left, top, left + width, top + height, text))
+
+    kept: list[tuple[float, float, float, float, str]] = []
+    for key in sorted(lines.keys()):
+        words = lines[key]
+        x0 = min(w[0] for w in words)
+        y0 = min(w[1] for w in words)
+        x1 = max(w[2] for w in words)
+        y1 = max(w[3] for w in words)
+        text = " ".join(w[4] for w in words)
+
+        block = (x0, y0, x1, y1)
+        if _is_in_margin(block, image_height, top_margin_ratio, bottom_margin_ratio) and len(text) <= HEADER_FOOTER_MAX_CHARS:
+            continue
+        if _is_blacklisted(text, blacklist or set()):
+            continue
+        if _is_noise_block(text):
+            continue
+        kept.append((x0, y0, x1, y1, text))
+
+    return _merge_blocks_into_paragraphs(kept)
+
+
+def try_ocr_page(
+    doc,
+    page_index: int,
+    lang: str = "tur+eng",
+    dpi: int = 300,
+    blacklist: set[str] | None = None,
+    top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+    bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+) -> str | None:
+    """pytesseract kuruluysa OCR dener (gömülü-metin yolundakiyle aynı kenar payı/kara
+    liste filtreleriyle); kurulu değilse sessizce None döner."""
     try:
-        import pytesseract
+        import pytesseract  # noqa: F401
     except ImportError:
         return None
 
-    return _ocr_with_retry(doc, page_index, lambda img: pytesseract.image_to_string(img, lang=lang), dpi=dpi)
+    def _ocr_fn(img):
+        paragraphs = _extract_ocr_text_blocks(
+            img, lang, blacklist=blacklist, top_margin_ratio=top_margin_ratio, bottom_margin_ratio=bottom_margin_ratio
+        )
+        return "\n\n".join(paragraphs)
+
+    return _ocr_with_retry(doc, page_index, _ocr_fn, dpi=dpi)
 
 
 # ---------------------------------------------------------------------------
@@ -864,7 +931,14 @@ def process_page(
         bottom_margin_ratio=bottom_margin_ratio,
     )
     if text is None:
-        text = try_ocr_page(doc, page_index, ocr_lang)
+        text = try_ocr_page(
+            doc,
+            page_index,
+            ocr_lang,
+            blacklist=header_blacklist,
+            top_margin_ratio=top_margin_ratio,
+            bottom_margin_ratio=bottom_margin_ratio,
+        )
         if not text or not text.strip():
             # Ne gömülü metin ne de OCR sonucu var (taranmış sayfa, OCR
             # kurulu değil vb.) — sayfayı atlarsak içerik tamamen kaybolur,
@@ -879,7 +953,14 @@ def process_page(
             )
             return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
     elif force_ocr:
-        ocr_text = try_ocr_page(doc, page_index, ocr_lang)
+        ocr_text = try_ocr_page(
+            doc,
+            page_index,
+            ocr_lang,
+            blacklist=header_blacklist,
+            top_margin_ratio=top_margin_ratio,
+            bottom_margin_ratio=bottom_margin_ratio,
+        )
         if ocr_text:
             text = ocr_text
 
@@ -975,7 +1056,9 @@ def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
                 continue
             for img_name, img_bytes in pr.images:
                 book.add_item(
-                    epub.EpubItem(uid=img_name, file_name=img_name, media_type="image/jpeg", content=img_bytes)
+                    epub.EpubItem(
+                        uid=img_name.replace("/", "_"), file_name=img_name, media_type="image/jpeg", content=img_bytes
+                    )
                 )
             if pr.html:
                 html_parts.append(pr.html)

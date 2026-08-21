@@ -45,6 +45,7 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False) -> BookResult:
         reference_text=book.reference_text,
         must_include_phrases=book.must_include_phrases,
         must_exclude_phrases=book.must_exclude_phrases,
+        exclude_check_text=content.full_text_excluding_title,
     )
 
     structure = evaluate_structure(

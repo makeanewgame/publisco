@@ -26,7 +26,9 @@ class _ChapterHTMLParser(HTMLParser):
         super().__init__()
         self.paragraphs: list[str] = []
         self.headings: list[tuple[int, str]] = []
-        self.ordered_blocks: list[str] = []  # p + h1/h2 metni, belge sırasıyla (full_text için)
+        # p + h1/h2 metni, belge sırasıyla, (seviye, metin) çiftleri olarak
+        # (full_text ve full_text_excluding_title için) -- seviye 0 = paragraf.
+        self.ordered_blocks: list[tuple[int, str]] = []
         self.image_count = 0
         self._capture_tag: str | None = None
         self._buffer: list[str] = []
@@ -46,11 +48,12 @@ class _ChapterHTMLParser(HTMLParser):
         if tag == self._capture_tag:
             text = "".join(self._buffer).strip()
             if text:
+                level = _HEADING_TAGS.get(tag, 0)
                 if tag == "p":
                     self.paragraphs.append(text)
                 else:
-                    self.headings.append((_HEADING_TAGS[tag], text))
-                self.ordered_blocks.append(text)
+                    self.headings.append((level, text))
+                self.ordered_blocks.append((level, text))
             self._capture_tag = None
             self._buffer = []
 
@@ -58,6 +61,7 @@ class _ChapterHTMLParser(HTMLParser):
 @dataclass
 class EpubContent:
     full_text: str
+    full_text_excluding_title: str
     paragraphs: list[str] = field(default_factory=list)
     headings: list[tuple[int, str]] = field(default_factory=list)
     chapter_titles: list[str] = field(default_factory=list)
@@ -71,7 +75,7 @@ def read_epub(epub_bytes: bytes) -> EpubContent:
 
     paragraphs: list[str] = []
     headings: list[tuple[int, str]] = []
-    ordered_blocks: list[str] = []
+    ordered_blocks: list[tuple[int, str]] = []
     content_image_count = 0
     chapter_count = 0
 
@@ -94,10 +98,21 @@ def read_epub(epub_bytes: bytes) -> EpubContent:
     # `text_to_html_blocks` içeriği <h2>'ye sınıflandırabiliyor (bkz.
     # converter.text_to_html_blocks kısa-satır heuristiği) -- metin
     # bütünlüğü metrikleri bu içeriği kaçırmamalı.
-    full_text = "\n\n".join(ordered_blocks)
+    full_text = "\n\n".join(text for _level, text in ordered_blocks)
+
+    # `full_text_excluding_title`, yalnızca h1'i (bölüm başlığı) dışarıda
+    # bırakır -- `assemble_epub` (converter.py) her bölüm için TAM OLARAK bir
+    # kez, kitabın kendi başlığını `<h1>` yapıyor (TOC'suz kitaplarda bu,
+    # `must_exclude_phrases`'te sıkça yer alan kitap başlığıyla birebir
+    # örtüşüyor). h2 hariç tutulmuyor çünkü heterojen (bazen gerçek alt
+    # başlık, bazen `text_to_html_blocks`'un kısa-satır heuristiğiyle
+    # yanlış sınıflandırdığı gövde metni) -- yalnızca h1 hiçbir zaman gövde
+    # içeriği taşımıyor, her zaman `chap.title`'ın birebir kopyası.
+    full_text_excluding_title = "\n\n".join(text for level, text in ordered_blocks if level != 1)
 
     return EpubContent(
         full_text=full_text,
+        full_text_excluding_title=full_text_excluding_title,
         paragraphs=paragraphs,
         headings=headings,
         chapter_titles=chapter_titles,

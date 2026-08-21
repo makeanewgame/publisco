@@ -82,6 +82,60 @@ def test_phrase_include_and_exclude():
     assert result.phrase_exclude_violations == ["kosu basligi"]
 
 
+def test_exclude_check_text_ignores_leaked_h1_but_still_catches_body_repeats():
+    """`exclude_check_text` verilmezse davranış değişmemeli (geriye uyumluluk)."""
+    result = evaluate_text_completeness(
+        generated_text="Kitap Basligi\n\nBu bir paragraf.",
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Kitap Basligi"],
+    )
+    assert result.phrase_exclude_violations == ["Kitap Basligi"]
+
+    result_with_exclude_text = evaluate_text_completeness(
+        generated_text="Kitap Basligi\n\nBu bir paragraf.",
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Kitap Basligi"],
+        exclude_check_text="Bu bir paragraf.",
+    )
+    assert result_with_exclude_text.phrase_exclude_violations == []
+
+
+def test_single_chapter_title_not_treated_as_leaked_exclude_phrase(sample_pdf_bytes):
+    """TOC'suz kitaplarda pipeline tek bölümü kitabın kendi başlığıyla adlandırıp
+    bunu tam olarak bir kez `<h1>` yapar (bkz. converter.py `plan_conversion`
+    fallback'i) -- golden veride koşu başlığı sızıntısını yakalamak için
+    `must_exclude_phrases`'e kitabın kendi adı konursa, bu meşru tek seferlik
+    başlık sahte bir ihlal sayılmamalı; ama aynı ifade gövde paragraflarında
+    (h1 dışında) gerçekten tekrar ederse hâlâ yakalanmalı."""
+    title = "Cok Ozel Bir Kitap Basligi"
+    artifact = run_conversion(sample_pdf_bytes, {"title": title}, "test-book")
+    assert artifact.error is None
+
+    content = read_epub(artifact.epub_bytes)
+    assert title.casefold() in content.full_text.casefold()
+    assert title.casefold() not in content.full_text_excluding_title.casefold()
+
+    title_result = evaluate_text_completeness(
+        generated_text=content.full_text,
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=[title],
+        exclude_check_text=content.full_text_excluding_title,
+    )
+    assert title_result.phrase_exclude_violations == []
+
+    body_result = evaluate_text_completeness(
+        generated_text=content.full_text,
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["test paragrafidir"],  # sample_pdf_bytes'ın iki sayfasında da gövde metninde geçiyor
+        exclude_check_text=content.full_text_excluding_title,
+    )
+    assert body_result.phrase_exclude_violations == ["test paragrafidir"]
+
+
 def test_ngram_overlap_drops_on_reordered_text():
     """İki-sütun okuma sırası bozulması: kelime kümesi aynı kalsa bile
     n-gram (sıra duyarlı) örtüşmesi düşmeli."""

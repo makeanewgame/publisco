@@ -35,8 +35,18 @@ class TextCompletenessResult:
 
 
 def _check_phrases(
-    generated_text: str, must_include: list[str], must_exclude: list[str]
+    generated_text: str,
+    exclude_check_text: str,
+    must_include: list[str],
+    must_exclude: list[str],
 ) -> tuple[float | None, list[str], list[str]]:
+    """`exclude_check_text` ayrı tutulur çünkü `must_exclude_phrases` "sızan koşu
+    başlığı" niyetiyle yazılır, ama kitabın kendi başlığı TOC'suz kitaplarda
+    bölüm `<h1>`'i olarak tam olarak bir kez meşru şekilde göründüğünden, tüm
+    metin (h1 dahil) üzerinde düz substring araması bu meşru başlığı sahte bir
+    ihlal sayar. Çağıran (`evaluate.py`) h1'i çıkarılmış bir metin geçebilir;
+    geçmezse `generated_text` ile aynı davranır (bkz. `evaluate_text_completeness`
+    varsayılanı)."""
     normalized_generated = normalize_phrase(generated_text)
 
     include_misses = [p for p in must_include if normalize_phrase(p) not in normalized_generated]
@@ -44,7 +54,8 @@ def _check_phrases(
     if must_include:
         include_recall = (len(must_include) - len(include_misses)) / len(must_include)
 
-    exclude_violations = [p for p in must_exclude if normalize_phrase(p) in normalized_generated]
+    normalized_exclude_check = normalize_phrase(exclude_check_text)
+    exclude_violations = [p for p in must_exclude if normalize_phrase(p) in normalized_exclude_check]
 
     return include_recall, include_misses, exclude_violations
 
@@ -83,9 +94,13 @@ def evaluate_text_completeness(
     reference_text: str | None,
     must_include_phrases: list[str],
     must_exclude_phrases: list[str],
+    exclude_check_text: str | None = None,
 ) -> TextCompletenessResult:
     include_recall, include_misses, exclude_violations = _check_phrases(
-        generated_text, must_include_phrases, must_exclude_phrases
+        generated_text,
+        exclude_check_text if exclude_check_text is not None else generated_text,
+        must_include_phrases,
+        must_exclude_phrases,
     )
 
     result = TextCompletenessResult(

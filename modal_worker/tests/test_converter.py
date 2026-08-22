@@ -202,6 +202,35 @@ def test_extract_page_text_preserves_paragraph_breaks(pdf_with_two_paragraphs_by
     assert "\n\n" in text
 
 
+def test_extract_page_text_reorders_two_column_layout(pdf_with_two_columns_bytes):
+    """İki sütunlu bir sayfada okuma sırası önce tüm sol sütun, sonra tüm
+    sağ sütun olmalı -- `get_text('blocks', sort=True)`'in varsayılan
+    y-sonra-x sıralaması bunu satır satır (row-major) karıştırırdı.
+
+    Regresyon testi: fixture bloklarını kasıtlı olarak önce SAĞ sonra SOL
+    sütun sırasıyla ekliyor, PDF'in ham obje sırasının etkisiz olduğunu
+    doğrulamak için."""
+    doc = pymupdf.open(stream=pdf_with_two_columns_bytes, filetype="pdf")
+    text = extract_page_text(doc[0])
+    doc.close()
+
+    assert text is not None
+    for line in [
+        "Sol sutun ilk paragraf",
+        "Sol sutun ikinci paragraf",
+        "Sol sutun ucuncu paragraf",
+        "Sag sutun ilk paragraf",
+        "Sag sutun ikinci paragraf",
+        "Sag sutun ucuncu paragraf",
+    ]:
+        assert line in text, f"'{line}' metinde bulunamadı"
+
+    # sol sütunun SON satırı bile sağ sütunun İLK satırından önce gelmeli
+    left_last_idx = text.index("Sol sutun ucuncu paragraf")
+    right_first_idx = text.index("Sag sutun ilk paragraf")
+    assert left_last_idx < right_first_idx, "sol sütun tamamen sağ sütundan önce gelmeli"
+
+
 def test_convert_pdf_to_epub_keeps_paragraphs_as_separate_p_tags(pdf_with_two_paragraphs_bytes):
     config = {"title": "Paragraf Testi"}
     result = convert_pdf_to_epub(pdf_with_two_paragraphs_bytes, config)

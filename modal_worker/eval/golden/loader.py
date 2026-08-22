@@ -22,6 +22,34 @@ GOLDEN_DIR = Path(__file__).resolve().parent
 MANIFEST_PATH = GOLDEN_DIR / "manifest.json"
 BOOKS_DIR = GOLDEN_DIR / "books"
 
+# Aktif geliştirme sırasında hızlı doğrulama için: her kategoriden HIZLI bir
+# temsilci (bkz. `baselines/baseline.json`'daki `duration_seconds` -- en
+# yavaş 8 kitap tüm 50 kitaplık koşunun ~%80'ini oluşturuyor, çoğunlukla ağır
+# OCR'lı taranmış kitaplar). `poor-quality-scan` kategorisinin TEK kitabı
+# (~295sn) hız uğruna dışarıda bırakıldı, --fast'te bu kategori hiç temsil
+# edilmiyor. Toplam süre ~1.5 dakika (tam koşu ~1 saate kadar çıkabiliyor).
+#
+# Bu bir regresyon GARANTİSİ değil -- commit/PR öncesi hâlâ argümansız tam
+# koşu (`pnpm test:conversion`) çalıştırılmalı; --fast yalnızca "büyük ölçüde
+# bozmadım mı" sorusuna saniyeler içinde cevap vermek için.
+FAST_SUBSET_BOOK_IDS = frozenset(
+    {
+        "scanned_003",  # bad-ocr-layer
+        "scanned_006",  # book-with-footnotes
+        "book-with-images_966108",  # book-with-images
+        "book-with-tables_table",  # book-with-tables
+        "complex-headings_tu-rkiye-sigorta-klavuz",  # complex-headings
+        "english_molecules",  # english
+        "mathematical_singular-integrals",  # mathematical (unsupported=true)
+        "multilingual_arapc-a-kitap",  # multilingual
+        "normal-text-novel_son-sans",  # normal-text-novel
+        "scanned_002",  # scanned-novel
+        "technical-with-code_cplus-conherince",  # technical-with-code
+        "turkish_bilimsel-makale-nasil-yazilir",  # turkish
+        "two-column-academic_farkindalik-gelistirme-programi",  # two-column-academic
+    }
+)
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -92,7 +120,9 @@ def load_real_books() -> list[GoldenBook]:
     return books
 
 
-def load_golden_books(smoke_only: bool = False) -> list[GoldenBook]:
+def load_golden_books(smoke_only: bool = False, fast_only: bool = False) -> list[GoldenBook]:
     if smoke_only:
         return load_synthetic_books()
+    if fast_only:
+        return load_synthetic_books() + [b for b in load_real_books() if b.id in FAST_SUBSET_BOOK_IDS]
     return load_synthetic_books() + load_real_books()

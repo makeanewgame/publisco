@@ -80,6 +80,41 @@ def pdf_with_embedded_image_bytes() -> bytes:
 
 
 @pytest.fixture
+def pdf_with_two_columns_bytes() -> bytes:
+    """İki sütunlu bir sayfa (akademik makale düzeni) üretir -- sol sütunda 3,
+    sağ sütunda 3 ayrı blok. Bloklar kasıtlı olarak önce SAĞ sonra SOL sütun
+    sırasıyla eklenir (PDF içindeki ham obje sırası y-koordinatıyla ilgisiz
+    olabilir) -- okuma sırası düzeltmesinin gerçekten y-sonra-x/iç sıraya
+    değil, sütuna göre çalıştığını test eder."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)  # A4
+
+    right_lines = [
+        "Sag sutun ilk paragraf metni burada baslar.",
+        "Sag sutun ikinci paragraf metni burada.",
+        "Sag sutun ucuncu paragraf metni burada.",
+    ]
+    left_lines = [
+        "Sol sutun ilk paragraf metni burada baslar.",
+        "Sol sutun ikinci paragraf metni burada.",
+        "Sol sutun ucuncu paragraf metni burada.",
+    ]
+
+    y = 100
+    for text in right_lines:
+        page.insert_text((320, y), text, fontsize=12)
+        y += 100
+    y = 100
+    for text in left_lines:
+        page.insert_text((72, y), text, fontsize=12)
+        y += 100
+
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
 def blank_pdf_bytes() -> bytes:
     """Ne metni ne metadata'sı olan, boş bir sayfalık bir PDF üretir."""
     doc = pymupdf.open()

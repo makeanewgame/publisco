@@ -3,6 +3,7 @@
 Kullanım:
     python -m eval.run                        # tüm golden set, baseline ile karşılaştır
     python -m eval.run --smoke                 # yalnız sentetik smoke kitaplar
+    python -m eval.run --fast                  # her kategoriden hızlı bir temsilci (~1.5dk, regresyon garantisi değil)
     python -m eval.run --book book-007         # tek kitap + tam diagnostic dökümü
     python -m eval.run --save-baseline         # bu koşuyu yeni baseline yap
     python -m eval.run --variant llm-v1        # sonuçları bir variant etiketiyle kaydet
@@ -63,6 +64,11 @@ def _run_compare(path_a: str, path_b: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Publisco conversion evaluation")
     parser.add_argument("--smoke", action="store_true", help="Yalnız sentetik smoke kitapları çalıştır")
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Her kategoriden hızlı bir temsilci + smoke kitaplar (~1.5dk) -- hızlı doğrulama için, regresyon garantisi değil",
+    )
     parser.add_argument("--book", metavar="BOOK_ID", help="Yalnız tek bir kitabı çalıştır, tam diagnostic bas")
     parser.add_argument("--variant", default="local", help="Sonucu bu etiketle kaydet (ör. llm-v1)")
     parser.add_argument("--save-baseline", action="store_true", help="Bu koşuyu yeni baseline yap")
@@ -78,7 +84,7 @@ def main() -> None:
 
     _check_optional_tools()
 
-    books = load_golden_books(smoke_only=args.smoke)
+    books = load_golden_books(smoke_only=args.smoke, fast_only=args.fast)
     if args.book:
         books = [b for b in books if b.id == args.book]
         if not books:

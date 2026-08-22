@@ -30,7 +30,8 @@ içinde üretilen 3 kitapla mekaniği doğrular -- her zaman çalışır.
 ## Komutlar
 
 ```bash
-pnpm test:conversion                        # tüm golden set, baseline ile karşılaştır
+pnpm test:conversion                        # tüm golden set, baseline ile karşılaştır (~1 saate kadar sürebilir)
+pnpm test:conversion --fast                 # her kategoriden hızlı bir temsilci (~1.5dk) -- hızlı doğrulama, regresyon garantisi değil
 pnpm test:conversion --smoke                # yalnız sentetik smoke kitaplar
 pnpm test:conversion --book book-007        # tek kitap + tam diagnostic
 pnpm test:conversion --save-baseline        # bu koşuyu yeni baseline yap

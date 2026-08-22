@@ -174,42 +174,142 @@ def _merge_blocks_into_paragraphs(blocks: list[tuple[float, float, float, float,
     hizaya gore belirgin sekilde icerideyse, bu yeni bir paragrafin ilk satiridir
     (klasik roman dizgisinde standart paragraf-basi girintisi);
     (2) anormal dikey bosluk -- girinti kullanmayan (bos-satir ile ayrilan) dizgi
-    stillerini de yakalamak icin ikincil bir agdir."""
+    stillerini de yakalamak icin ikincil bir agdir.
+
+    Bu iki sinyal yalnizca TEK SATIRLIK bloklara uygulanir. Temiz/LaTeX
+    kaynakli akademik PDF'lerde PyMuPDF bir blogu zaten COK SATIRLI (kendi
+    icinde "\n" ile birlesmis, tum bir paragraf) donduruyor -- boyle bir blok
+    zaten tamamlanmis bir paragraf, komsularina girinti/bosluk sezgisiyle
+    EKLENMEMELI (gercek paragraflar-arasi bosluk, PyMuPDF'in kendi
+    paragraf-ici satir araligindan bile kucuk olabiliyor -- eklenirse iki
+    ayri paragraf tek bir dev paragrafa yanlislikla kaynasir, ayrica
+    cok-satirli bloklarin yuksekligi tek-satir istatistiklerini de bozar)."""
     if not blocks:
         return []
 
-    heights = [y1 - y0 for _, y0, _, y1, _ in blocks]
-    line_height = statistics.median(heights)
+    single_line_blocks = [b for b in blocks if "\n" not in b[4]]
+    if single_line_blocks:
+        heights = [y1 - y0 for _, y0, _, y1, _ in single_line_blocks]
+        line_height = statistics.median(heights)
 
-    gaps = [blocks[i][1] - blocks[i - 1][3] for i in range(1, len(blocks))]
-    normal_gaps = [g for g in gaps if g <= line_height * 1.5]
-    typical_gap = statistics.median(normal_gaps) if normal_gaps else line_height * 0.6
+        gaps = [single_line_blocks[i][1] - single_line_blocks[i - 1][3] for i in range(1, len(single_line_blocks))]
+        normal_gaps = [g for g in gaps if g <= line_height * 1.5]
+        typical_gap = statistics.median(normal_gaps) if normal_gaps else line_height * 0.6
 
-    flush_x0 = min(x0 for x0, _, _, _, _ in blocks)
-    indent_threshold = flush_x0 + max(PARAGRAPH_INDENT_MIN_PT, line_height * PARAGRAPH_INDENT_LINE_HEIGHT_RATIO)
+        flush_x0 = min(x0 for x0, _, _, _, _ in single_line_blocks)
+        indent_threshold = flush_x0 + max(PARAGRAPH_INDENT_MIN_PT, line_height * PARAGRAPH_INDENT_LINE_HEIGHT_RATIO)
+    else:
+        typical_gap = indent_threshold = None
 
     paragraphs: list[str] = []
     current_lines: list[str] = []
+    current_is_multiline = False
     prev_y1: float | None = None
 
     for x0, y0, _x1, y1, text in blocks:
-        is_new_paragraph = not current_lines
-        if not is_new_paragraph:
-            indented = x0 > indent_threshold
-            big_gap = (y0 - prev_y1) > typical_gap * PARAGRAPH_GAP_MULTIPLIER
-            is_new_paragraph = indented or big_gap
+        is_multiline = "\n" in text
+        if is_multiline or current_is_multiline:
+            is_new_paragraph = bool(current_lines)
+        else:
+            is_new_paragraph = not current_lines
+            if not is_new_paragraph:
+                indented = x0 > indent_threshold
+                big_gap = (y0 - prev_y1) > typical_gap * PARAGRAPH_GAP_MULTIPLIER
+                is_new_paragraph = indented or big_gap
 
         if is_new_paragraph and current_lines:
             paragraphs.append("\n".join(current_lines))
             current_lines = []
 
         current_lines.append(text)
+        current_is_multiline = is_multiline
         prev_y1 = y1
 
     if current_lines:
         paragraphs.append("\n".join(current_lines))
 
     return paragraphs
+
+
+COLUMN_SPAN_MARGIN_RATIO = 0.05  # sütun sınırına yakın bloklar için tolerans payı (sayfa genişliğinin oranı)
+COLUMN_MIN_BLOCKS_PER_SIDE = 3  # bu sayının altında sol/sağ blok varsa iki sütunlu sayılmaz (yanlış-pozitif riski)
+COLUMN_MIN_SIDE_BLOCK_RATIO = 0.6  # sol+sağ bloklar, sayfadaki tüm blokların en az bu oranını oluşturmalı
+
+
+def _split_into_reading_order_segments(
+    blocks: list[tuple[float, float, float, float, str]], page_width: float
+) -> list[list[tuple[float, float, float, float, str]]]:
+    """`page.get_text('blocks', sort=True)`'in kendi sıralaması yalnızca
+    y-sonra-x'e göre çalışır -- tek sütunlu sayfalarda doğru, ama İKİ
+    SÜTUNLU sayfalarda (akademik makaleler) sol/sağ sütun bloklarını aynı
+    yükseklikte satır satır iç içe geçirir; oysa gerçek okuma sırası önce
+    tüm sol sütun, sonra tüm sağ sütun olmalı.
+
+    Sayfa gerçekten iki sütunluysa (bloklar sayfa orta çizgisinin belirgin
+    biçimde solunda/sağında iki gruba ayrılıyorsa, her iki grupta da
+    yeterli blok varsa) bloku bu kurala göre "bölüm"lere ayırır -- tam
+    genişlik kaplayan bloklar (başlık, tam-genişlik şekil/tablo) bir
+    bölümü kapatıp kendi bölümü olarak araya girer. Sonucu tek bir düz
+    blok listesi DEĞİL, bölümlerin listesi olarak döner -- her bölüm
+    çağıran tarafından ayrı ayrı `_merge_blocks_into_paragraphs`'a
+    verilmeli, çünkü o fonksiyonun girinti tespiti tüm bloklarda TEK bir
+    global sol-hiza (`flush_x0`) varsayıyor; sütunlar aynı pas'ta
+    birleştirilirse sağ sütunun her satırı sol sütuna göre "girintili"
+    görünüp yanlışlıkla ayrı birer paragrafa bölünür.
+
+    İki sütunlu olduğu net değilse (tek sütun -- golden set'in büyük
+    çoğunluğu), TEK bir bölüm olarak, mevcut y-sonra-x sırasıyla döner —
+    yani tek sütunlu sayfalarda davranış hiç değişmez."""
+    if not blocks:
+        return []
+
+    x_mid = page_width / 2
+    span_margin = page_width * COLUMN_SPAN_MARGIN_RATIO
+
+    def _side(block: tuple[float, float, float, float, str]) -> str:
+        x0, _y0, x1, _y1, _text = block
+        if x1 <= x_mid + span_margin:
+            return "left"
+        if x0 >= x_mid - span_margin:
+            return "right"
+        return "span"
+
+    sides = [_side(b) for b in blocks]
+    left_count = sides.count("left")
+    right_count = sides.count("right")
+    is_two_column = (
+        left_count >= COLUMN_MIN_BLOCKS_PER_SIDE
+        and right_count >= COLUMN_MIN_BLOCKS_PER_SIDE
+        and (left_count + right_count) / len(blocks) >= COLUMN_MIN_SIDE_BLOCK_RATIO
+    )
+    if not is_two_column:
+        return [sorted(blocks, key=lambda b: (b[1], b[0]))]
+
+    ordered_indices = sorted(range(len(blocks)), key=lambda i: blocks[i][1])
+    segments: list[list[tuple[float, float, float, float, str]]] = []
+    section_left: list[tuple[float, float, float, float, str]] = []
+    section_right: list[tuple[float, float, float, float, str]] = []
+
+    def _flush_section() -> None:
+        if section_left:
+            segments.append(sorted(section_left, key=lambda b: b[1]))
+            section_left.clear()
+        if section_right:
+            segments.append(sorted(section_right, key=lambda b: b[1]))
+            section_right.clear()
+
+    for i in ordered_indices:
+        side = sides[i]
+        if side == "span":
+            _flush_section()
+            segments.append([blocks[i]])
+        elif side == "left":
+            section_left.append(blocks[i])
+        else:
+            section_right.append(blocks[i])
+    _flush_section()
+
+    return segments
 
 
 def _extract_text_blocks(
@@ -224,9 +324,11 @@ def _extract_text_blocks(
     Üç sezgisel filtre uygulanır: (1) sayfanın üst/alt kenar payındaki kısa
     bloklar (koşu başlığı/sayfa no) atlanır, (2) kitap başlığı/yazarıyla
     eşleşen bloklar (kara liste) atlanır, (3) hiç harf içermeyen kısa veya
-    tek karakterlik bloklar (gürültü) atlanır."""
+    tek karakterlik bloklar (gürültü) atlanır. Kalan bloklar, iki sütunlu
+    sayfalarda okuma sırasını koruyacak şekilde bölümlere ayrılır (bkz.
+    `_split_into_reading_order_segments`)."""
     try:
-        raw_blocks = page.get_text("blocks", sort=True)
+        raw_blocks = page.get_text("blocks", sort=False)
     except Exception:
         return []
 
@@ -247,7 +349,10 @@ def _extract_text_blocks(
             continue
         kept.append((block[0], block[1], block[2], block[3], text))
 
-    return _merge_blocks_into_paragraphs(kept)
+    paragraphs: list[str] = []
+    for segment in _split_into_reading_order_segments(kept, page.rect.width):
+        paragraphs.extend(_merge_blocks_into_paragraphs(segment))
+    return paragraphs
 
 
 def extract_page_text(

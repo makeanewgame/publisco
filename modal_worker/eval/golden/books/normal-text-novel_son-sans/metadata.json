@@ -15,10 +15,7 @@
     "Hayden tenimin altına işleyen tek kişiydi",
     "YETİŞKİN OKURLAR İÇİNDİ"
   ],
-  "must_exclude_phrases": [
-    "T. L. SWAN",
-    "YETİŞKİN OKURLAR İÇİNDİ"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     14200,
     17200

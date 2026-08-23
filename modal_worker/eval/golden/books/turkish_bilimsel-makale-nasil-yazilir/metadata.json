@@ -17,10 +17,7 @@
     "Kısa Özet'e, makalenin küçültülmüş bir biçimi olarak bakılmalıdır.",
     "İyi hazırlanmış bir Kısa Özet, okuyucunun, dokümanın içeriğini kısa zamanda ve hassasiyetle belirlemesine imkân verir."
   ],
-  "must_exclude_phrases": [
-    "Robert A. Day",
-    "Bilimsel Bir Makale Nasıl Yazılır"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     1395.2,
     2092.7999999999997

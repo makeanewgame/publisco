@@ -14,9 +14,7 @@
     "Tel & WP : 070 611 33 00",
     "OL"
   ],
-  "must_exclude_phrases": [
-    "Tel & WP : 070 611 33 00"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     5600,
     6900

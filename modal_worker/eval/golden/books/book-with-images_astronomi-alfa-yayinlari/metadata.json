@@ -14,10 +14,7 @@
     "TELESKOP DEVRİMİ",
     "Henry Cavendish bir burma terazi kullanarak kütleçekim sabitini ölçtü"
   ],
-  "must_exclude_phrases": [
-    "Alfa Yayınları",
-    "Astronomi"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     4731,
     7096

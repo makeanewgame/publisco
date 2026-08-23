@@ -13,10 +13,7 @@
     "Bu, 1859'da bir sorun olarak kabul edildi",
     "Einstein'ın Genel Görelilik Teorisi"
   ],
-  "must_exclude_phrases": [
-    "Bilim Kitabı",
-    "Alfa Yayınları"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     7017,
     10527

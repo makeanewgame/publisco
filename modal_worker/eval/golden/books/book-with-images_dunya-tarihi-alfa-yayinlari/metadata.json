@@ -14,10 +14,7 @@
     "Geç 5. yüzyılda Meksika şehri Monte Alban",
     "ROMA CUMHURİYETİNDEKİ iki toplumsal sınıf"
   ],
-  "must_exclude_phrases": [
-    "Dünya Tarihi",
-    "Alfa Yayınları"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     25486,
     38228

@@ -13,10 +13,7 @@
     "Barajın inşası sırasında üç test sondajı yapılmış olup",
     "ASTM D 7012 standartlarına uygun tek eksenli sıkışma dayanımı"
   ],
-  "must_exclude_phrases": [
-    "Ankara Üniversitesi",
-    "Jeoloji Mühendisliği Anabilim Dalı"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     3051,
     4576

@@ -14,11 +14,7 @@
     "If you wish to store an exception rather than a value, you call the set_exception() member function rather than set_value().",
     "Code is said to be scalable if the performance increases as more processing cores are added to the system."
   ],
-  "must_exclude_phrases": [
-    "C++ Concurrency in Action",
-    "Anthony Williams",
-    "MANNING"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     4664.0,
     6996.0

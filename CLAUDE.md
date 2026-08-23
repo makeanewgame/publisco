@@ -249,6 +249,7 @@ Before ending a turn that made code changes, do both of these:
 
 1. **NOTES.md** — if the work surfaced a new finding, TODO, bug, or follow-up that isn't already tracked there, add it under the right section (`Yapılacaklar` / `Sorunlar (Buglar)` / `Fikirler`). Skip this if nothing new came up — don't pad the file.
 2. **CLAUDE.md → "Sunucu Paketleri" (Modal Worker section)** — if the change added a new *system-level* dependency to `modal_worker/` (an `apt` package in `modal.Image.apt_install(...)`, a new OS binary a Python package shells out to — not a plain `pip_install` package), update that section. A Stop hook (`.claude/hooks/check-worker-deps.sh`) catches the common case (`modal_worker/main.py`/`requirements.txt` changed without `CLAUDE.md`) and will block with a reminder, but it can't tell *why* a package was added — use judgment for the OS-package/system dependency part specifically.
+3. **PDF→EPUB dönüşüm kalitesi işi (`modal_worker/eval/` odaklı fazlar)** — bu iş koluna dokunan bir görev bittiğinde `ROADMAP.md`'yi (öncelik sırası/sıradaki adım değiştiyse) ve tamamlanan bir bulgu varsa `TAMAMLANANLAR.md`'yi de güncelle — `NOTES.md`'yle birlikte üçü senkron kalmalı (bkz. `ROADMAP.md`'nin başındaki yöntem notu).
 
 ## 📞 Team Notes
 

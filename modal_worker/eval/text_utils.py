@@ -6,10 +6,22 @@ import re
 import unicodedata
 
 
+_QUOTE_VARIANTS = str.maketrans(
+    {
+        "‘": "'", "’": "'", "‚": "'", "‛": "'", "′": "'",
+        "“": '"', "”": '"', "„": '"', "‟": '"', "″": '"',
+    }
+)
+
+
 def normalize_phrase(text: str) -> str:
-    """Karşılaştırma için: unicode NFC + casefold + boşluk sadeleştirme.
+    """Karşılaştırma için: unicode NFC + casefold + boşluk sadeleştirme + tipografik
+    tırnak/apostrof varyantlarının (' ' " " vb.) düz ' / " karakterlerine indirgenmesi
+    (PDF'ler genelde tipografik tırnak kullanırken golden metadata'daki ifadeler düz
+    tırnakla yazılıyor -- bu fark olmasa da eşleşmeyi bozuyordu, bkz. NOTES.md).
     `must_include_phrases` / `must_exclude_phrases` kontrolünde kullanılır."""
     normalized = unicodedata.normalize("NFC", text)
+    normalized = normalized.translate(_QUOTE_VARIANTS)
     normalized = re.sub(r"\s+", " ", normalized).strip().casefold()
     return normalized
 

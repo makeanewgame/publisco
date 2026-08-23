@@ -202,6 +202,31 @@ def test_extract_page_text_preserves_paragraph_breaks(pdf_with_two_paragraphs_by
     assert "\n\n" in text
 
 
+def test_fix_mac_turkish_mojibake_corrects_known_substitutions():
+    from converter import _fix_mac_turkish_mojibake
+
+    garbled = "B‹L‹MSEL B‹R MAKALE, AﬁKAR, e¤itim, ba¤lant›"
+    fixed = _fix_mac_turkish_mojibake(garbled, has_macroman_font=True)
+
+    assert fixed == "BİLİMSEL BİR MAKALE, AŞKAR, eğitim, bağlantı"
+
+
+def test_fix_mac_turkish_mojibake_noop_without_macroman_font():
+    from converter import _fix_mac_turkish_mojibake
+
+    garbled = "B‹L‹MSEL"
+    assert _fix_mac_turkish_mojibake(garbled, has_macroman_font=False) == garbled
+
+
+def test_fix_mac_turkish_mojibake_noop_without_tell_characters():
+    from converter import _fix_mac_turkish_mojibake
+
+    # '¤' tek başına (ör. gerçek bir para birimi işareti) yanlış tetiklememeli --
+    # yalnızca güçlü işaretçiler (‹ › ﬁ ﬂ) varken düzeltme uygulanır.
+    text_with_currency_sign = "Fiyat: ¤100"
+    assert _fix_mac_turkish_mojibake(text_with_currency_sign, has_macroman_font=True) == text_with_currency_sign
+
+
 def test_extract_page_text_reorders_two_column_layout(pdf_with_two_columns_bytes):
     """İki sütunlu bir sayfada okuma sırası önce tüm sol sütun, sonra tüm
     sağ sütun olmalı -- `get_text('blocks', sort=True)`'in varsayılan

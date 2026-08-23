@@ -312,6 +312,54 @@ def _split_into_reading_order_segments(
     return segments
 
 
+# PyMuPDF, fontu 'MacRomanEncoding' sanıp eski Mac OS TÜRKÇE kod sayfasıyla
+# (yalnızca İ/ı/Ğ/ğ/Ş/ş'nin bulunduğu birkaç bayt konumunda standart Mac
+# Roman'dan farklı) üretilmiş PDF'leri yanlış çözünce ortaya çıkan karakterler
+# -- ör. 'B‹L‹MSEL' aslında 'BİLİMSEL'. Python'un mac_roman/mac_turkish
+# codec'leri arasında round-trip (encode+decode) DENENDİ ama PyMuPDF'in
+# kendi iç MacRomanEncoding tablosu (Euro işareti eklenmeden ÖNCEKİ klasik
+# Apple tablosu) Python'un güncel 'mac_roman' codec'inden bazı bayt
+# konumlarında farklı çıktı verdiğinden (ör. PyMuPDF '¤' U+00A4 basıyor,
+# Python'un tablosunda o bayt '€' U+20AC'a karşılık geliyor ve 'İ'ye
+# encode edilemiyor) round-trip bu kitapta sessizce başarısız oluyordu.
+# Bunun yerine gerçek kitap üzerinde ampirik olarak doğrulanmış doğrudan
+# karakter eşlemesi kullanılıyor (bkz. NOTES.md/TAMAMLANANLAR.md).
+_MAC_TURKISH_MOJIBAKE_MAP = {
+    "‹": "İ",  # U+2039 SINGLE LEFT-POINTING ANGLE QUOTATION MARK
+    "›": "ı",  # U+203A SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+    "ﬁ": "Ş",  # U+FB01 LATIN SMALL LIGATURE FI
+    "ﬂ": "ş",  # U+FB02 LATIN SMALL LIGATURE FL
+    "¤": "ğ",  # U+00A4 CURRENCY SIGN
+    "⁄": "Ğ",  # U+2044 FRACTION SLASH
+}
+# Bunlardan yalnızca bu üçü, gerçek düzgün metinde neredeyse hiç
+# rastlanmayacak kadar spesifik -- gate/tetikleyici olarak yalnızca bunlar
+# kullanılıyor. '¤'/'⁄' tek başına (ör. gerçek bir para birimi/kesir
+# işareti olarak) yanlış tetiklememesi için MacRomanEncoding + bu üç
+# işaretçiden en az biri şart koşuluyor.
+_MAC_TURKISH_MOJIBAKE_TELLS = {"‹", "›", "ﬁ", "ﬂ"}
+
+
+def _page_has_macroman_font(page) -> bool:
+    """Sayfada `_fix_mac_turkish_mojibake`'in düzeltme uygulayabileceği
+    riskli bir font (PyMuPDF'in 'MacRomanEncoding' dediği) var mı? Bu tek
+    başına yeterli değil -- çoğu MacRomanEncoding fontu gerçekten doğru/
+    İngilizce metin içindir; asıl karar `_fix_mac_turkish_mojibake`'teki
+    işaretçi karakterlerle veriliyor."""
+    try:
+        return any(f[5] == "MacRomanEncoding" for f in page.get_fonts(full=True))
+    except Exception:
+        return False
+
+
+def _fix_mac_turkish_mojibake(text: str, has_macroman_font: bool) -> str:
+    if not has_macroman_font or not (set(text) & _MAC_TURKISH_MOJIBAKE_TELLS):
+        return text
+    for wrong, right in _MAC_TURKISH_MOJIBAKE_MAP.items():
+        text = text.replace(wrong, right)
+    return text
+
+
 def _extract_text_blocks(
     page,
     blacklist: set[str] | None = None,
@@ -333,12 +381,13 @@ def _extract_text_blocks(
         return []
 
     page_height = page.rect.height
+    has_macroman_font = _page_has_macroman_font(page)
 
     kept: list[tuple[float, float, float, float, str]] = []
     for block in raw_blocks:
         if len(block) < 7 or block[6] != 0:  # sadece metin blokları (1 = görsel)
             continue
-        text = block[4].strip()
+        text = _fix_mac_turkish_mojibake(block[4].strip(), has_macroman_font)
         if not text:
             continue
         if _is_in_margin(block, page_height, top_margin_ratio, bottom_margin_ratio) and len(text) <= HEADER_FOOTER_MAX_CHARS:
@@ -767,15 +816,20 @@ def _extract_cover_title_author(doc, page_index: int = 0) -> tuple[str | None, s
     büyüklüğüne göre), metin katmanı yoksa (taranmış/görsel kapak) OCR ile
     aynı heuristiği satır yüksekliği üzerinden dener."""
     try:
-        data = doc[page_index].get_text("dict")
+        page = doc[page_index]
+        data = page.get_text("dict")
+        has_macroman_font = _page_has_macroman_font(page)
     except Exception:
         data = {}
+        has_macroman_font = False
 
     lines: list[tuple[float, str]] = []
     for block in data.get("blocks", []):
         for line in block.get("lines", []):
             spans = line.get("spans", [])
-            text = "".join(span.get("text", "") for span in spans).strip()
+            text = _fix_mac_turkish_mojibake(
+                "".join(span.get("text", "") for span in spans).strip(), has_macroman_font
+            )
             if not text:
                 continue
             size = max((span.get("size", 0) for span in spans), default=0)

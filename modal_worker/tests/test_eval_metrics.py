@@ -82,6 +82,20 @@ def test_phrase_include_and_exclude():
     assert result.phrase_exclude_violations == ["kosu basligi"]
 
 
+def test_phrase_include_matches_across_typographic_quote_variants():
+    """PDF'ler genelde tipografik tırnak (' ' " ") kullanır, golden metadata'daki
+    ifadeler ise genelde düz tırnakla ('/") yazılır -- bu fark eşleşmeyi
+    bozmamalı (bkz. NOTES.md/TAMAMLANANLAR.md, turkish_bilimsel-makale bulgusu)."""
+    result = evaluate_text_completeness(
+        generated_text="“Kısa Özet’e, makalenin küçültülmüş bir biçimi” diye tanımlanır.",
+        reference_text=None,
+        must_include_phrases=["Kısa Özet'e, makalenin küçültülmüş bir biçimi"],
+        must_exclude_phrases=[],
+    )
+    assert result.phrase_include_recall == 1.0
+    assert result.phrase_include_misses == []
+
+
 def test_exclude_check_text_ignores_leaked_h1_but_still_catches_body_repeats():
     """`exclude_check_text` verilmezse davranış değişmemeli (geriye uyumluluk)."""
     result = evaluate_text_completeness(

@@ -9,8 +9,7 @@
   "expected_chapters": null,
   "expected_image_count": 59,
   "must_include_phrases": [
-    "Müşteri Platformu Sağlık Kullanıcı Kılavuzu",
-    "www.turkiyesigorta.com.tr",
+    "Müşteri Platformu",
     "Poliçe Bilgileri",
     "Sağlık Harcaması Talebi (Hızlı İşlemler)"
   ],
@@ -20,5 +19,5 @@
     86
   ],
   "unsupported": false,
-  "notes": "Müşteri Platformu - Sağlık Kullanıcı Kılavuzu, Türkiye Sigorta. 16 sayfa, Turkish. text_density=1.0. Profil: 59 gömülü görsel, ~72 paragraf tahmini. KATEGORİ: complex-headings — Mobil uygulama kullanım kılavuzu, İçindekiler sayfası mevcut. Başlık hiyerarşisi: 1. Ana başlık (Müşteri Platformu), 2. Alt başlıklar (Intro, Giriş, Kayıt Ekranı, Ana sayfa, Poliçe Bilgileri, Tekliflerim, vb.), 3. Hızlı İşlemler alt kategorileri (Sağlık Harcaması Talebi, Anlaşmalı Kurumlar, İletişim). Navigasyon yapısı açık ve çok seviyeli (multi-level) hiyerarşi."
+  "notes": "Müşteri Platformu - Sağlık Kullanıcı Kılavuzu, Türkiye Sigorta. 16 sayfa, Turkish. text_density=1.0. Profil: 59 gömülü görsel, ~72 paragraf tahmini. KATEGORİ: complex-headings — Mobil uygulama kullanım kılavuzu, İçindekiler sayfası mevcut. Başlık hiyerarşisi: 1. Ana başlık (Müşteri Platformu), 2. Alt başlıklar (Intro, Giriş, Kayıt Ekranı, Ana sayfa, Poliçe Bilgileri, Tekliflerim, vb.), 3. Hızlı İşlemler alt kategorileri (Sağlık Harcaması Talebi, Anlaşmalı Kurumlar, İletişim). Navigasyon yapısı açık ve çok seviyeli (multi-level) hiyerarşi. 2026-08-23 düzeltmesi: eski must_include_phrases'te iki sorun vardı -- (1) 'www.turkiyesigorta.com.tr' PDF'in HER sayfasında (1-14) aynı pikselde tekrarlayan gerçek bir footer, pipeline bunu doğru şekilde (bilinçli olarak) her yerde filtreliyor, bu yüzden kaldırıldı (T. L. SWAN'daki Faz4 bulgusuyla aynı desen); (2) kapak alt başlığı 'Sağlık Kullanıcı Kılavuzu' PDF'te kerning/harf-aralığı yüzünden 'S ağ lık K u llan ıc ı Kılavu zu' gibi sahte boşluklarla geliyor (bu kitapta TEK YERDE gözlenen, dar kapsamlı bir PyMuPDF çıkarım tuhaflığı, genel bir düzeltme yapmaya değecek kadar yaygın değil) -- ifade yalnızca doğru çıkan 'Müşteri Platformu' kısmına indirildi."
 }

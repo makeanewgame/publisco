@@ -23,38 +23,42 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
 ## Şu ana kadarki skor ilerlemesi (fast eval, 16 kitap)
 
 43.5 → 47.6 (Faz1) → 52.8 (Faz2) → 54.8 (Faz3) → 63.7 (golden exclude-phrase denetimi)
-→ 68.7 (aynı denetim, quote-normalizasyon öncesi) → **75.4 (Faz4 — en güncel)**
+→ 68.7 (aynı denetim, quote-normalizasyon öncesi) → 75.4 (Faz4)
+→ **76.8 (complex-headings golden düzeltmesi — en güncel)**
+
+## Tamamlanan adaylar
+
+- ~~`complex-headings_tu-rkiye-sigorta-klavuz`~~ — 2026-08-23'te düzeltildi (58.8→80.7).
+  İkisi de golden veri hatası çıktı, pipeline koduna dokunulmadı: bir must_include ifadesi
+  aslında her sayfada doğru şekilde filtrelenen gerçek bir footer'dı (T. L. SWAN'daki
+  Faz4 deseniyle aynı), diğeri dar kapsamlı bir kerning/harf-aralığı tuhaflığı yüzünden
+  eşleşmiyordu. Detay: `TAMAMLANANLAR.md`. Yan bulgu (aşağıdaki madde 1'e eklendi):
+  aynı kitapta paragraf sayısı da düşük çıkıyor — henüz araştırılmadı.
 
 ## Sıradaki adaylar (öncelik sırasına göre)
 
-### 1. `complex-headings_tu-rkiye-sigorta-klavuz` — hızlı kazanç, düşük efor
-Skor: 58.8. İki `must_include_phrase` kayıp, ikisi de zaten teşhis edildi:
-- `"Müşteri Platformu Sağlık Kullanıcı Kılavuzu"` — kapak sayfasının ham metninde
-  harfler arasına sahte boşluk giriyor (`"S ağ lık K u llan ıc ı Kılavu zu"`), muhtemelen
-  kapak tasarımındaki harf aralığı (kerning) PyMuPDF'in kelime sınırı sezgisini bozuyor.
-- `"www.turkiyesigorta.com.tr"` — ham PDF'te tam haliyle var ama üretilen EPUB metninde
-  YOK (uçtan uca doğrulandı). Muhtemelen kısa/tek satırlık bu blok margin ya da noise
-  filtresine takılıp siliniyor.
+### 1. Paragraf-sayısı düşük çıkan kitaplar — önce teşhis gerekiyor
+İki kitapta aynı açık soru var, muhtemelen ortak bir kök nedenleri olabilir:
+- `book-with-images_966108`: skor 53.4, `structure` %22.9. 699 paragraf üretiliyor,
+  golden `expected_paragraph_range` [3051, 4576] bekliyor (149 sayfalık, tablo-ağırlıklı
+  bir tez).
+- `complex-headings_tu-rkiye-sigorta-klavuz`: skor 80.7 ama `structure` hâlâ %44.8. 26
+  paragraf üretiliyor, [58, 86] bekleniyor (mobil uygulama rehberi, kısa navigasyon/liste
+  blokları ağırlıklı).
 
-**Sonraki adım:** `_extract_text_blocks`/`_is_in_margin`/`_is_noise_block`'u bu sayfa
-üzerinde adım adım izleyip URL bloğunun tam olarak hangi filtrede düştüğünü bul. Kerning
-sorunu için PyMuPDF'in `get_text("words")` çıktısına bakıp boşluk-birleştirme sezgisi
-eklenip eklenemeyeceğini değerlendir (riskli olabilir — genelleşebilir mi, tek kitaba mı
-özel, önce kontrol et).
+**Henüz doğrulanmadı**: gerçek bir pipeline bug'ı mı (tablo/liste-ağırlıklı sayfalarda
+aşırı birleştirme), yoksa golden verideki tahminin kendisi mi yanlış (tahmin, gerçek
+pipeline çalıştırılmadan ham blok sayısından yapılmıştı — bu iki format için de tahmin
+yöntemi abartılı çıkmış olabilir).
 
-### 2. `book-with-images_966108` paragraf eksikliği — önce teşhis gerekiyor
-Skor: 53.4, `structure` %22.9. 699 paragraf üretiliyor, golden `expected_paragraph_range`
-[3051, 4576] bekliyor. **Henüz doğrulanmadı**: gerçek bir pipeline bug'ı mı (tablo-ağırlıklı
-sayfalarda paragraf/tablo birleştirme sorunu), yoksa golden verideki tahminin kendisi mi
-yanlış (tahmin, gerçek pipeline çalıştırılmadan ham blok sayısından yapılmıştı — tablo
-ağırlıklı belgelerde bu tahmin yöntemi abartılı çıkabilir).
+**Sonraki adım:** Her iki kitabın birkaç sayfasını `_extract_text_blocks` ile adım adım
+işleyip kaç ham blok / kaç nihai paragraf üretildiğini elle say, PDF'in o sayfalarını
+görsel olarak (`page_to_image_bytes` ile) kontrol et. Gerçek kayıp varsa nerede olduğunu
+bul; yoksa golden `expected_paragraph_range`'i gözlenen gerçek sayıya göre kalibre et.
+İki kitap da aynı kökten çıkarsa (ör. Faz3'ün çok-satırlı-blok kuralı liste/tablo
+formatlarında fazla agresif davranıyorsa) tek bir fix ikisini de düzeltebilir.
 
-**Sonraki adım:** Kitabın birkaç sayfasını `_extract_text_blocks` ile adım adım işleyip
-kaç ham blok / kaç nihai paragraf üretildiğini elle say, PDF'in o sayfalarını görsel
-olarak (`page_to_image_bytes` ile) kontrol et. Gerçek kayıp varsa nerede olduğunu bul;
-yoksa golden `expected_paragraph_range`'i gözlenen gerçek sayıya göre kalibre et.
-
-### 3. Görsel dedup + konumlandırma (Faz 2'den açık kalan sınırlama)
+### 2. Görsel dedup + konumlandırma (Faz 2'den açık kalan sınırlama)
 `extract_embedded_page_images` (`converter.py`) üç bilinen sınırlamayla MVP bırakılmıştı
 (detay: `NOTES.md` satır 47):
 - Sayfa-aşırı dedup yok (aynı görsel her sayfada tekrarsa ayrı dosya olarak ekleniyor)
@@ -66,7 +70,7 @@ görünüyor (xref bazlı bir `seen_xrefs`'i sayfa döngüsü dışına, chunk/r
 taşımak) — önce onunla başlanabilir. Tam interleaving (blok-seviyesi y-koordinat
 sıralaması) daha büyük bir refactor, ayrı bir alt-adım olarak ele alınmalı.
 
-### 4. Bölüm tespiti (chapter detection) — ERTELENDİ, kullanıcı onayı gerek
+### 3. Bölüm tespiti (chapter detection) — ERTELENDİ, kullanıcı onayı gerek
 Kullanıcı 2026-08-22'de "şimdilik dokunma" dedi. Sebep: ölçülebilir etki dar (golden
 sette yalnızca 2-3 kitapta `expected_chapters` dolu), taranmış kitaplarda font-boyutu
 heuristiği eklemek OCR'ı plan fazında bir kez daha çalıştırmayı gerektirir (maliyet
@@ -75,7 +79,7 @@ ikiye katlanabilir). Detay: `NOTES.md` satır 56-57.
 **Yeniden gündeme gelirse önce sorulacak:** Örneklem sayfa mı (hızlı, bazı bölümleri
 kaçırabilir) yoksa tüm sayfaları OCR'lama mı (yavaş, tam)?
 
-### 5. `mathematical` unsupported çelişkisi — en düşük öncelik, kozmetik
+### 4. `mathematical` unsupported çelişkisi — en düşük öncelik, kozmetik
 `mathematical_test-soruolar` / `mathematical_ujma`'nın golden metadata'sında aynı ifade
 hem `must_include_phrases` hem `must_exclude_phrases`'te (mantıksal çelişki, aynı desen
 Faz4'te 2 kitapta düzeltilmişti). `unsupported: true` olduğundan gerçek skora girmiyor

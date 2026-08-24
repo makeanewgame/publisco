@@ -83,6 +83,29 @@ def test_convert_pdf_to_epub_extracts_embedded_image_from_text_page(pdf_with_emb
         assert "<img" in chapter_html
 
 
+def test_convert_pdf_to_epub_dedups_identical_image_across_pages(pdf_with_duplicate_image_across_pages_bytes):
+    """Aynı görsel (aynı bayt içeriği) birden fazla sayfada tekrarsa EPUB'a yalnızca
+    BİR kopya eklenmeli -- diğer sayfalardaki `<img>` referansları o tek kopyaya
+    yönlendirilmeli.
+
+    Regresyon testi: `assemble_epub`'daki görsel ekleme döngüsü, sayfa-içi dedup'ı
+    olan (`extract_embedded_page_images`'teki `seen_xrefs`) ama sayfa-AŞIRI dedup'ı
+    olmayan bir noktaydı -- aynı görsel farklı sayfalarda (dosya adı sayfa numarasını
+    içerdiğinden) her tekrarda ayrı bir dosya olarak ekleniyordu (bkz. NOTES.md/
+    ROADMAP.md Faz 2'den açık kalan sınırlama)."""
+    config = {"title": "Tekrarli Gorselli Kitap"}
+    result = convert_pdf_to_epub(pdf_with_duplicate_image_across_pages_bytes, config)
+
+    with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        image_entries = [name for name in archive.namelist() if "_img_" in name]
+        assert len(image_entries) == 1, f"Aynı görsel tek bir dosyaya dedup edilmeli, bulunanlar: {image_entries}"
+
+        chapter_html = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
+        assert chapter_html.count("<img") == 2, "İki sayfa da kendi <img> referansını korumalı"
+        canonical_name = image_entries[0].split("/")[-1]
+        assert chapter_html.count(canonical_name) == 2, "Her iki referans da aynı (tek) dosyayı göstermeli"
+
+
 def test_convert_pdf_to_epub_ocr_recovers_text_from_scanned_page(ocr_scanned_page_bytes):
     """Metin katmanı olmayan ama görselde okunabilir metin bulunan bir sayfada,
     OCR kuruluysa gerçek metin çıkarılmalı — sayfa sessizce görsele düşmemeli.

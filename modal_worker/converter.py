@@ -26,6 +26,7 @@ kapsamı dışında bırakıldı (bkz. NOTES.md).
 
 from __future__ import annotations
 
+import hashlib
 import html
 import io
 import logging
@@ -1297,6 +1298,16 @@ def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
     )
     book.add_item(css)
 
+    # Sayfa-içi dedup (`extract_embedded_page_images`'teki `seen_xrefs`) yalnızca AYNI
+    # sayfada tekrar eden xref'leri yakalıyor; aynı görsel (ör. yayınevi logosu/filigran)
+    # farklı sayfalarda -- hatta farklı map-fazı container'larında -- tekrarsa her
+    # tekrarda ayrı bir dosya olarak ekleniyordu (dosya adı sayfa numarasını içerdiğinden
+    # xref eşitliği görünmüyor). Reduce fazı tüm `page_results`'ı tek yerde topladığından
+    # (chunk sınırından bağımsız) içerik hash'ine göre kitap-geneli dedup burada güvenle
+    # yapılabilir -- xref yerine gerçek bayt içeriği karşılaştırılıyor ki aynı görsel
+    # farklı xref'lerle gömülmüş olsa bile (nadir ama mümkün) yine de tek kopya kalsın.
+    seen_image_hashes: dict[bytes, str] = {}  # içerik hash'i -> ilk eklenen dosya adı
+
     chapter_items = []
     for i, chap in enumerate(plan.chapters):
         html_parts = [f"<h1>{html.escape(chap.title)}</h1>"]
@@ -1306,6 +1317,13 @@ def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
             if pr is None:
                 continue
             for img_name, img_bytes, media_type in pr.images:
+                content_hash = hashlib.sha256(img_bytes).digest()
+                canonical_name = seen_image_hashes.get(content_hash)
+                if canonical_name is not None:
+                    if canonical_name != img_name:
+                        pr.html = pr.html.replace(f'src="{img_name}"', f'src="{canonical_name}"')
+                    continue
+                seen_image_hashes[content_hash] = img_name
                 book.add_item(
                     epub.EpubItem(
                         uid=img_name.replace("/", "_"), file_name=img_name, media_type=media_type, content=img_bytes

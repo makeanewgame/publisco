@@ -80,6 +80,27 @@ def pdf_with_embedded_image_bytes() -> bytes:
 
 
 @pytest.fixture
+def pdf_with_duplicate_image_across_pages_bytes() -> bytes:
+    """Aynı görseli (aynı bayt içeriği) iki AYRI sayfaya gömer -- sayfa-aşırı
+    (cross-page) görsel dedup'ı test etmek için (bkz. NOTES.md/ROADMAP.md
+    Faz 2'den açık kalan sınırlama: aynı görsel her sayfada tekrarsa ayrı
+    dosya olarak ekleniyordu)."""
+    image = Image.new("RGB", (300, 200), color="blue")
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    image_bytes = buffer.getvalue()
+
+    doc = pymupdf.open()
+    for text in ("Birinci sayfa metni. " * 6, "Ikinci sayfa metni. " * 6):
+        page = doc.new_page()
+        page.insert_text((72, 72), text, fontsize=12)
+        page.insert_image(pymupdf.Rect(72, 300, 372, 500), stream=image_bytes)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
 def pdf_with_two_columns_bytes() -> bytes:
     """İki sütunlu bir sayfa (akademik makale düzeni) üretir -- sol sütunda 3,
     sağ sütunda 3 ayrı blok. Bloklar kasıtlı olarak önce SAĞ sonra SOL sütun

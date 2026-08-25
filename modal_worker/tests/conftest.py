@@ -80,6 +80,32 @@ def pdf_with_embedded_image_bytes() -> bytes:
 
 
 @pytest.fixture
+def pdf_with_unplaced_image_resource_bytes() -> bytes:
+    """Bir sayfanın Resources/XObject sözlüğünde REFERANS EDİLEN ama o sayfanın
+    içerik akışında hiç ÇİZİLMEYEN bir görsel xref'i üretir -- `page.get_images()`
+    bunu listeler ama `page.get_image_rects()` boş döner (gerçek PDF'lerde
+    kullanılmayan/paylaşılan kaynaklarda görülüyor, bkz. ROADMAP.md madde 2,
+    `book-with-images_966108` sayfa 17'deki xref=2 örneği)."""
+    image = Image.new("RGB", (300, 200), color="green")
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+
+    doc = pymupdf.open()
+    page1 = doc.new_page()
+    page1.insert_text((72, 72), "Bu sayfada hem metin hem gomulu bir gorsel var. " * 6, fontsize=12)
+    page1.insert_image(pymupdf.Rect(72, 300, 372, 500), stream=buffer.getvalue())
+    xref = page1.get_images(full=True)[0][0]
+
+    page2 = doc.new_page()
+    page2.insert_text((72, 72), "Bu sayfada metin var ama resim cizilmemis. " * 6, fontsize=12)
+    doc.xref_set_key(page2.xref, "Resources", f"<< /XObject << /Im0 {xref} 0 R >> >>")
+
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
 def pdf_with_duplicate_image_across_pages_bytes() -> bytes:
     """Aynı görseli (aynı bayt içeriği) iki AYRI sayfaya gömer -- sayfa-aşırı
     (cross-page) görsel dedup'ı test etmek için (bkz. NOTES.md/ROADMAP.md

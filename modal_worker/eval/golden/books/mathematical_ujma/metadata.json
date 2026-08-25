@@ -16,7 +16,6 @@
     "For m > 1 the following inequality holds"
   ],
   "must_exclude_phrases": [
-    "Universal Journal of Mathematics and Applications",
     "www.dergipark.org.tr"
   ],
   "expected_paragraph_range": [
@@ -24,5 +23,5 @@
     1280
   ],
   "unsupported": true,
-  "notes": "12-page research article from UJMA vol. 7 (4) 2024, pp. 180-191. Contains fractional calculus theory, Gronwall inequalities, Jensen lemma, and differential inequalities. Estimated ~1165 paragraphs (97 blocks/page × 12 pages). 9 embedded images with mathematical diagrams and proofs. Marked unsupported: mathematical journal article with heavy notation and technical proofs."
+  "notes": "12-page research article from UJMA vol. 7 (4) 2024, pp. 180-191. Contains fractional calculus theory, Gronwall inequalities, Jensen lemma, and differential inequalities. Estimated ~1165 paragraphs (97 blocks/page × 12 pages). 9 embedded images with mathematical diagrams and proofs. Marked unsupported: mathematical journal article with heavy notation and technical proofs. 2026-08-24: 'Universal Journal of Mathematics and Applications' removed from must_exclude_phrases -- it was also (correctly) in must_include_phrases (it's the journal's own title, appearing legitimately on the cover/header), a logical contradiction (same pattern fixed in 10 other books, see TAMAMLANANLAR.md)."
 }

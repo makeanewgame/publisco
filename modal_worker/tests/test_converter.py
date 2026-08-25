@@ -35,6 +35,39 @@ def test_text_to_html_blocks_wraps_paragraphs():
     assert html.endswith("</p>")
 
 
+def test_text_to_html_blocks_still_detects_real_short_headings():
+    """Sıkılaştırılmış h2 sezgiseli gerçek kısa alt başlıkları hâlâ yakalamalı --
+    aşağıdaki regresyon testlerinin (denklem/atıf/eksen-etiketi reddi) yanlışlıkla
+    TÜM kısa satırları <p>'ye düşürmediğini doğrular."""
+    assert text_to_html_blocks("İntro") == "<h2>İntro</h2>"
+    assert text_to_html_blocks("4.1 Kayaların Mineralojik ve Petrografik Özellikleri") == (
+        "<h2>4.1 Kayaların Mineralojik ve Petrografik Özellikleri</h2>"
+    )
+
+
+def test_text_to_html_blocks_rejects_equation_fragments_as_headings():
+    """Denklem parçaları (Yunan harfi/matematiksel Unicode/Symbol-font kaçağı) kısa
+    ve noktalamasız oldukları için eski sezgisel bunları <h2> sayıyordu -- regresyon
+    testi: book-with-images_966108'de 721 sahte h2'nin ~154'ü bu kategoriydi (bkz.
+    NOTES.md/ROADMAP.md madde 1)."""
+    assert text_to_html_blocks("σ , MPa") == "<p>σ , MPa</p>"
+    assert text_to_html_blocks("𝜏𝑝= 𝐶0(1 −𝑒−𝑏𝜎𝑛) + 𝜎𝑛𝑡𝑎𝑛𝜙𝑟 (3.7)") == (
+        "<p>𝜏𝑝= 𝐶0(1 −𝑒−𝑏𝜎𝑛) + 𝜎𝑛𝑡𝑎𝑛𝜙𝑟 (3.7)</p>"
+    )
+
+
+def test_text_to_html_blocks_rejects_citation_fragments_and_toc_leaders_as_headings():
+    assert text_to_html_blocks("JRC değerleri (Vallejo ve Ferrer 2002'den)") == (
+        "<p>JRC değerleri (Vallejo ve Ferrer 2002&#x27;den)</p>"
+    )
+    assert text_to_html_blocks("ÖZGEÇMİŞ.......... 139") == "<p>ÖZGEÇMİŞ.......... 139</p>"
+
+
+def test_text_to_html_blocks_rejects_axis_labels_as_headings():
+    assert text_to_html_blocks("a b") == "<p>a b</p>"
+    assert text_to_html_blocks("0 100 200 300 400 500") == "<p>0 100 200 300 400 500</p>"
+
+
 def test_convert_pdf_to_epub_produces_valid_epub_zip(sample_pdf_bytes):
     config = {"title": "Test Kitap", "author": "Test Yazar", "language": "tr"}
     result = convert_pdf_to_epub(sample_pdf_bytes, config)
@@ -81,6 +114,26 @@ def test_convert_pdf_to_epub_extracts_embedded_image_from_text_page(pdf_with_emb
         chapter_html = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
         assert "gomulu bir gorsel var" in chapter_html.lower(), "Görsel eklenirken sayfanın metni kaybolmamalı"
         assert "<img" in chapter_html
+
+
+def test_convert_pdf_to_epub_skips_unplaced_image_resource(pdf_with_unplaced_image_resource_bytes):
+    """Bir sayfanın kaynak sözlüğünde referans edilen ama o sayfada hiç çizilmeyen bir
+    görsel `<img>` olarak eklenmemeli -- yalnızca gerçekten çizilmiş görseller (bu
+    fixture'da 1. sayfadaki) EPUB'a girmeli.
+
+    Regresyon testi: `extract_embedded_page_images`, `page.get_images(full=True)`'in
+    döndürdüğü HER xref'i (sayfada gerçekten çizilip çizilmediğine bakmadan) çıkarıyordu
+    -- gerçek PDF'lerde (bkz. `book-with-images_966108` sayfa 17, xref=2) sayfada hiç
+    görünmeyen bir görsel için sahte bir `<img>` üretilmesine yol açıyordu."""
+    config = {"title": "Kullanilmayan Kaynakli Kitap"}
+    result = convert_pdf_to_epub(pdf_with_unplaced_image_resource_bytes, config)
+
+    with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        image_entries = [name for name in archive.namelist() if "_img_" in name]
+        assert len(image_entries) == 1, f"Yalnızca gerçekten çizilmiş görsel eklenmeli, bulunanlar: {image_entries}"
+
+        chap2_html = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
+        assert chap2_html.count("<img") == 1, "Kullanılmayan kaynak <img> olarak sızmamalı"
 
 
 def test_convert_pdf_to_epub_dedups_identical_image_across_pages(pdf_with_duplicate_image_across_pages_bytes):

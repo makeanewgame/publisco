@@ -61,6 +61,50 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
+# text_to_html_blocks'un "kısa tek satır -> h2" sezgiselinin YANLIŞ tetiklenmemesi için
+# kara liste sinyalleri. Amaç kısa gerçek alt başlıkları (ör. "İntro", "4.1 Kayaların
+# Mineralojik ve Petrografik Özellikleri") yakalamak; ama tablo/denklem/kaynakça-ağırlıklı
+# belgelerde (bkz. ROADMAP.md madde 1, book-with-images_966108'de 721 sahte h2 bulundu)
+# aynı sezgisel denklem parçalarını, eksen etiketlerini ve TOC nokta-dolgularını da
+# başlık sanıyordu -- bunlar metinsel olarak "gerçek başlık" sınıfından ayırt edilebilir,
+# tablo hücresi/liste kelimesi gibi daha belirsiz durumlar (ör. "Numune", "Doku") ise
+# yazı tipi/boyut bilgisi olmadan güvenilir ayırt edilemediğinden kapsam dışı bırakıldı.
+_HEADING_MATH_CHARS = "∑∆√±≤≥×÷−=∫∂∞"
+
+
+def _looks_like_math_or_citation(text: str) -> bool:
+    """Yunan harfi/matematiksel Unicode blok karakteri (denklem), sembol fontu kaçağı
+    (Private Use Area, ör. Symbol fontundaki φ/τ karşılıkları), parantez içinde 4
+    haneli bir yıl (kaynakça/atıf parçası, ör. "(İmre, 2011)") veya TOC nokta-dolgusu
+    (ör. "ÖZGEÇMİŞ.......... 139") içeriyorsa gerçek bir başlık DEĞİL, gövde metninden
+    kopmuş bir parça sayılır."""
+    if any(ch in _HEADING_MATH_CHARS for ch in text):
+        return True
+    for ch in text:
+        cp = ord(ch)
+        if 0x0370 <= cp <= 0x03FF or 0x1D400 <= cp <= 0x1D7FF or 0xE000 <= cp <= 0xF8FF:
+            return True
+    if re.search(r"\(\s*[^)]*\d{4}[^)]*\)", text) or text.startswith("("):
+        return True
+    if re.search(r"\.{4,}", text):
+        return True
+    return False
+
+
+def _looks_like_axis_label(text: str) -> bool:
+    """Grafik eksen etiketleri/kısa kod çiftleri gibi (ör. "a b", "0 100 200 300") her
+    "kelimesi" 2 karakter veya daha kısa olan ya da tamamen rakam+boşluktan oluşan
+    satırlar -- gerçek başlıklarda en az bir okunabilir kelime bulunur."""
+    words = text.split()
+    if not words:
+        return False
+    if all(len(w) <= 2 for w in words):
+        return True
+    if re.fullmatch(r"[\d\s.,-]+", text):
+        return True
+    return False
+
+
 def text_to_html_blocks(text: str) -> str:
     """Metni başlık ve paragraf bloklarına dönüştürür."""
     cleaned = clean_text(text)
@@ -75,7 +119,8 @@ def text_to_html_blocks(text: str) -> str:
         if not lines:
             continue
 
-        if len(lines) == 1 and len(lines[0].split()) <= 6 and not re.search(r"[.!?]$", lines[0]):
+        is_heading_shaped = len(lines) == 1 and len(lines[0].split()) <= 6 and not re.search(r"[.!?]$", lines[0])
+        if is_heading_shaped and not _looks_like_math_or_citation(lines[0]) and not _looks_like_axis_label(lines[0]):
             html_blocks.append(f"<h2>{html.escape(lines[0])}</h2>")
             continue
 
@@ -666,13 +711,21 @@ def extract_embedded_page_images(doc, page_index: int, page_num: int) -> list[tu
     `diagram_pages`/tam-sayfa-görsel fallback'inde korunuyorlardı) — bkz.
     NOTES.md. Bu fonksiyon o boşluğu dolduruyor.
 
-    İki savunma: (1) küçük ikon/madde imi/süsleme görselleri
-    (`MIN_EMBEDDED_IMAGE_DIMENSION` altı) atlanır -- her sayfada onlarca
-    küçük dekoratif görsel olabilir, bunları birer `<img>` yapmak gürültü
-    yaratır. (2) EPUB'ın çekirdek medya tiplerinde olmayan formatlar (ör.
-    JP2/JPX, CMYK JPEG) Pillow ile JPEG'e yeniden kodlanır; Pillow da
-    açamazsa (bozuk/desteklenmeyen kodek) o görsel sessizce atlanır -- tek
-    bozuk bir görsel yüzünden tüm sayfanın metni kaybolmamalı."""
+    Üç savunma: (1) sayfada gerçekten hiç ÇİZİLMEMİŞ (`get_image_rects` boş
+    dönen) görseller atlanır -- `page.get_images(full=True)`, sayfanın
+    kaynak sözlüğünde REFERANS EDİLEN her xref'i döner, bunların hepsi
+    içerik akışında görünür şekilde yerleştirilmiş olmak zorunda değil (ör.
+    kullanılmayan bir kaynak, başka bir sayfayla paylaşılan ama bu sayfada
+    çizilmeyen bir XObject) -- bu durumda görseli yine de eklemek, sayfada
+    gerçekte hiç görünmeyen bir `<img>` üretir (bkz. ROADMAP.md madde 2,
+    `book-with-images_966108` sayfa 17'de xref=2 için gözlendi). (2) küçük
+    ikon/madde imi/süsleme görselleri (`MIN_EMBEDDED_IMAGE_DIMENSION` altı)
+    atlanır -- her sayfada onlarca küçük dekoratif görsel olabilir, bunları
+    birer `<img>` yapmak gürültü yaratır. (3) EPUB'ın çekirdek medya
+    tiplerinde olmayan formatlar (ör. JP2/JPX, CMYK JPEG) Pillow ile JPEG'e
+    yeniden kodlanır; Pillow da açamazsa (bozuk/desteklenmeyen kodek) o
+    görsel sessizce atlanır -- tek bozuk bir görsel yüzünden tüm sayfanın
+    metni kaybolmamalı."""
     images: list[tuple[str, bytes, str]] = []
     seen_xrefs: set[int] = set()
     page = doc[page_index]
@@ -682,6 +735,9 @@ def extract_embedded_page_images(doc, page_index: int, page_num: int) -> list[tu
         if xref in seen_xrefs:
             continue
         seen_xrefs.add(xref)
+
+        if not page.get_image_rects(xref):
+            continue
 
         width, height = img[2], img[3]
         if width < MIN_EMBEDDED_IMAGE_DIMENSION or height < MIN_EMBEDDED_IMAGE_DIMENSION:

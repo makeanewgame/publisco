@@ -14,13 +14,11 @@
     "a ⊕ b=b² - a",
     "Scanned by CamScanner"
   ],
-  "must_exclude_phrases": [
-    "Scanned by CamScanner"
-  ],
+  "must_exclude_phrases": [],
   "expected_paragraph_range": [
     350,
     420
   ],
   "unsupported": true,
-  "notes": "440-page fully scanned math textbook (no embedded text layer, 100% image-based). Contains operator algebra test questions with mathematical notation. Actual content rendered as page images in PNG. All 440 pages are rendered images with multiple choice answers (A, B, C, D, E). Paragraph estimate (~385) from block-counting on visual samples. Marked unsupported: mathematical content, fully scanned, heavy reliance on mathematical notation."
+  "notes": "440-page fully scanned math textbook (no embedded text layer, 100% image-based). Contains operator algebra test questions with mathematical notation. Actual content rendered as page images in PNG. All 440 pages are rendered images with multiple choice answers (A, B, C, D, E). Paragraph estimate (~385) from block-counting on visual samples. Marked unsupported: mathematical content, fully scanned, heavy reliance on mathematical notation. 2026-08-24: 'Scanned by CamScanner' removed from must_exclude_phrases -- it was also (correctly) in must_include_phrases, a logical contradiction (same pattern fixed in 10 other books, see TAMAMLANANLAR.md) since it repeats on nearly every page (watermark) and can't simultaneously be required and forbidden."
 }

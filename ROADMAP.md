@@ -26,7 +26,8 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
 → 68.7 (aynı denetim, quote-normalizasyon öncesi) → 75.4 (Faz4)
 → 76.8 (complex-headings golden düzeltmesi, sonra cross-page görsel dedup — skor sabit kaldı)
 → 77.3 (text_to_html_blocks'un h2 sezgiseli sıkılaştırıldı — yalnızca book-with-images_966108'i etkiledi)
-→ **77.4 (sayfada hiç çizilmeyen "hayalet" görsel kaynakları artık atlanıyor — images %90.4→%91.6, aşağıya bkz.)**
+→ 77.4 (sayfada hiç çizilmeyen "hayalet" görsel kaynakları artık atlanıyor — images %90.4→%91.6)
+→ **77.6 (görsel konumlandırma/interleaving + boyut filtresi düzeltmesi, iki golden `expected_image_count` hatası giderildi — images %91.6→%91.8, aşağıya bkz.)**
 
 ## Tamamlanan adaylar
 
@@ -67,6 +68,18 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
   fix'siz haliyle kırmızı olduğu doğrulandı, suite 55/55 yeşil. Fast eval (16 kitap):
   77.3→77.4, `images` metrik ortalaması %90.4→%91.6, `book-with-images_966108` 54.9→57.4.
   Detay: `TAMAMLANANLAR.md`.
+- ~~Madde 2'nin kalan iki alt-maddesi (görsel konumlandırma/interleaving + boyut filtresi)~~ —
+  2026-08-25'te düzeltildi. Görseller artık sayfa sonuna değil, metin bloklarıyla birlikte
+  TEK bir okuma-sırası akışında (`_build_interleaved_page_html`) PDF'teki gerçek konumlarına
+  yerleştiriliyor — `book-with-images_966108` sayfa 17'de elle doğrulandı: artık gerçekten
+  paragraf→figür→altyazı→paragraf sırasıyla üretiliyor. Boyut filtresi de ham piksel yerine
+  sayfada GÖRÜNEN (nokta) boyutuna bakacak şekilde değişti (`MIN_EMBEDDED_IMAGE_DISPLAY_PT=30`).
+  3 yeni regresyon testi (konumlandırma + iki boyut-filtresi senaryosu), suite 58/58 yeşil.
+  Fast eval ilk koşuda görünen bir gerileme (77.4→76.5) iki golden `expected_image_count`
+  hatasına (`english_molecules`, `two-column-academic_farkindalik-gelistirme-programi` —
+  ikisinde de "içerik görseli" sanılan şey aslında dekoratif logo/CC-BY rozetiymiş, sayfa
+  render'ları elle incelenerek doğrulandı) çıktı, golden düzeltilince 77.4→77.6. Detay:
+  `TAMAMLANANLAR.md`.
 
 ## Sıradaki adaylar (öncelik sırasına göre)
 
@@ -84,38 +97,6 @@ salt metinle ayırt edilemiyor.
 şu an `page.get_text("blocks")` kullanıyor, font bilgisi taşımıyor; `page.get_text("dict")`'e
 geçmek gerekir) — bu tam olarak madde 3'teki (bölüm tespiti) font-heuristiği kararıyla aynı
 mimari genişleme. Ayrı ele alınmamalı, madde 3 gündeme gelince birlikte değerlendirilmeli.
-
-### 2. Görsel konumlandırma + boyut filtresi (Faz 2'den açık kalan, dedup + hayalet-görsel hariç)
-`extract_embedded_page_images` (`converter.py`) üç bilinen sınırlamayla MVP bırakılmıştı;
-sayfa-aşırı dedup ve hayalet-görsel (sayfada çizilmeyen kaynak) 2026-08-24/25'te
-düzeltildi (yukarıya bkz.), kalan ikisi açık:
-- **Konumlandırma yaklaşık** — görseller sayfanın SONUNA ekleniyor, gerçek konumuna
-  (paragraf arasına) değil; tam interleaving için blok-seviyesi y-koordinat sıralaması
-  (`_extract_text_blocks`'un zaten yaptığına benzer) gerekir.
-- **Boyut filtresi** ham piksel boyutuna bakıyor, sayfadaki görünen/ölçeklenmiş boyuta
-  değil — küçük gösterilen büyük bir görsel ya da tersi yanlış filtrelenebilir.
-
-**2026-08-24/25 manuel doğrulama notu:** Bu maddenin ilk önerdiği test kitabı
-(`book-with-images_haritalarla-cografya`) YANLIŞ seçimdi — tamamen taranmış
-(`is_scanned=true`), bu yüzden `extract_embedded_page_images` o kitapta hiç çalışmıyor.
-Daha iyi adaylar: `book-with-images_966108` (sayfa 17'de tek-sütun, temiz bir
-paragraf→figür→altyazı→paragraf örneği zaten elle doğrulandı — interleaving'in gerçek
-faydası burada net görülüyor) veya `book-with-images_ankaranin-trekking-rotalari`
-(88 sayfa, küçük). İkinci kitapta ayrıca ayrı bir bug bulundu (bkz. NOTES.md): sayfa 5
-gibi GERÇEKTEN çok sütunlu (3+) sayfalarda `_split_into_reading_order_segments` bozuk
-sıra üretiyor — bu, interleaving'i bu tür sayfalarda denemeden önce ayrıca ele alınmalı
-(yoksa görsel bloklarını doğru sırasız bir temele eklemiş oluruz).
-
-**Sonraki adım:** Tam interleaving daha büyük bir refactor — `_extract_text_blocks`'un
-zaten sayfa bloklarını (metin + görsel, x/y koordinatlarıyla) okuduğu noktaya görsel
-bloklarını da (şu an `block[6] != 0` ile atlanıyor) dahil edip tek bir birleşik
-sıralama üretmek gerekir. `book-with-images_966108` sayfa 17 gibi tek-sütun bir örnekte
-elle denenip gerçek okuma deneyimine etkisi görülmeli — bu, ROADMAP'teki diğer
-maddelerden daha büyük bir mimari değişiklik, ayrı bir oturumda ele alınabilir.
-
-**Not (2026-08-24):** Bu maddenin etkisini ölçmek için önce `eval/metrics/images.py`'nin
-NOTES.md'de belirtilen ölçüm sorunu (occurrence vs benzersiz dosya sayısı) gözden
-geçirilmeli — yoksa konumlandırma/boyut-filtresi düzeltmeleri de skora tam yansımayabilir.
 
 ### 3. Bölüm tespiti (chapter detection) — ERTELENDİ, kullanıcı onayı gerek
 Kullanıcı 2026-08-22'de "şimdilik dokunma" dedi. Sebep: ölçülebilir etki dar (golden

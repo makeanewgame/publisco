@@ -127,6 +127,63 @@ def pdf_with_duplicate_image_across_pages_bytes() -> bytes:
 
 
 @pytest.fixture
+def pdf_with_image_between_paragraphs_bytes() -> bytes:
+    """İki paragraf arasına (dikey konum olarak) yerleştirilmiş gerçek boyutlu
+    (ikon-filtresini rahatça geçen) bir görsel içeren bir PDF üretir --
+    görselin artık sayfa SONUNA değil, PDF'teki gerçek konumuna (paragraflar
+    arasına) yerleştirildiğini test etmek için (bkz. ROADMAP.md madde 2)."""
+    image = Image.new("RGB", (300, 200), color="teal")
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Bu ilk paragraf resimden once gelir ve yeterince uzundur.", fontsize=12)
+    page.insert_image(pymupdf.Rect(72, 200, 372, 400), stream=buffer.getvalue())
+    page.insert_text((72, 450), "Bu ikinci paragraf resimden sonra gelir ve farklidir.", fontsize=12)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
+def pdf_with_small_raw_but_large_display_image_bytes() -> bytes:
+    """Ham piksel boyutu küçük (eski `MIN_EMBEDDED_IMAGE_DIMENSION=40px` eşiğinin
+    altında) ama sayfada BÜYÜK gösterilen (yukarı ölçeklenen) bir görsel üretir --
+    boyut filtresinin artık ham piksel yerine sayfada GÖRÜNEN (rect) boyutuna
+    baktığını test eder (bkz. ROADMAP.md madde 2, `MIN_EMBEDDED_IMAGE_DISPLAY_PT`)."""
+    image = Image.new("RGB", (20, 20), color="purple")
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Bu sayfada kucuk ham ama buyuk gosterilen bir gorsel var. " * 4, fontsize=12)
+    page.insert_image(pymupdf.Rect(72, 300, 172, 400), stream=buffer.getvalue())  # 100x100 pt gösterim
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
+def pdf_with_large_raw_but_tiny_display_image_bytes() -> bytes:
+    """Ham piksel boyutu BÜYÜK ama sayfada küçük (ikon boyutunda) gösterilen
+    bir görsel üretir -- eski (ham piksel bazlı) filtre bunu yanlışlıkla
+    tutuyordu; yeni (görünen/rect boyutu bazlı) filtre atlamalı."""
+    image = Image.new("RGB", (500, 500), color="orange")
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Bu sayfada buyuk ham ama kucuk gosterilen bir gorsel var. " * 4, fontsize=12)
+    page.insert_image(pymupdf.Rect(72, 300, 82, 310), stream=buffer.getvalue())  # 10x10 pt gösterim
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
 def pdf_with_two_columns_bytes() -> bytes:
     """İki sütunlu bir sayfa (akademik makale düzeni) üretir -- sol sütunda 3,
     sağ sütunda 3 ayrı blok. Bloklar kasıtlı olarak önce SAĞ sonra SOL sütun

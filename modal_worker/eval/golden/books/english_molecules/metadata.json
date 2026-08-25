@@ -7,7 +7,7 @@
     "author": "Alessandra Durazzo, Laura D'Addezio, Emanuela Camilli, et al."
   },
   "expected_chapters": null,
-  "expected_image_count": 5,
+  "expected_image_count": 0,
   "must_include_phrases": [
     "This work aims at giving an updated picture of the strict interaction between main plant biologically active compounds and botanicals.",
     "Botanicals are made of single herbs or by mixing different herbs, from raw material of whole plants or parts of them",
@@ -23,5 +23,5 @@
     111
   ],
   "unsupported": false,
-  "notes": "11-page academic article (Molecules journal 2018). text_density=1.0 indicates full embedded text layer. 5 embedded images detected (some may be figures/diagrams). Paragraph estimate ~92 from avg 8.4 blocks/page with ~20% tolerance. Language confirmed as English from cover pages and samples. No table of contents visible; expected_chapters set to null."
+  "notes": "11-page academic article (Molecules journal 2018). text_density=1.0 indicates full embedded text layer. Paragraph estimate ~92 from avg 8.4 blocks/page with ~20% tolerance. Language confirmed as English from cover pages and samples. No table of contents visible; expected_chapters set to null. expected_image_count 5 -> 0 (2026-08-25) -- görsel çıkarımına konum bilgisi eklenip (ROADMAP.md madde 2) boyut filtresi ham piksele değil sayfada GÖRÜNEN (nokta) boyutuna bakacak şekilde düzeltilince, PDF'teki 5 gömülü görselin TAMAMININ (4x journal/MDPI logosu sayfa 1'de 41.6x27.5pt, 1x CC-BY rozeti sayfa 11'de 83.1x29.1pt) dekoratif rozet/logo olduğu sayfa render'ları elle incelenerek doğrulandı -- makalede gerçek bir figür/diyagram YOK. Curator'ın orijinal tahmini (bkz. eski not: '5 embedded images detected, some may be figures/diagrams') ham xref sayımına dayanıyordu, dekoratif olup olmadığını ayırt edemiyordu."
 }

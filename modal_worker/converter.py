@@ -105,6 +105,23 @@ def _looks_like_axis_label(text: str) -> bool:
     return False
 
 
+def _paragraph_text_to_html(paragraph_text: str) -> str | None:
+    """Tek bir (birden fazla satır içerebilen) paragraf metnini `<h2>` ya da
+    `<p>`'ye çevirir -- `text_to_html_blocks`'un asıl sezgiseli, blok-bazlı
+    (sayfa-içi görsellerle harmanlanan) akışın da (bkz. `_build_interleaved_page_html`)
+    aynı başlık/paragraf mantığını kullanabilmesi için ayrı bir fonksiyona çıkarıldı."""
+    lines = [line.strip() for line in paragraph_text.splitlines() if line.strip()]
+    if not lines:
+        return None
+
+    is_heading_shaped = len(lines) == 1 and len(lines[0].split()) <= 6 and not re.search(r"[.!?]$", lines[0])
+    if is_heading_shaped and not _looks_like_math_or_citation(lines[0]) and not _looks_like_axis_label(lines[0]):
+        return f"<h2>{html.escape(lines[0])}</h2>"
+
+    block_text = " ".join(lines)
+    return f"<p>{html.escape(block_text)}</p>"
+
+
 def text_to_html_blocks(text: str) -> str:
     """Metni başlık ve paragraf bloklarına dönüştürür."""
     cleaned = clean_text(text)
@@ -112,21 +129,7 @@ def text_to_html_blocks(text: str) -> str:
         return ""
 
     paragraphs = re.split(r"\n\s*\n", cleaned)
-    html_blocks = []
-
-    for paragraph in paragraphs:
-        lines = [line.strip() for line in paragraph.splitlines() if line.strip()]
-        if not lines:
-            continue
-
-        is_heading_shaped = len(lines) == 1 and len(lines[0].split()) <= 6 and not re.search(r"[.!?]$", lines[0])
-        if is_heading_shaped and not _looks_like_math_or_citation(lines[0]) and not _looks_like_axis_label(lines[0]):
-            html_blocks.append(f"<h2>{html.escape(lines[0])}</h2>")
-            continue
-
-        block_text = " ".join(lines)
-        html_blocks.append(f"<p>{html.escape(block_text)}</p>")
-
+    html_blocks = [block for block in (_paragraph_text_to_html(p) for p in paragraphs) if block is not None]
     return "\n".join(html_blocks)
 
 
@@ -305,15 +308,20 @@ def _split_into_reading_order_segments(
 
     İki sütunlu olduğu net değilse (tek sütun -- golden set'in büyük
     çoğunluğu), TEK bir bölüm olarak, mevcut y-sonra-x sırasıyla döner —
-    yani tek sütunlu sayfalarda davranış hiç değişmez."""
+    yani tek sütunlu sayfalarda davranış hiç değişmez.
+
+    Blok tuple'ının yalnızca ilk dört alanı (x0, y0, x1, y1) geometri için
+    kullanılır -- gerisi (metin, ya da `_build_interleaved_page_html`'in
+    metin/görsel ayrımı için eklediği ekstra alanlar) dokunulmadan aynı
+    tuple içinde taşınır, bu fonksiyon tuple'ın uzunluğuna bağlı değildir."""
     if not blocks:
         return []
 
     x_mid = page_width / 2
     span_margin = page_width * COLUMN_SPAN_MARGIN_RATIO
 
-    def _side(block: tuple[float, float, float, float, str]) -> str:
-        x0, _y0, x1, _y1, _text = block
+    def _side(block: tuple) -> str:
+        x0, x1 = block[0], block[2]
         if x1 <= x_mid + span_margin:
             return "left"
         if x0 >= x_mid - span_margin:
@@ -406,21 +414,21 @@ def _fix_mac_turkish_mojibake(text: str, has_macroman_font: bool) -> str:
     return text
 
 
-def _extract_text_blocks(
+def _collect_filtered_text_blocks(
     page,
     blacklist: set[str] | None = None,
     top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
     bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
-) -> list[str]:
-    """Sayfayı PyMuPDF'in blok bazlı çıkarımıyla okur, filtrelenmiş blokları
-    gerçek paragraflara birleştirir (bkz. `_merge_blocks_into_paragraphs`).
+) -> list[tuple[float, float, float, float, str]]:
+    """Sayfadaki metin bloklarını PyMuPDF'ten okuyup üç sezgisel filtre uygular:
+    (1) sayfanın üst/alt kenar payındaki kısa bloklar (koşu başlığı/sayfa no)
+    atlanır, (2) kitap başlığı/yazarıyla eşleşen bloklar (kara liste) atlanır,
+    (3) hiç harf içermeyen kısa veya tek karakterlik bloklar (gürültü) atlanır.
 
-    Üç sezgisel filtre uygulanır: (1) sayfanın üst/alt kenar payındaki kısa
-    bloklar (koşu başlığı/sayfa no) atlanır, (2) kitap başlığı/yazarıyla
-    eşleşen bloklar (kara liste) atlanır, (3) hiç harf içermeyen kısa veya
-    tek karakterlik bloklar (gürültü) atlanır. Kalan bloklar, iki sütunlu
-    sayfalarda okuma sırasını koruyacak şekilde bölümlere ayrılır (bkz.
-    `_split_into_reading_order_segments`)."""
+    Ham `(x0, y0, x1, y1, metin)` konumlarını (paragraf birleştirmesi
+    yapılmadan) döner -- hem `_extract_text_blocks`'un (paragraf sınırı
+    çıkarımı) hem `_build_interleaved_page_html`'in (görsellerle konum
+    bazlı harmanlama) ortak temeli."""
     try:
         raw_blocks = page.get_text("blocks", sort=False)
     except Exception:
@@ -443,7 +451,20 @@ def _extract_text_blocks(
         if _is_noise_block(text):
             continue
         kept.append((block[0], block[1], block[2], block[3], text))
+    return kept
 
+
+def _extract_text_blocks(
+    page,
+    blacklist: set[str] | None = None,
+    top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+    bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+) -> list[str]:
+    """Sayfayı PyMuPDF'in blok bazlı çıkarımıyla okur, filtrelenmiş blokları
+    gerçek paragraflara birleştirir (bkz. `_merge_blocks_into_paragraphs`).
+    Filtrelenmiş bloklar, iki sütunlu sayfalarda okuma sırasını koruyacak
+    şekilde önce bölümlere ayrılır (bkz. `_split_into_reading_order_segments`)."""
+    kept = _collect_filtered_text_blocks(page, blacklist, top_margin_ratio, bottom_margin_ratio)
     paragraphs: list[str] = []
     for segment in _split_into_reading_order_segments(kept, page.rect.width):
         paragraphs.extend(_merge_blocks_into_paragraphs(segment))
@@ -691,7 +712,7 @@ def page_to_image_bytes(doc, page_index: int, dpi: int = 200, quality: int = 90)
     return output.getvalue()
 
 
-MIN_EMBEDDED_IMAGE_DIMENSION = 40  # bu boyuttan (piksel) küçük gömülü görseller ikon/madde imi/süsleme sayılıp atlanır
+MIN_EMBEDDED_IMAGE_DISPLAY_PT = 30.0  # bu boyuttan (nokta, sayfadaki GÖRÜNEN/render boyutu) küçük gömülü görseller ikon/madde imi/süsleme sayılıp atlanır
 
 _EPUB_CORE_IMAGE_MEDIA_TYPES = {
     "png": "image/png",
@@ -701,9 +722,13 @@ _EPUB_CORE_IMAGE_MEDIA_TYPES = {
 }
 
 
-def extract_embedded_page_images(doc, page_index: int, page_num: int) -> list[tuple[str, bytes, str]]:
+def extract_embedded_page_images(
+    doc, page_index: int, page_num: int
+) -> list[tuple[float, float, float, float, str, bytes, str]]:
     """Sayfadaki, metinle karışık gömülü görselleri (fotoğraf/figür/diyagram)
-    çıkarır -- `(dosya adı, bayt, media_type)` üçlüleri döner.
+    çıkarır -- `(x0, y0, x1, y1, dosya adı, bayt, media_type)` yedilileri döner;
+    konum, çağıranın (bkz. `_build_interleaved_page_html`) görseli metin
+    akışındaki gerçek yerine (sayfa sonuna değil) yerleştirebilmesi içindir.
 
     Önceden `_extract_text_blocks` yalnızca metin bloklarını işliyordu
     (`block[6] != 0` filtresiyle görsel bloklar atlanıyordu) ve normal metin
@@ -718,15 +743,19 @@ def extract_embedded_page_images(doc, page_index: int, page_num: int) -> list[tu
     kullanılmayan bir kaynak, başka bir sayfayla paylaşılan ama bu sayfada
     çizilmeyen bir XObject) -- bu durumda görseli yine de eklemek, sayfada
     gerçekte hiç görünmeyen bir `<img>` üretir (bkz. ROADMAP.md madde 2,
-    `book-with-images_966108` sayfa 17'de xref=2 için gözlendi). (2) küçük
-    ikon/madde imi/süsleme görselleri (`MIN_EMBEDDED_IMAGE_DIMENSION` altı)
-    atlanır -- her sayfada onlarca küçük dekoratif görsel olabilir, bunları
-    birer `<img>` yapmak gürültü yaratır. (3) EPUB'ın çekirdek medya
+    `book-with-images_966108` sayfa 17'de xref=2 için gözlendi). Aynı xref
+    birden fazla yerde çizilmişse konum için İLK dönen dikdörtgen kullanılır.
+    (2) küçük ikon/madde imi/süsleme görseller atlanır -- ama filtre artık
+    görselin PDF içindeki HAM piksel boyutuna değil, sayfada GÖRÜNEN
+    (dikdörtgenin nokta cinsinden) boyutuna bakıyor (`MIN_EMBEDDED_IMAGE_DISPLAY_PT`)
+    -- eskiden ham piksel boyutu kullanılıyordu, bu da küçük gösterilen büyük
+    bir görseli kaçırıp büyük-ama-küçük-basılan bir görseli yanlışlıkla
+    tutabiliyordu (bkz. ROADMAP.md madde 2). (3) EPUB'ın çekirdek medya
     tiplerinde olmayan formatlar (ör. JP2/JPX, CMYK JPEG) Pillow ile JPEG'e
     yeniden kodlanır; Pillow da açamazsa (bozuk/desteklenmeyen kodek) o
     görsel sessizce atlanır -- tek bozuk bir görsel yüzünden tüm sayfanın
     metni kaybolmamalı."""
-    images: list[tuple[str, bytes, str]] = []
+    images: list[tuple[float, float, float, float, str, bytes, str]] = []
     seen_xrefs: set[int] = set()
     page = doc[page_index]
 
@@ -736,11 +765,11 @@ def extract_embedded_page_images(doc, page_index: int, page_num: int) -> list[tu
             continue
         seen_xrefs.add(xref)
 
-        if not page.get_image_rects(xref):
+        rects = page.get_image_rects(xref)
+        if not rects:
             continue
-
-        width, height = img[2], img[3]
-        if width < MIN_EMBEDDED_IMAGE_DIMENSION or height < MIN_EMBEDDED_IMAGE_DIMENSION:
+        rect = rects[0]
+        if rect.width < MIN_EMBEDDED_IMAGE_DISPLAY_PT or rect.height < MIN_EMBEDDED_IMAGE_DISPLAY_PT:
             continue
 
         try:
@@ -768,7 +797,7 @@ def extract_embedded_page_images(doc, page_index: int, page_num: int) -> list[tu
                 continue
 
         img_name = f"images/page_{page_num}_img_{img_index}.{ext}"
-        images.append((img_name, image_bytes, media_type))
+        images.append((rect.x0, rect.y0, rect.x1, rect.y1, img_name, image_bytes, media_type))
 
     return images
 
@@ -1178,6 +1207,72 @@ class PageResult:
     images: list[tuple[str, bytes, str]] = field(default_factory=list)  # (dosya adı, bayt, media_type)
 
 
+def _flush_text_run(
+    run: list[tuple[float, float, float, float, str]], html_parts: list[str]
+) -> None:
+    """`run`'daki (tek okuma-sırası segmentindeki ardışık) metin bloklarını
+    paragraflara birleştirip HTML'e ekler, `run`'ı temizler."""
+    for paragraph in _merge_blocks_into_paragraphs(run):
+        block_html = _paragraph_text_to_html(clean_text(paragraph))
+        if block_html:
+            html_parts.append(block_html)
+    run.clear()
+
+
+def _build_interleaved_page_html(
+    doc,
+    page_index: int,
+    page_num: int,
+    blacklist: set[str] | None,
+    top_margin_ratio: float,
+    bottom_margin_ratio: float,
+) -> tuple[str, list[tuple[str, bytes, str]]]:
+    """Sayfanın metin ve gömülü-görsel bloklarını TEK bir okuma-sırası akışında
+    birleştirir -- görseller artık sayfanın SONUNA değil, PDF'teki gerçek
+    konumlarına (ör. paragraf arasına) yerleştirilir (bkz. ROADMAP.md madde 2).
+
+    Metin blokları (`_collect_filtered_text_blocks`) ve görsel blokları
+    (`extract_embedded_page_images`) aynı (x0, y0, x1, y1, tür, veri) tuple
+    biçimine getirilip `_split_into_reading_order_segments`'e (iki sütunlu
+    sayfalarda sütun sırasını koruyan aynı fonksiyon) birlikte verilir; her
+    segment içinde ardışık metin blokları `_merge_blocks_into_paragraphs`
+    ile paragraflara birleştirilir, bir görsel bloğuna rastlanınca o ana
+    kadarki paragraf akışı kapatılıp `<img>` eklenir ve paragraf birleştirme
+    kaldığı yerden devam eder.
+
+    Yalnızca gömülü metin katmanı bulunan (OCR'a düşmemiş, `force_ocr` ile
+    ezilmemiş) sayfalarda kullanılır -- çağıran (`process_page`) OCR-türetilmiş
+    metin için eski düz akışı kullanmaya devam eder (bkz. oradaki not:
+    OCR koordinatları piksel-uzayında, PDF görselleri nokta-uzayında)."""
+    page = doc[page_index]
+    text_blocks = _collect_filtered_text_blocks(page, blacklist, top_margin_ratio, bottom_margin_ratio)
+    image_blocks = extract_embedded_page_images(doc, page_index, page_num)
+
+    combined: list[tuple[float, float, float, float, str, Any]] = [
+        (x0, y0, x1, y1, "text", text) for x0, y0, x1, y1, text in text_blocks
+    ]
+    combined.extend(
+        (x0, y0, x1, y1, "image", (img_name, img_bytes, media_type))
+        for x0, y0, x1, y1, img_name, img_bytes, media_type in image_blocks
+    )
+
+    html_parts: list[str] = []
+    images: list[tuple[str, bytes, str]] = []
+    for segment in _split_into_reading_order_segments(combined, page.rect.width):
+        text_run: list[tuple[float, float, float, float, str]] = []
+        for x0, y0, x1, y1, kind, payload in segment:
+            if kind == "text":
+                text_run.append((x0, y0, x1, y1, payload))
+                continue
+            _flush_text_run(text_run, html_parts)
+            img_name, img_bytes, media_type = payload
+            images.append((img_name, img_bytes, media_type))
+            html_parts.append(f'<img src="{img_name}" alt="Sayfa {page_num} görseli" />')
+        _flush_text_run(text_run, html_parts)
+
+    return "\n".join(html_parts), images
+
+
 def process_page(
     doc,
     page_num: int,
@@ -1223,6 +1318,7 @@ def process_page(
     # görsel çıkarımı bu sayfalarda ATLANMALI -- yoksa OCR'lanan metnin hemen
     # altına aynı sayfanın gereksiz bir kopyası (tam sayfa görsel) eklenir.
     is_scanned_page = text is None
+    text_is_ocr_derived = is_scanned_page
     if text is None:
         text = try_ocr_page(
             doc,
@@ -1258,6 +1354,7 @@ def process_page(
         )
         if ocr_text:
             text = ocr_text
+            text_is_ocr_derived = True
 
     use_visual = visual_mode or (auto_visual_mode and should_use_visual_page(config, text, page_num))
     if use_visual:
@@ -1269,21 +1366,35 @@ def process_page(
         html_parts.append(build_visual_page_html(page_num, img_name, caption=caption))
         return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
 
-    cleaned = clean_text(text)
-    block_html = text_to_html_blocks(cleaned)
-    if block_html:
-        html_parts.append(block_html)
-
     # Sayfa normal metin olarak işlendi (görsele düşmedi) -- ama metinle
     # karışık gömülü görseller (fotoğraf/figür/diyagram) olabilir, bunlar
     # `extract_page_text`'in metin-blok filtresinde hiç görünmüyordu (bkz.
     # NOTES.md). `diagram_pages`'te zaten tüm sayfa görsel olarak eklendiği
-    # için, taranmış sayfalarda da (yukarıdaki `is_scanned_page` notuna bkz.)
-    # burada tekrar çıkarmıyoruz.
-    if not is_scanned_page and page_num not in diagram_pages:
-        for img_name, img_bytes, media_type in extract_embedded_page_images(doc, page_index, page_num):
-            images.append((img_name, img_bytes, media_type))
-            html_parts.append(f'<img src="{img_name}" alt="Sayfa {page_num} görseli" />')
+    # için burada tekrar çıkarmıyoruz.
+    if text_is_ocr_derived or page_num in diagram_pages:
+        # OCR'dan türetilmiş metin (taranmış sayfa YA DA force_ocr) piksel-uzayı
+        # koordinatlarında; gömülü görsellerin PDF-nokta-uzayı koordinatlarıyla
+        # aynı sistemde değil, bu yüzden bu durumda (ve diagram_pages'te, zaten
+        # tam sayfa görsel eklendiğinden) eski düz (interleave'siz) akış kullanılır.
+        cleaned = clean_text(text)
+        block_html = text_to_html_blocks(cleaned)
+        if block_html:
+            html_parts.append(block_html)
+        if not is_scanned_page and page_num not in diagram_pages:
+            for x0, y0, x1, y1, img_name, img_bytes, media_type in extract_embedded_page_images(
+                doc, page_index, page_num
+            ):
+                images.append((img_name, img_bytes, media_type))
+                html_parts.append(f'<img src="{img_name}" alt="Sayfa {page_num} görseli" />')
+    else:
+        # Normal gömülü-metin sayfası: metin ve görselleri PDF'teki gerçek
+        # okuma sırasına göre TEK bir akışta harmanla (bkz. ROADMAP.md madde 2).
+        page_html, page_images = _build_interleaved_page_html(
+            doc, page_index, page_num, header_blacklist, top_margin_ratio, bottom_margin_ratio
+        )
+        if page_html:
+            html_parts.append(page_html)
+        images.extend(page_images)
 
     return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
 

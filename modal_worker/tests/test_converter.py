@@ -159,6 +159,56 @@ def test_convert_pdf_to_epub_dedups_identical_image_across_pages(pdf_with_duplic
         assert chapter_html.count(canonical_name) == 2, "Her iki referans da aynı (tek) dosyayı göstermeli"
 
 
+def test_convert_pdf_to_epub_interleaves_embedded_image_between_paragraphs(pdf_with_image_between_paragraphs_bytes):
+    """Gömülü görsel artık sayfanın SONUNA değil, PDF'teki gerçek konumuna
+    (iki paragraf arasına) yerleştirilmeli.
+
+    Regresyon testi: eskiden `process_page`, tüm sayfa metnini tek bir
+    `text_to_html_blocks` çağrısıyla HTML'e çevirip gömülü görselleri ayrı
+    bir döngüyle en SONA ekliyordu (bkz. ROADMAP.md madde 2, "konumlandırma
+    yaklaşık" sınırlaması) -- bu fixture'da görsel iki paragraf arasında
+    olduğundan, eski davranışta ikinci paragraftan SONRA çıkardı."""
+    config = {"title": "Aralarda Gorselli Kitap"}
+    result = convert_pdf_to_epub(pdf_with_image_between_paragraphs_bytes, config)
+
+    with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        chapter_html = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
+        first_idx = chapter_html.lower().index("once gelir")
+        img_idx = chapter_html.index("<img")
+        second_idx = chapter_html.lower().index("sonra gelir")
+        assert first_idx < img_idx < second_idx, "Görsel iki paragraf arasına yerleştirilmeli, sayfa sonuna değil"
+
+
+def test_convert_pdf_to_epub_keeps_small_raw_but_large_display_image(pdf_with_small_raw_but_large_display_image_bytes):
+    """Ham piksel boyutu küçük olsa da sayfada büyük gösterilen (yukarı
+    ölçeklenen) bir görsel tutulmalı -- boyut filtresi artık ham piksel
+    boyutuna değil, sayfadaki GÖRÜNEN (rect) boyutuna bakıyor.
+
+    Regresyon testi: eski `MIN_EMBEDDED_IMAGE_DIMENSION=40px` ham-piksel
+    filtresi bu 20x20px görseli (100x100pt olarak gösterilse bile) atlardı."""
+    config = {"title": "Kucuk Ham Buyuk Gosterim"}
+    result = convert_pdf_to_epub(pdf_with_small_raw_but_large_display_image_bytes, config)
+
+    with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        image_entries = [name for name in archive.namelist() if "_img_" in name]
+        assert image_entries, "Ham piksel boyutu küçük olsa da sayfada büyük gösterilen görsel tutulmalı"
+
+
+def test_convert_pdf_to_epub_skips_large_raw_but_tiny_display_image(pdf_with_large_raw_but_tiny_display_image_bytes):
+    """Ham piksel boyutu büyük olsa da sayfada küçük (ikon boyutunda)
+    gösterilen bir görsel atlanmalı -- boyut filtresi artık sayfadaki
+    GÖRÜNEN (rect) boyutuna bakıyor, ham piksel boyutuna değil.
+
+    Regresyon testi: eski ham-piksel filtresi bu 500x500px görseli (10x10pt
+    gibi ikon boyutunda gösterilse bile) yanlışlıkla tutardı."""
+    config = {"title": "Buyuk Ham Kucuk Gosterim"}
+    result = convert_pdf_to_epub(pdf_with_large_raw_but_tiny_display_image_bytes, config)
+
+    with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        image_entries = [name for name in archive.namelist() if "_img_" in name]
+        assert not image_entries, "Sayfada ikon boyutunda gösterilen görsel, ham piksel boyutu büyük olsa da atlanmalı"
+
+
 def test_convert_pdf_to_epub_ocr_recovers_text_from_scanned_page(ocr_scanned_page_bytes):
     """Metin katmanı olmayan ama görselde okunabilir metin bulunan bir sayfada,
     OCR kuruluysa gerçek metin çıkarılmalı — sayfa sessizce görsele düşmemeli.

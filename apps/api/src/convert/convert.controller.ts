@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Res, StreamableFile, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CurrentUser, RequestUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -22,7 +23,11 @@ export class ConvertController {
 
   // `/analyze`'ın kendi, ayrı upload token'ı (bkz. createAnalyzeUploadToken) —
   // kullanıcıya/kotaya bağlı değil, bu yüzden auth GEREKTİRMİYOR (kullanıcı
-  // dosya seçtiğinde henüz giriş yapmamış olabilir).
+  // dosya seçtiğinde henüz giriş yapmamış olabilir). Auth olmadığından IP
+  // başına daha sıkı bir limit uygulanıyor (global varsayılan 100/dk yerine
+  // 10/dk) — herkes sınırsız upload token'ı isteyip Blob'a 100MB'a kadar PDF
+  // yükleyebilmesin diye (bkz. NOTES.md, maliyet DoS'u riski).
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('analyze/upload-url')
   async createAnalyzeUploadUrl(@Body() dto: RequestConvertUploadDto) {
     return this.convertService.createAnalyzeUploadToken(dto.fileName);
@@ -38,6 +43,10 @@ export class ConvertController {
   // body limitine takılıp 503 üretiyordu). Kota/kullanıcıya özel bir yan
   // etkisi yok, bu yüzden bilinçli olarak auth GEREKTİRMİYOR — JwtAuthGuard
   // eklenirse henüz giriş yapmamış kullanıcılar dosya seçer seçmez 401 alır.
+  // Auth olmadığından ve her çağrı Modal'da gerçek bir PDF analiz işlemi
+  // tetiklediğinden (maliyetli) IP başına daha sıkı bir limit uygulanıyor
+  // (bkz. NOTES.md, maliyet DoS'u riski).
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('analyze')
   async analyze(@Body() dto: AnalyzePdfDto) {
     return this.convertService.analyze(dto.pathname);

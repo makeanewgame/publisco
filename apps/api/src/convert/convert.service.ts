@@ -238,8 +238,14 @@ export class ConvertService {
     const jobId = randomUUID();
     try {
       await this.startModalPipeline(jobId, uploaded.url, dto);
+      // Bu satıra gelindiğinde Modal `/convert`'e 202 dönüp `.spawn()` ile
+      // pipeline'ı zaten arka planda başlatmış demektir (startModalPipeline
+      // yukarıda bunu bekledi) — job hiçbir zaman gerçekten "PENDING" (henüz
+      // başlamamış) durumda görünmüyor, şemanın varsayılanı yerine doğrudan
+      // PROCESSING ile oluşturuluyor (bkz. NOTES.md: PROCESSING hiç set
+      // edilmiyordu).
       await this.prisma.convertJob.create({
-        data: { id: jobId, userId, fileSizeBytes: uploaded.size, pageCount },
+        data: { id: jobId, userId, fileSizeBytes: uploaded.size, pageCount, status: ConvertJobStatus.PROCESSING },
       });
       return { jobId };
     } catch (error) {

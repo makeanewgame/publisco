@@ -331,33 +331,117 @@ def _merge_blocks_into_paragraphs(
     return paragraphs
 
 
-COLUMN_SPAN_MARGIN_RATIO = 0.05  # sütun sınırına yakın bloklar için tolerans payı (sayfa genişliğinin oranı)
-COLUMN_MIN_BLOCKS_PER_SIDE = 3  # bu sayının altında sol/sağ blok varsa iki sütunlu sayılmaz (yanlış-pozitif riski)
-COLUMN_MIN_SIDE_BLOCK_RATIO = 0.6  # sol+sağ bloklar, sayfadaki tüm blokların en az bu oranını oluşturmalı
+COLUMN_SPAN_WIDTH_RATIO = 0.5  # bir bloğun tam-genişlik (span) ADAYI sayılması için minimum genişlik oranı
+COLUMN_BAND_GAP_MARGIN_RATIO = 0.06  # aynı sütuna ait blokları birleştirirken tolere edilen boşluk payı -- paragraf ilk-satır girintisini (tek sütunlu sayfalarda x0'ı iki gruba ayırabilen ~1-3em'lik sapma) yutacak kadar geniş, ama gerçek sütun-arası boşluktan (gözlenen minimum ~150pt) belirgin biçimde dar
+COLUMN_MIN_BLOCKS_PER_COLUMN = 3  # bu sayının altında blok içeren aday bant sütun sayılmaz (yanlış-pozitif riski)
+COLUMN_MIN_TOTAL_BLOCK_RATIO = 0.6  # sütun bantlarındaki bloklar, sayfadaki tüm blokların en az bu oranını oluşturmalı
+COLUMN_MAX_COUNT = 6  # makul sütun sayısı üst sınırı (gürültülü/yanlış bant tespitini sınırlamak için)
+COLUMN_MIN_BLOCK_WIDTH_RATIO = 0.08  # bant içindeki EN GENİŞ bloğun genişliği sayfa genişliğinin en az bu oranı olmalı
+
+
+def _detect_column_bands(
+    blocks: list[tuple[float, float, float, float, str]], page_width: float
+) -> list[tuple[float, float]] | None:
+    """Blokları x-aralığına göre soldan sağa sütun bantlarına ayırır.
+
+    Genişliği `COLUMN_SPAN_WIDTH_RATIO`'dan fazla olan bloklar (başlık,
+    tam-genişlik şekil/tablo) aday havuzuna alınmaz -- bunlar birden fazla
+    sütunu köprüleyip bantları birbirine karıştırır. Kalan bloklar x0'a
+    göre sıralanıp SADECE x0 yakınlığına (bir önceki bloğun x0'ına göre)
+    bakılarak gruplanır -- kasıtlı olarak x1'e (bloğun sağ kenarına)
+    BAKILMAZ, çünkü bir grubun x1'ini genişletmeye dayalı bir birleştirme,
+    iki gerçek sütun arasındaki dar bir boşluğu köprüleyen tek bir geniş
+    blok (ör. altında iki sütuna yayılan bir görsel altyazısı) yüzünden
+    komşu sütunları yanlışlıkla birleştirebilir -- bu bant sadece o bloğun
+    KENDİ x0'ına göre konumlanır, x1'i diğer blokların gruplamasını
+    etkilemez. Her sütundaki paragraflar aynı sol hizaya (x0) yaslandığından
+    bu, gerçek sütun sınırlarını (paragraf genişliği ne olursa olsun) güvenilir
+    şekilde ayırır. En az 2 bant, her bantta en az `COLUMN_MIN_BLOCKS_PER_COLUMN`
+    blok, her bantın EN GENİŞ bloğu sayfa genişliğinin en az
+    `COLUMN_MIN_BLOCK_WIDTH_RATIO`'sunu kaplaması (harita/diyagram üzerine
+    serpiştirilmiş küçük etiketlerin -- ör. yükseklik/mesafe rakamları --
+    tesadüfen aynı x0'da kümelenip sahte "sütun" sayılmasını engeller, bkz.
+    NOTES.md -- gerçek bir sütunda en az bir satır sütun genişliğine yakın
+    uzunlukta olur, oysa dağınık etiketler hep dar tek kelimeliktir) ve
+    bantlardaki blokların toplamının sayfadaki tüm bloklara oranı
+    `COLUMN_MIN_TOTAL_BLOCK_RATIO`'yu karşılaması gerekir -- yoksa None
+    döner (tek sütun kabul edilir)."""
+    span_width = page_width * COLUMN_SPAN_WIDTH_RATIO
+    candidates = sorted((b for b in blocks if (b[2] - b[0]) < span_width), key=lambda b: b[0])
+    if len(candidates) < COLUMN_MIN_BLOCKS_PER_COLUMN * 2:
+        return None
+
+    gap_threshold = page_width * COLUMN_BAND_GAP_MARGIN_RATIO
+    groups: list[list[tuple]] = []
+    for block in candidates:
+        if groups and block[0] - groups[-1][-1][0] <= gap_threshold:
+            groups[-1].append(block)
+        else:
+            groups.append([block])
+
+    min_block_width = page_width * COLUMN_MIN_BLOCK_WIDTH_RATIO
+    kept = [
+        g
+        for g in groups
+        if len(g) >= COLUMN_MIN_BLOCKS_PER_COLUMN
+        and max(b[2] - b[0] for b in g) >= min_block_width
+        # zincirleme (ardışık-çift) x0 gruplaması, aralarındaki adımlar küçük
+        # olsa bile TOPLAMDA sürüklenip (ör. ortalanmış bir başlık altındaki
+        # değişen uzunlukta isim listesi) gerçek bir sütunu taklit edebilir --
+        # bir sütunun tüm blokları aynı sol hizaya yaslandığından grup içi
+        # x0 YAYILIMI (spread) da `gap_threshold`'u aşmamalı.
+        and (max(b[0] for b in g) - min(b[0] for b in g)) <= gap_threshold
+    ]
+    if len(kept) < 2 or len(kept) > COLUMN_MAX_COUNT:
+        return None
+    if sum(len(g) for g in kept) / len(blocks) < COLUMN_MIN_TOTAL_BLOCK_RATIO:
+        return None
+
+    return [(min(b[0] for b in g), max(b[2] for b in g)) for g in kept]
+
+
+def _classify_block_band(block: tuple, band_ranges: list[tuple[float, float]]) -> int | None:
+    """Bir bloğu, x-aralığı kesişen bant(lar)a göre sınıflandırır. Tam olarak
+    tek bir bantla kesişiyorsa o bantın index'ini, hiçbiriyle kesişmiyorsa
+    (bantlar arası boşlukta/kenar boşluğunda kalan bir blok -- merkezine en
+    yakın banda atanır) en yakın bantın index'ini, İKİ VEYA DAHA FAZLA
+    bantla kesişiyorsa (gerçek tam-genişlik span -- başlık/şekil) None
+    döner. Bantlar `_detect_column_bands` tarafından üst üste binmeyecek
+    şekilde üretildiğinden, bandı üreten bloklar her zaman kendi bantlarıyla
+    kesişir ve komşu banda taşmaz."""
+    x0, x1 = block[0], block[2]
+    overlaps = [i for i, (bx0, bx1) in enumerate(band_ranges) if x1 > bx0 and x0 < bx1]
+    if len(overlaps) == 1:
+        return overlaps[0]
+    if len(overlaps) >= 2:
+        return None
+
+    mid = (x0 + x1) / 2
+    return min(range(len(band_ranges)), key=lambda i: abs(mid - (band_ranges[i][0] + band_ranges[i][1]) / 2))
 
 
 def _split_into_reading_order_segments(
     blocks: list[tuple[float, float, float, float, str]], page_width: float
 ) -> list[list[tuple[float, float, float, float, str]]]:
     """`page.get_text('blocks', sort=True)`'in kendi sıralaması yalnızca
-    y-sonra-x'e göre çalışır -- tek sütunlu sayfalarda doğru, ama İKİ
-    SÜTUNLU sayfalarda (akademik makaleler) sol/sağ sütun bloklarını aynı
-    yükseklikte satır satır iç içe geçirir; oysa gerçek okuma sırası önce
-    tüm sol sütun, sonra tüm sağ sütun olmalı.
+    y-sonra-x'e göre çalışır -- tek sütunlu sayfalarda doğru, ama ÇOK
+    SÜTUNLU sayfalarda (akademik makaleler, dergi/rehber tarzı düzenler)
+    sütun bloklarını aynı yükseklikte satır satır iç içe geçirir; oysa
+    gerçek okuma sırası önce tüm ilk sütun, sonra tüm ikinci sütun, ...
+    olmalı (sütun sayısı 2 ile sınırlı değil).
 
-    Sayfa gerçekten iki sütunluysa (bloklar sayfa orta çizgisinin belirgin
-    biçimde solunda/sağında iki gruba ayrılıyorsa, her iki grupta da
-    yeterli blok varsa) bloku bu kurala göre "bölüm"lere ayırır -- tam
-    genişlik kaplayan bloklar (başlık, tam-genişlik şekil/tablo) bir
-    bölümü kapatıp kendi bölümü olarak araya girer. Sonucu tek bir düz
-    blok listesi DEĞİL, bölümlerin listesi olarak döner -- her bölüm
-    çağıran tarafından ayrı ayrı `_merge_blocks_into_paragraphs`'a
-    verilmeli, çünkü o fonksiyonun girinti tespiti tüm bloklarda TEK bir
-    global sol-hiza (`flush_x0`) varsayıyor; sütunlar aynı pas'ta
-    birleştirilirse sağ sütunun her satırı sol sütuna göre "girintili"
-    görünüp yanlışlıkla ayrı birer paragrafa bölünür.
+    Sayfa gerçekten çok sütunluysa (bkz. `_detect_column_bands`) bloğu bu
+    kurala göre "bölüm"lere ayırır -- tam genişlik kaplayan bloklar
+    (başlık, tam-genişlik şekil/tablo) bir bölümü kapatıp kendi bölümü
+    olarak araya girer. Sonucu tek bir düz blok listesi DEĞİL, bölümlerin
+    listesi olarak döner -- her bölüm çağıran tarafından ayrı ayrı
+    `_merge_blocks_into_paragraphs`'a verilmeli, çünkü o fonksiyonun
+    girinti tespiti tüm bloklarda TEK bir global sol-hiza (`flush_x0`)
+    varsayıyor; sütunlar aynı pas'ta birleştirilirse sonraki sütunların her
+    satırı öncekine göre "girintili" görünüp yanlışlıkla ayrı birer
+    paragrafa bölünür.
 
-    İki sütunlu olduğu net değilse (tek sütun -- golden set'in büyük
+    Çok sütunlu olduğu net değilse (tek sütun -- golden set'in büyük
     çoğunluğu), TEK bir bölüm olarak, mevcut y-sonra-x sırasıyla döner —
     yani tek sütunlu sayfalarda davranış hiç değişmez.
 
@@ -368,51 +452,29 @@ def _split_into_reading_order_segments(
     if not blocks:
         return []
 
-    x_mid = page_width / 2
-    span_margin = page_width * COLUMN_SPAN_MARGIN_RATIO
-
-    def _side(block: tuple) -> str:
-        x0, x1 = block[0], block[2]
-        if x1 <= x_mid + span_margin:
-            return "left"
-        if x0 >= x_mid - span_margin:
-            return "right"
-        return "span"
-
-    sides = [_side(b) for b in blocks]
-    left_count = sides.count("left")
-    right_count = sides.count("right")
-    is_two_column = (
-        left_count >= COLUMN_MIN_BLOCKS_PER_SIDE
-        and right_count >= COLUMN_MIN_BLOCKS_PER_SIDE
-        and (left_count + right_count) / len(blocks) >= COLUMN_MIN_SIDE_BLOCK_RATIO
-    )
-    if not is_two_column:
+    band_ranges = _detect_column_bands(blocks, page_width)
+    if band_ranges is None:
         return [sorted(blocks, key=lambda b: (b[1], b[0]))]
 
     ordered_indices = sorted(range(len(blocks)), key=lambda i: blocks[i][1])
     segments: list[list[tuple[float, float, float, float, str]]] = []
-    section_left: list[tuple[float, float, float, float, str]] = []
-    section_right: list[tuple[float, float, float, float, str]] = []
+    sections: list[list[tuple[float, float, float, float, str]]] = [[] for _ in band_ranges]
 
-    def _flush_section() -> None:
-        if section_left:
-            segments.append(sorted(section_left, key=lambda b: b[1]))
-            section_left.clear()
-        if section_right:
-            segments.append(sorted(section_right, key=lambda b: b[1]))
-            section_right.clear()
+    def _flush_sections() -> None:
+        for section in sections:
+            if section:
+                segments.append(sorted(section, key=lambda b: b[1]))
+                section.clear()
 
     for i in ordered_indices:
-        side = sides[i]
-        if side == "span":
-            _flush_section()
-            segments.append([blocks[i]])
-        elif side == "left":
-            section_left.append(blocks[i])
+        block = blocks[i]
+        band_idx = _classify_block_band(block, band_ranges)
+        if band_idx is None:
+            _flush_sections()
+            segments.append([block])
         else:
-            section_right.append(blocks[i])
-    _flush_section()
+            sections[band_idx].append(block)
+    _flush_sections()
 
     return segments
 

@@ -219,6 +219,93 @@ def pdf_with_two_columns_bytes() -> bytes:
 
 
 @pytest.fixture
+def pdf_with_four_columns_bytes() -> bytes:
+    """DÖRT sütunlu bir sayfa (dergi/rehber tarzı düzen) üretir -- her sütunda
+    3 blok, gerçek bir kitapta gözlenen geometriye yakın (bkz. NOTES.md/
+    ROADMAP.md'deki `book-with-images_ankaranin-trekking-rotalari` sayfa 5
+    bulgusu): sütun 1-2 arası dar (~11pt) bir boşluk, sütun 2-3 arası geniş
+    (~100pt) bir boşluk, sütun 3-4 arası yine dar bir boşluk. Eski algoritma
+    sayfayı yalnızca ORTA ÇİZGİYE göre iki "yarı"ya ayırdığından (sütun 1+2 =
+    sol yarı, sütun 3+4 = sağ yarı), bu düzende her yarının kendi içindeki 2
+    alt-sütunu birbirine karıştırırdı. Bloklar kasıtlı olarak sütun 4'ten
+    sütun 1'e doğru (tersten) eklenir -- ham PDF obje sırasının etkisiz
+    olduğunu doğrulamak için."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=765, height=553)
+
+    columns = [
+        (28, ["Sutun bir ilk paragraf.", "Sutun bir ikinci paragraf.", "Sutun bir ucuncu paragraf."]),
+        (187, ["Sutun iki ilk paragraf.", "Sutun iki ikinci paragraf.", "Sutun iki ucuncu paragraf."]),
+        (434, ["Sutun uc ilk paragraf.", "Sutun uc ikinci paragraf.", "Sutun uc ucuncu paragraf."]),
+        (592, ["Sutun dort ilk paragraf.", "Sutun dort ikinci paragraf.", "Sutun dort ucuncu paragraf."]),
+    ]
+    for x, lines in reversed(columns):
+        y = 100
+        for text in lines:
+            page.insert_text((x, y), text, fontsize=10)
+            y += 150
+
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
+def pdf_with_indented_single_column_bytes() -> bytes:
+    """Tek sütunlu, ama her paragrafın İLK SATIRI girintili (hanging/first-
+    line indent) bir sayfa üretir -- devam satırları x0=72'de, her paragrafın
+    ilk satırı x0=100'de başlar. Bu, blokları x0'a göre kümeleyen sütun
+    tespitinin YANLIŞLIKLA iki "sütun" (girintili/girintisiz) bulmaması
+    gerektiğini doğrular -- gerçek bir kitapta (NOTES.md'deki bulgu)
+    tam olarak bu düzende sahte bir 2-sütun tespiti yaşanmıştı."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+
+    y = 72
+    for i in range(4):
+        page.insert_text((100, y), f"Paragraf {i+1} ilk satiri buradan baslar.", fontsize=11)
+        y += 18
+        page.insert_text((72, y), "devam satiri burada surer ve biraz daha uzar.", fontsize=11)
+        y += 18
+        page.insert_text((72, y), "son satir da burada tamamlanir simdi.", fontsize=11)
+        y += 30
+
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
+def pdf_with_scattered_map_labels_bytes() -> bytes:
+    """Tek gerçek metin sütunu (sol) + bir harita/diyagram üzerine
+    serpiştirilmiş DAR, KISA etiketler (sağ, ör. yükseklik/mesafe rakamları)
+    içeren bir sayfa üretir. Etiketler benzer x0'da kümelenip sayı bakımından
+    (`COLUMN_MIN_BLOCKS_PER_COLUMN`) eşiği geçse bile, DAR oldukları için
+    (`COLUMN_MIN_BLOCK_WIDTH_RATIO`) gerçek bir sütun sayılmamalı -- gerçek
+    bir kitapta (NOTES.md'deki bulgu) tam olarak bu düzende sahte bir sütun
+    tespit edilmişti."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+
+    y = 72
+    for text in [
+        "Bu gercek bir paragraf metnidir ve yeterince uzundur.",
+        "Ikinci satirda da metin devam etmektedir boylece.",
+        "Ucuncu satir paragrafi burada tamamlanmaktadir simdi.",
+    ]:
+        page.insert_text((72, y), text, fontsize=11)
+        y += 30
+
+    for text in ["921m", "767m", "8 km"]:
+        page.insert_text((450, y), text, fontsize=8)
+        y += 40
+
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
 def blank_pdf_bytes() -> bytes:
     """Ne metni ne metadata'sı olan, boş bir sayfalık bir PDF üretir."""
     doc = pymupdf.open()

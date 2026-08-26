@@ -29,7 +29,8 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
 → 77.4 (sayfada hiç çizilmeyen "hayalet" görsel kaynakları artık atlanıyor — images %90.4→%91.6)
 → 77.6 (görsel konumlandırma/interleaving + boyut filtresi düzeltmesi, iki golden `expected_image_count` hatası giderildi — images %91.6→%91.8)
 → 78.9 (madde 1: font-boyutu/kalınlık sinyali `complex-headings`'in sahte `<h2>`'lerini düzeltti — o kitap 80.7→85.8, `scanned_002`'de küçük/kabul edilen bir yan etki dışında tüm kitaplarda iyileşme — aşağıya bkz.)
-→ **78.9 (madde 3: bölüm tespiti fallback'i eklendi — skor KASITLI OLARAK değişmedi: `eval/`'daki hiçbir dosya `detect_chapters`/`analyze_pdf` çağırmıyor, `structure`'ın `chapter_recall`'ü üretilen EPUB'ın KENDİ TOC'undan geliyor (`config["chapters"]`'a bağlı, `plan_conversion`/`assemble_epub`'ın işi) — `detect_chapters` yalnızca `/analyze` önizleme uç noktasını besliyor, dönüşüm pipeline'ına hiç girmiyor. Doğrulama bu yüzden eval yerine 5 golden `expected_chapters` kitabı üzerinde doğrudan `detect_chapters(doc)` çağrılarak elle yapıldı, aşağıya bkz.)**
+→ 78.9 (madde 3: bölüm tespiti fallback'i eklendi — skor KASITLI OLARAK değişmedi: `eval/`'daki hiçbir dosya `detect_chapters`/`analyze_pdf` çağırmıyor, `structure`'ın `chapter_recall`'ü üretilen EPUB'ın KENDİ TOC'undan geliyor (`config["chapters"]`'a bağlı, `plan_conversion`/`assemble_epub`'ın işi) — `detect_chapters` yalnızca `/analyze` önizleme uç noktasını besliyor, dönüşüm pipeline'ına hiç girmiyor. Doğrulama bu yüzden eval yerine 5 golden `expected_chapters` kitabı üzerinde doğrudan `detect_chapters(doc)` çağrılarak elle yapıldı, aşağıya bkz.)
+→ **79.0 (N-sütun okuma sırası bug'ı düzeltildi — `_split_into_reading_order_segments` artık gerçekten 3+ sütunlu sayfaları doğru sıralıyor, eskiden yalnızca sayfayı orta çizgiden ikiye ayırıp her yarının kendi içindeki alt-sütunları karıştırıyordu. Küçük bir iyileşme çünkü golden setteki çoğu sayfa hâlâ tek/iki sütunlu, aşağıya bkz.)**
 
 ## Tamamlanan adaylar
 
@@ -129,6 +130,17 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
   düşükse (ör. bir gezi rehberinin numaralı yürüyüş-rotası alt-maddeleri) bu sinyale
   güvenilmiyor. 16 yeni birim/entegrasyon testi eklendi (`test_converter.py`), suite
   71/71 yeşil. Detay: `TAMAMLANANLAR.md`.
+- ~~N-sütun okuma sırası bug'ı (NOTES.md'de ayrı bir "Sorunlar" maddesiydi, madde 2'nin
+  manuel doğrulaması sırasında bulunmuştu)~~ — 2026-08-26'da düzeltildi.
+  `_split_into_reading_order_segments`, gerçekten çok sütunlu (3+, dergi/rehber tarzı)
+  sayfalarda sayfayı yalnızca orta çizgiden ikiye ayırıp her yarının kendi içindeki
+  alt-sütunları karıştırıyordu (kanıt: `book-with-images_ankaranin-trekking-rotalari`
+  sayfa 5, 4 sütunlu). Yeni `_detect_column_bands` blokları x0 yakınlığına göre bant'lara
+  ayırıyor (N sütuna genelleşiyor). Uygulama sırasında manuel doğrulamayla 3 ayrı
+  yanlış-pozitif riski bulunup düzeltildi (bir görsel altyazısının iki sütunu köprülemesi,
+  paragraf ilk-satır girintisinin sahte 2-sütun sayılması, harita etiketlerinin sahte
+  sütun sayılması). 3 yeni regresyon testi, suite 71→74 yeşil. Fast eval: 78.9→79.0,
+  hiçbir kitapta gerileme yok; hedef kitap tam eval'da 34.9→35.2. Detay: `TAMAMLANANLAR.md`.
 
 ## Diğer (bu roadmap'in kapsamı dışı, ayrı konular)
 

@@ -20,6 +20,7 @@ from converter import (
 )
 from converter import (
     _detect_chapter_candidate_from_dict_page,
+    _detect_column_bands,
     _filter_chapter_candidates,
     _is_chapter_heading_shaped,
     _is_mostly_uppercase,
@@ -538,6 +539,66 @@ def test_extract_page_text_reorders_two_column_layout(pdf_with_two_columns_bytes
     left_last_idx = text.index("Sol sutun ucuncu paragraf")
     right_first_idx = text.index("Sag sutun ilk paragraf")
     assert left_last_idx < right_first_idx, "sol sütun tamamen sağ sütundan önce gelmeli"
+
+
+def test_extract_page_text_reorders_four_column_layout(pdf_with_four_columns_bytes):
+    """Regresyon testi (NOTES.md/ROADMAP.md'deki N-sütun bug'ı): eski
+    algoritma sayfayı yalnızca orta çizgiye göre iki yarıya ayırdığından,
+    4 gerçek sütunlu (dar sütun1-2/sütun3-4 boşluğu, geniş sütun2-3 boşluğu)
+    bir sayfada her yarının içindeki 2 alt-sütunu birbirine karıştırıyordu.
+    Okuma sırası artık gerçekten sütun1 -> sütun2 -> sütun3 -> sütun4
+    olmalı."""
+    doc = pymupdf.open(stream=pdf_with_four_columns_bytes, filetype="pdf")
+    text = extract_page_text(doc[0])
+    doc.close()
+
+    assert text is not None
+    indices = {
+        label: text.index(label)
+        for label in [
+            "Sutun bir ilk paragraf",
+            "Sutun bir ucuncu paragraf",
+            "Sutun iki ilk paragraf",
+            "Sutun iki ucuncu paragraf",
+            "Sutun uc ilk paragraf",
+            "Sutun uc ucuncu paragraf",
+            "Sutun dort ilk paragraf",
+            "Sutun dort ucuncu paragraf",
+        ]
+    }
+    assert indices["Sutun bir ucuncu paragraf"] < indices["Sutun iki ilk paragraf"]
+    assert indices["Sutun iki ucuncu paragraf"] < indices["Sutun uc ilk paragraf"]
+    assert indices["Sutun uc ucuncu paragraf"] < indices["Sutun dort ilk paragraf"]
+
+
+def test_detect_column_bands_ignores_paragraph_indent_in_single_column(pdf_with_indented_single_column_bytes):
+    """Regresyon testi: tek sütunlu bir sayfada paragrafların ilk satır
+    girintisi (hanging indent), blokları x0'a göre iki gruba ayırıp sahte
+    bir 2-sütun tespitine yol açmamalı -- gerçek bir kitapta (NOTES.md'deki
+    bulgu) tam bunun yüzünden bir sayfa yanlışlıkla 2 sütunlu sayıldı."""
+    doc = pymupdf.open(stream=pdf_with_indented_single_column_bytes, filetype="pdf")
+    page = doc[0]
+    blocks = [b for b in page.get_text("blocks") if b[4].strip()]
+    bands = _detect_column_bands(blocks, page.rect.width)
+    doc.close()
+
+    assert bands is None
+
+
+def test_detect_column_bands_ignores_scattered_narrow_labels(pdf_with_scattered_map_labels_bytes):
+    """Regresyon testi: bir harita/diyagram üzerine serpiştirilmiş dar
+    (kısa) etiketler, sayıca yeterli olsalar bile gerçek bir sütun
+    sayılmamalı -- gerçek bir kitapta (`book-with-images_ankaranin-
+    trekking-rotalari` sayfa 56, NOTES.md'deki bulgu) yükseklik/mesafe
+    rakamları tesadüfen aynı x0'da kümelenip sahte bir sütun olarak
+    tespit edilmişti."""
+    doc = pymupdf.open(stream=pdf_with_scattered_map_labels_bytes, filetype="pdf")
+    page = doc[0]
+    blocks = [b for b in page.get_text("blocks") if b[4].strip()]
+    bands = _detect_column_bands(blocks, page.rect.width)
+    doc.close()
+
+    assert bands is None
 
 
 def test_convert_pdf_to_epub_keeps_paragraphs_as_separate_p_tags(pdf_with_two_paragraphs_bytes):

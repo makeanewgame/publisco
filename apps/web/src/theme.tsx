@@ -5,9 +5,6 @@ export type ThemeName = 'default' | 'folder';
 const STORAGE_KEY = 'publisco-theme';
 
 function getInitialTheme(): ThemeName {
-
-  return 'default'
-
   if (typeof window === 'undefined') return 'default';
   return window.localStorage.getItem(STORAGE_KEY) === 'folder' ? 'folder' : 'default';
 }
@@ -32,8 +29,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     () => ({
       theme,
       setTheme,
-      // toggleTheme: () => setTheme((prev) => (prev === 'folder' ? 'default' : 'folder')),
-      toggleTheme: () => setTheme((prev) => (prev === 'folder' ? 'default' : 'default')),
+      toggleTheme: () => setTheme((prev) => (prev === 'folder' ? 'default' : 'folder')),
     }),
     [theme],
   );

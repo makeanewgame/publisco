@@ -1,6 +1,5 @@
 import { Outlet } from 'react-router-dom';
 import { Footer } from '../components/Footer';
-import { FloatingThemeToggle } from '../components/FloatingThemeToggle';
 import { Navbar } from '../components/Navbar';
 
 export function RootLayout() {

@@ -6,7 +6,7 @@ import { navPillClass, userChipClass } from '../lib/themeClasses';
 import { useLocale } from '../i18n';
 import { useTheme } from '../theme';
 import { clearCredentials, selectCurrentUser } from '../app/authSlice';
-import { FloatingThemeToggle } from './FloatingThemeToggle';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Navbar() {
   const { locale, setLocale, t } = useLocale();
@@ -59,6 +59,7 @@ export function Navbar() {
   if (theme === 'folder') {
     return (
       <div className="tabs-row">
+        <ThemeToggle />
         <Logo />
         <Link to="/#features" className="tab t1">{t('nav.features')}</Link>
         <Link to="/#how" className="tab t2">{t('nav.how')}</Link>
@@ -89,6 +90,7 @@ export function Navbar() {
     <div className="container mx-auto">
       <nav className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-4 border-b border-[#e8d9c4]/50 bg-[#fffdf8]/95 px-4 py-4 backdrop-blur-md sm:px-6 lg:px-8 shadow-[0_1px_3px_rgba(36,28,21,0.06)]">
         <div className="flex items-center gap-8">
+          <ThemeToggle />
           <Logo />
           <div className="hidden items-center gap-1 text-[#6e6257] lg:flex">
             <Link

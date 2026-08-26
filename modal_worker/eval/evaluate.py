@@ -36,6 +36,7 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False) -> BookResult:
             error=artifact.error,
             gates_triggered=["conversion_error"],
             duration_seconds=artifact.duration_seconds,
+            unsupported=book.unsupported,
         )
 
     content = read_epub(artifact.epub_bytes)
@@ -56,7 +57,7 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False) -> BookResult:
         expected_paragraph_range=book.expected_paragraph_range,
     )
 
-    duplicates = evaluate_duplicates(content.full_text)
+    duplicates = evaluate_duplicates(content.full_text, total_pages=artifact.plan.total_pages)
 
     language = artifact.plan.resolved_config.get("language", book.language)
     broken_words = evaluate_broken_words(content.full_text, language)
@@ -65,7 +66,14 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False) -> BookResult:
     end_page = artifact.plan.chunks[-1][1] if artifact.plan.chunks else artifact.plan.total_pages
 
     ocr_quality = evaluate_ocr_quality(pdf_bytes, artifact.plan.resolved_config, start_page, end_page)
-    images = evaluate_images(pdf_bytes, start_page, end_page, content.content_image_count, book.expected_image_count)
+    images = evaluate_images(
+        pdf_bytes,
+        start_page,
+        end_page,
+        content.content_image_count,
+        book.expected_image_count,
+        epub_unique_image_count=content.total_image_items,
+    )
     epub_validity = evaluate_epub_validity(artifact.epub_bytes)
 
     scoring_output = score_book(
@@ -100,4 +108,5 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False) -> BookResult:
         },
         gates_triggered=scoring_output.gates_triggered,
         duration_seconds=artifact.duration_seconds,
+        unsupported=book.unsupported,
     )

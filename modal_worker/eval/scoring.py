@@ -124,7 +124,7 @@ def _structure_score(result: StructureResult) -> float | None:
 
 def _cleanliness_score(duplicates: DuplicatesResult, broken_words: BrokenWordsResult) -> float | None:
     ngram_penalty = min(1.0, duplicates.duplicate_ngram_ratio * 5)
-    block_penalty = min(1.0, duplicates.repeated_short_block_total_occurrences / 20)
+    block_penalty = min(1.0, duplicates.leaked_short_block_total_occurrences / 20)
     duplicate_score = 1 - max(ngram_penalty, block_penalty)
 
     if not broken_words.available:
@@ -149,7 +149,7 @@ def _images_score(result: ImagesResult) -> float | None:
     if result.expected_image_count is not None:
         expected = max(1, result.expected_image_count)
         recall = 1 - (result.missing_vs_expected or 0) / expected
-        precision_base = max(1, result.epub_content_image_count or result.expected_image_count)
+        precision_base = max(1, result.epub_unique_image_count or result.expected_image_count)
         precision = 1 - (result.unexpected_vs_expected or 0) / precision_base
         return _clip(0.7 * recall + 0.3 * precision)
 

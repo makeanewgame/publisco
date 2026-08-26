@@ -14,6 +14,7 @@ from dataclasses import dataclass
 class ImagesResult:
     pdf_image_count: int = 0
     epub_content_image_count: int = 0
+    epub_unique_image_count: int = 0
     expected_image_count: int | None = None
     missing_vs_pdf: int = 0
     missing_vs_expected: int | None = None
@@ -43,18 +44,27 @@ def evaluate_images(
     end_page: int,
     epub_content_image_count: int,
     expected_image_count: int | None,
+    epub_unique_image_count: int | None = None,
 ) -> ImagesResult:
     pdf_image_count = _count_pdf_images(pdf_bytes, start_page, end_page)
+    # Golden `expected_image_count` curator tarafından genelde PDF'teki benzersiz
+    # xref sayısından tahmin ediliyor -- karşılaştırma da benzersiz DOSYA sayısıyla
+    # (`epub_unique_image_count`) yapılmalı, `<img>` etiketi OCCURRENCE sayısıyla
+    # değil (aksi halde cross-page dedup'ın gerçek etkisi ölçülemiyor, bkz.
+    # NOTES.md/book-with-images_966108 bulgusu). Verilmezse occurrence sayısına
+    # düşülüyor (geriye dönük uyumlu).
+    unique_image_count = epub_unique_image_count if epub_unique_image_count is not None else epub_content_image_count
 
     result = ImagesResult(
         pdf_image_count=pdf_image_count,
         epub_content_image_count=epub_content_image_count,
+        epub_unique_image_count=unique_image_count,
         expected_image_count=expected_image_count,
         missing_vs_pdf=max(0, pdf_image_count - epub_content_image_count),
     )
 
     if expected_image_count is not None:
-        result.missing_vs_expected = max(0, expected_image_count - epub_content_image_count)
-        result.unexpected_vs_expected = max(0, epub_content_image_count - expected_image_count)
+        result.missing_vs_expected = max(0, expected_image_count - unique_image_count)
+        result.unexpected_vs_expected = max(0, unique_image_count - expected_image_count)
 
     return result

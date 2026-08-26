@@ -24,17 +24,22 @@ METRIC_LABELS = {
 def build_run_summary(book_results: list[BookResult], variant: str) -> dict[str, Any]:
     books_payload = [asdict(r) for r in book_results]
 
-    scored = [r for r in book_results if r.score is not None]
+    # `eval/README.md`: unsupported=true kitaplar (ör. mathematical) skora/gate'e
+    # dahil edilmez, yalnızca raporlanır (per-kitap satırı hâlâ basılıyor,
+    # `books_payload`'da hâlâ var) -- bkz. NOTES.md/ROADMAP.md.
+    supported_results = [r for r in book_results if not r.unsupported]
+
+    scored = [r for r in supported_results if r.score is not None]
     overall_score = round(sum(r.score for r in scored) / len(scored), 1) if scored else 0.0
 
     metric_averages: dict[str, float | None] = {}
     for metric_name in METRIC_LABELS:
-        values = [r.metric_scores.get(metric_name) for r in book_results if r.metric_scores.get(metric_name) is not None]
+        values = [r.metric_scores.get(metric_name) for r in supported_results if r.metric_scores.get(metric_name) is not None]
         metric_averages[metric_name] = round(sum(values) / len(values), 3) if values else None
 
     failed_books = [
         {"book_id": r.book_id, "category": r.category, "score": r.score, "gates": r.gates_triggered, "error": r.error}
-        for r in book_results
+        for r in supported_results
         if r.category_label in ("Failed", "Poor") or r.error
     ]
 
@@ -160,8 +165,13 @@ def print_book_diagnostics(book: BookResult) -> None:
             print(f"  OCR confidence: {oq.get('avg_confidence', 0):.1f}%")
             print(f"  Low confidence pages: {(oq.get('low_confidence_page_pct') or 0) * 100:.1f}%")
         dup = details.get("duplicates", {})
-        if dup.get("repeated_short_blocks"):
-            print(f"  Repeated header/footer-like blocks: {dup.get('repeated_short_block_total_occurrences', 0)}")
+        if dup.get("leaked_short_blocks"):
+            print(f"  Repeated header/footer-like blocks: {dup.get('leaked_short_block_total_occurrences', 0)}")
+        elif dup.get("repeated_short_blocks"):
+            print(
+                "  Repeated short blocks (not page-leak-like, no score penalty): "
+                f"{dup.get('repeated_short_block_total_occurrences', 0)}"
+            )
         bw = details.get("broken_words", {})
         if bw.get("confirmed_count"):
             print(f"  Broken words: {bw.get('confirmed_count', 0)}")

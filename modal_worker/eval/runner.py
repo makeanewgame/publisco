@@ -53,6 +53,9 @@ class BookResult:
     gates_triggered: list[str] = field(default_factory=list)
     error: str | None = None
     duration_seconds: float = 0.0
+    # `eval/README.md`: unsupported=true kitaplar (ör. mathematical) skora/gate'e
+    # dahil edilmez, yalnızca raporlanır -- bkz. NOTES.md/ROADMAP.md.
+    unsupported: bool = False
 
 
 def run_conversion(pdf_bytes: bytes, config: dict[str, Any], book_id: str, force_ocr: bool = False) -> ConversionArtifact:

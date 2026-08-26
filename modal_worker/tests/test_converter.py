@@ -18,6 +18,14 @@ from converter import (
     process_page_range,
     text_to_html_blocks,
 )
+from converter import (
+    _detect_chapter_candidate_from_dict_page,
+    _filter_chapter_candidates,
+    _is_chapter_heading_shaped,
+    _is_mostly_uppercase,
+    _matches_known_title_or_author,
+    _toc_chapters_look_plausible,
+)
 
 
 def test_clean_text_merges_hyphenated_linebreaks():
@@ -247,6 +255,156 @@ def test_detect_chapters_returns_empty_without_toc(sample_pdf_bytes):
     chapters = detect_chapters(doc)
     doc.close()
     assert chapters == []
+
+
+def test_detect_chapters_falls_back_when_toc_looks_like_per_page_bookmarks():
+    """Bazı taranmış PDF'lerin gömülü outline'ı gerçek bölüm yapısını değil,
+    tarayıcı yazılımının her sayfa için ürettiği bir dosya-adı bookmark'ını
+    taşıyor (gerçek bir örnekte: scanned_002, 188 sayfa için 188 outline
+    girdisi). Böyle bir TOC'a körü körüne güvenmek yerine, sayfa/bölüm
+    oranı gerçekçi değilse TOC'un tamamı reddedilip fallback'e düşülmeli."""
+    doc = pymupdf.open()
+    for i in range(1, 11):
+        doc.new_page()
+    # 10 sayfalık bir belgede 8 "bölüm" -- 1.25 sayfa/bölüm, gerçekçi değil.
+    doc.set_toc([[1, f"Sayfa - {i:03d}", i] for i in range(1, 9)])
+    chapters = detect_chapters(doc)
+    doc.close()
+    assert chapters == []
+
+
+def test_toc_chapters_look_plausible_rejects_dense_per_page_toc():
+    assert _toc_chapters_look_plausible(188, 188) is False
+    assert _toc_chapters_look_plausible(148, 261) is False  # düz/tek-seviyeli outline, alt-başlıklar dahil
+
+
+def test_toc_chapters_look_plausible_accepts_short_paper_toc():
+    assert _toc_chapters_look_plausible(5, 11) is True
+    assert _toc_chapters_look_plausible(7, 15) is True
+
+
+def test_toc_chapters_look_plausible_accepts_single_entry():
+    assert _toc_chapters_look_plausible(1, 500) is True
+
+
+def test_filter_chapter_candidates_outlier_does_not_dominate_tier():
+    """gerçek bir örnekte (scanned_002, sayfa 1'in OCR yanlış okuması): bir
+    kapak illüstrasyonunun OCR yanlış okuması (190px, gövde/başlık
+    boyutlarından KAT KAT büyük) tek başına tavanı yükseltip AYNI stildeki
+    8 gerçek bölüm başlığını (17-23px, tavanın %90'ının altında kalarak)
+    eleyebiliyordu. Medyan tabanlı uç-değer tavanı bu tek seferlik
+    outlier'ı safdışı bırakmalı."""
+    candidates = [
+        (1, "KAPAK YANLIŞ OKUMASI", 190.0),
+        (8, "GERÇEK BÖLÜM 1", 17.0),
+        (10, "GERÇEK BÖLÜM 2", 17.0),
+        (40, "GERÇEK BÖLÜM 3", 17.0),
+        (77, "GERÇEK BÖLÜM 4", 17.0),
+    ]
+    chapters = _filter_chapter_candidates(candidates, tier_ratio=0.9)
+    titles = [c["title"] for c in chapters]
+    assert "KAPAK YANLIŞ OKUMASI" not in titles
+    assert "GERÇEK BÖLÜM 1" in titles
+    assert "GERÇEK BÖLÜM 2" in titles
+    assert "GERÇEK BÖLÜM 3" in titles
+    assert "GERÇEK BÖLÜM 4" in titles
+
+
+def test_filter_chapter_candidates_uses_numbering_when_it_matches_top_tier():
+    """gerçek bir örnekte (technical-with-code_functional-programing): düz/
+    tek-seviyeli bir outline yüzünden gömülü aday havuzu, gerçek bölümlerle
+    AYNI punto/kalınlıktaki onlarca alt-başlıkla dolu. "Chapter N." gibi
+    açık bir numaralandırma deseni VE bu adayların en büyük punto
+    katmanında olması, saf boyut sezgisinden daha güvenilir bir sinyal."""
+    candidates = [
+        (10, "Credits", 28.8),
+        (12, "About the Author", 28.8),
+        (43, "Chapter 1. The Powers", 28.8),
+        (58, "Chapter 2. Fundamentals", 28.8),
+        (92, "Chapter 3. Setting Up", 28.8),
+        (100, "Category theory in a nutshell", 23.8),
+    ]
+    chapters = _filter_chapter_candidates(candidates, tier_ratio=0.9)
+    titles = [c["title"] for c in chapters]
+    assert titles == ["Chapter 1. The Powers", "Chapter 2. Fundamentals", "Chapter 3. Setting Up"]
+
+
+def test_filter_chapter_candidates_ignores_numbering_when_not_at_top_tier():
+    """gerçek bir örnekte (book-with-images_ankaranin-trekking-rotalari):
+    numaralandırılmış adaylar ("17. Çamlıdere-Çamlıdere") aslında yürüyüş
+    rotası alt-maddeleri, küçük puntoda; gerçek bölüm başlıkları numarasız
+    ama daha büyük puntoda. Numaralandırma sinyaline, yalnızca genel tavana
+    yakın bir katmanda olduğunda güvenilmeli."""
+    candidates = [
+        (6, "ANADOLU'NUN KAVŞAK NOKTASI", 15.0),
+        (13, "YEŞİL SIĞINAK", 15.0),
+        (17, "2) Alakoç Köyü-Alakoç Yaylası", 11.0),
+        (32, "17. Çamlıdere-Çamlıdere", 11.0),
+    ]
+    chapters = _filter_chapter_candidates(candidates, tier_ratio=0.9)
+    titles = [c["title"] for c in chapters]
+    assert titles == ["ANADOLU'NUN KAVŞAK NOKTASI", "YEŞİL SIĞINAK"]
+
+
+def test_matches_known_title_or_author_handles_turkish_diacritic_loss():
+    """gerçek bir örnekte (scanned_002): kapak sayfasındaki başlık tekrarı
+    ("BiR GUN") gömülü fontta Türkçe aksanları (İ, Ü) kaybetmiş şekilde
+    çıkarılmıştı -- gerçek yazar/başlıkla ("BİR GÜN") harfiyen karşılaştırma
+    (hatta standart .casefold() ile bile) eşleşmiyordu."""
+    assert _matches_known_title_or_author("BiR GUN", "YVANWVMYVA DINIS", "BİR GÜN") is True
+
+
+def test_matches_known_title_or_author_rejects_unrelated_text():
+    assert _matches_known_title_or_author("ŞEYTAN GÖRÜNÜR", "YVANWVMYVA DINIS", "BİR GÜN") is False
+
+
+def test_is_chapter_heading_shaped_rejects_punctuation_only():
+    """gerçek bir örnekte (turkish_bilimsel-makale-nasil-yazilir): dekoratif
+    bir bölüm-ayracı ("◆ ◆ ◆") 3 "kelime" olarak sayılıp başlık şekli
+    testini geçiyor, sayfa başına tekrarlanarak onlarca sahte bölüm
+    üretiyordu."""
+    assert _is_chapter_heading_shaped("◆ ◆ ◆") is False
+    assert _is_chapter_heading_shaped("Gerçek Bir Başlık") is True
+
+
+def test_is_mostly_uppercase():
+    assert _is_mostly_uppercase("SALI: EGER TELEFONLAR") is True
+    assert _is_mostly_uppercase("şahane görünüyordu.") is False
+
+
+def test_detect_chapter_candidate_from_dict_page_requires_body_font_size():
+    """gerçek bir örnekte (scanned_001): belgenin tamamında güvenilir bir
+    gövde-punto tabanı bulunamayınca (`body_font_size=None`), font-boyutu
+    sezgisi "her şey başlık" varsayımına düşüp kitaptaki HER rastgele
+    cümleyi bölüm başlığı sayıyordu (40'tan fazla sahte bölüm). Gövde-punto
+    tabanı yoksa gömülü-metin yolu hiç aday üretmemeli."""
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 100), "Sıradan bir gövde cümlesi burada.", fontsize=12)
+    candidate = _detect_chapter_candidate_from_dict_page(page, None)
+    doc.close()
+    assert candidate is None
+
+
+def test_detect_chapters_uses_font_size_fallback_without_toc():
+    """TOC yokken, gömülü metindeki font-boyutu/kalınlık farkı gerçek bir
+    bölüm başlığını gövde metninden ayırt edebilmeli."""
+    doc = pymupdf.open()
+    for _ in range(3):
+        page = doc.new_page()
+        page.insert_text((72, 100), "Bu sayfadaki metin govde paragrafidir, yeterince uzundur.", fontsize=12)
+    heading_page = doc.new_page()
+    heading_page.insert_text((72, 100), "Gercek Bolum Basligi", fontsize=24)
+    heading_page.insert_text((72, 200), "Bu bolumun govde metni burada devam ediyor.", fontsize=12)
+    for _ in range(3):
+        page = doc.new_page()
+        page.insert_text((72, 100), "Yine sayfadaki metin govde paragrafidir, yeterince uzundur.", fontsize=12)
+
+    chapters = detect_chapters(doc)
+    doc.close()
+
+    titles = [c["title"] for c in chapters]
+    assert "Gercek Bolum Basligi" in titles
 
 
 def test_detect_title_author_prefers_metadata(pdf_with_metadata_bytes):

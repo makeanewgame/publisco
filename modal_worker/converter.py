@@ -105,17 +105,57 @@ def _looks_like_axis_label(text: str) -> bool:
     return False
 
 
-def _paragraph_text_to_html(paragraph_text: str) -> str | None:
+HEADING_FONT_SIZE_RATIO = 1.15  # gövde punto boyutunun bu kat ve üzeri satırlar başlık adayı sayılır
+_BOLD_FONT_FLAG = 1 << 4  # PyMuPDF span "flags" bitfield: bit 4 = kalın (bold)
+
+
+def _is_bold_span(font_name: str, flags: int) -> bool:
+    """PyMuPDF'in span düzeyinde döndürdüğü `flags` bitfield'ı (bit 4 = kalın)
+    çoğu font için güvenilir, ama bazı özel/gömülü fontlarda hiç set edilmeyip
+    yalnızca font ADINA (`...-Bold`, `...Bd` vb.) yansıyabiliyor -- ikisi
+    birden kontrol ediliyor."""
+    return bool(flags & _BOLD_FONT_FLAG) or "bold" in (font_name or "").lower()
+
+
+def _looks_like_heading_font(font_size: float, is_bold: bool, body_font_size: float | None) -> bool:
+    """Bir satırın punto boyutu/kalınlığı, sağlanan gövde metni punto
+    boyutuna göre başlık gibi mi görünüyor? `body_font_size` bilinmiyorsa
+    (ör. font bilgisi taşımayan eski çağrı yolları) her zaman True döner --
+    yani font kontrolü devre dışı kalır, karar salt şekil sezgiseline kalır."""
+    if not body_font_size:
+        return True
+    return is_bold or font_size >= body_font_size * HEADING_FONT_SIZE_RATIO
+
+
+def _paragraph_text_to_html(
+    paragraph_text: str,
+    font_size: float | None = None,
+    is_bold: bool = False,
+    body_font_size: float | None = None,
+) -> str | None:
     """Tek bir (birden fazla satır içerebilen) paragraf metnini `<h2>` ya da
     `<p>`'ye çevirir -- `text_to_html_blocks`'un asıl sezgiseli, blok-bazlı
     (sayfa-içi görsellerle harmanlanan) akışın da (bkz. `_build_interleaved_page_html`)
-    aynı başlık/paragraf mantığını kullanabilmesi için ayrı bir fonksiyona çıkarıldı."""
+    aynı başlık/paragraf mantığını kullanabilmesi için ayrı bir fonksiyona çıkarıldı.
+
+    `font_size`/`is_bold`/`body_font_size` yalnızca font bilgisi taşıyan
+    çağıranlarda (gömülü metin katmanlı sayfalar) doludur -- o durumda kısa/
+    noktalamasız bir satırın gerçekten `<h2>` sayılması için şekil sezgiselinin
+    yanına punto/kalınlık kontrolü de eklenir (bkz. ROADMAP.md madde 1: aksi
+    halde gövdeyle AYNI boyuttaki kısa satırlar -- ör. bir UI kılavuzundaki
+    "Kaydır", "Detay 1" gibi kısa etiketler -- yanlışlıkla başlık sayılıyordu)."""
     lines = [line.strip() for line in paragraph_text.splitlines() if line.strip()]
     if not lines:
         return None
 
     is_heading_shaped = len(lines) == 1 and len(lines[0].split()) <= 6 and not re.search(r"[.!?]$", lines[0])
-    if is_heading_shaped and not _looks_like_math_or_citation(lines[0]) and not _looks_like_axis_label(lines[0]):
+    is_heading = (
+        is_heading_shaped
+        and not _looks_like_math_or_citation(lines[0])
+        and not _looks_like_axis_label(lines[0])
+        and _looks_like_heading_font(font_size or 0.0, is_bold, body_font_size)
+    )
+    if is_heading:
         return f"<h2>{html.escape(lines[0])}</h2>"
 
     block_text = " ".join(lines)
@@ -209,8 +249,16 @@ PARAGRAPH_INDENT_LINE_HEIGHT_RATIO = 0.4  # esik, satir yuksekliginin bu oranind
 PARAGRAPH_GAP_MULTIPLIER = 1.8  # tipik satir-ici bosluktan bu kat fazla dikey bosluk = yeni paragraf
 
 
-def _merge_blocks_into_paragraphs(blocks: list[tuple[float, float, float, float, str]]) -> list[str]:
-    """Bir sayfadaki (x0, y0, x1, y1, metin) bloklarini gercek paragraflara birlestirir.
+def _merge_blocks_into_paragraphs(
+    blocks: list[tuple[float, float, float, float, str, float, bool]],
+) -> list[tuple[str, float, bool]]:
+    """Bir sayfadaki (x0, y0, x1, y1, metin, punto, kalın-mı) bloklarini gercek
+    paragraflara birlestirir, her paragraf icin de (metin, punto, kalın-mı)
+    dondurur -- punto/kalınlık, paragrafi baslatan İLK (birleştirilmemiş) bloktan
+    alınır. Bu yalnizca paragraf TEK SATIRLIK kaldığında (yani hiç başka blokla
+    birleşmediğinde) anlamlıdır -- başlık adayı kararı zaten yalnızca o durumda
+    bu bilgiyi kullanıyor (bkz. `_paragraph_text_to_html`); çok-bloklu birleşik
+    paragraflarda bu değerler kullanılmıyor, rastgele/önemsiz kalabilir.
 
     PyMuPDF'in blok tespiti, gomulu/OCR metin katmani satir-satir yerlestirilmis
     (ozellikle taranmis kitaplarda yaygin) PDF'lerde her fiziksel SATIRI ayri bir
@@ -238,24 +286,25 @@ def _merge_blocks_into_paragraphs(blocks: list[tuple[float, float, float, float,
 
     single_line_blocks = [b for b in blocks if "\n" not in b[4]]
     if single_line_blocks:
-        heights = [y1 - y0 for _, y0, _, y1, _ in single_line_blocks]
+        heights = [y1 - y0 for _, y0, _, y1, _, _, _ in single_line_blocks]
         line_height = statistics.median(heights)
 
         gaps = [single_line_blocks[i][1] - single_line_blocks[i - 1][3] for i in range(1, len(single_line_blocks))]
         normal_gaps = [g for g in gaps if g <= line_height * 1.5]
         typical_gap = statistics.median(normal_gaps) if normal_gaps else line_height * 0.6
 
-        flush_x0 = min(x0 for x0, _, _, _, _ in single_line_blocks)
+        flush_x0 = min(x0 for x0, _, _, _, _, _, _ in single_line_blocks)
         indent_threshold = flush_x0 + max(PARAGRAPH_INDENT_MIN_PT, line_height * PARAGRAPH_INDENT_LINE_HEIGHT_RATIO)
     else:
         typical_gap = indent_threshold = None
 
-    paragraphs: list[str] = []
+    paragraphs: list[tuple[str, float, bool]] = []
     current_lines: list[str] = []
     current_is_multiline = False
+    current_font: tuple[float, bool] = (0.0, False)
     prev_y1: float | None = None
 
-    for x0, y0, _x1, y1, text in blocks:
+    for x0, y0, _x1, y1, text, size, bold in blocks:
         is_multiline = "\n" in text
         if is_multiline or current_is_multiline:
             is_new_paragraph = bool(current_lines)
@@ -267,15 +316,17 @@ def _merge_blocks_into_paragraphs(blocks: list[tuple[float, float, float, float,
                 is_new_paragraph = indented or big_gap
 
         if is_new_paragraph and current_lines:
-            paragraphs.append("\n".join(current_lines))
+            paragraphs.append(("\n".join(current_lines), current_font[0], current_font[1]))
             current_lines = []
 
+        if not current_lines:
+            current_font = (size, bold)
         current_lines.append(text)
         current_is_multiline = is_multiline
         prev_y1 = y1
 
     if current_lines:
-        paragraphs.append("\n".join(current_lines))
+        paragraphs.append(("\n".join(current_lines), current_font[0], current_font[1]))
 
     return paragraphs
 
@@ -414,43 +465,73 @@ def _fix_mac_turkish_mojibake(text: str, has_macroman_font: bool) -> str:
     return text
 
 
+def _block_text_and_font(block: dict) -> tuple[str, float, bool]:
+    """`page.get_text('dict')`'in bir metin bloğundan, `get_text('blocks')`'un
+    ürettiğiyle aynı biçimde (satırlar `\\n` ile birleşik) düz metni, ve
+    bloğun İLK span'ından temsili punto boyutu/kalınlığını çıkarır. Gerçek
+    başlıklar (ve genelde gövde paragrafları da) tek span'lık tekdüze
+    bloklar olduğundan bu yeterli -- yalnızca TEK SATIRLIK/tek-blokluk
+    paragrafların başlık kararında kullanıldığından (bkz.
+    `_merge_blocks_into_paragraphs`), çok satırlı bloklardaki olası
+    stil farklılığı sonucu etkilemiyor."""
+    lines_text = []
+    size = 0.0
+    bold = False
+    first_span_seen = False
+    for line in block.get("lines", []):
+        line_text = "".join(span.get("text", "") for span in line.get("spans", []))
+        lines_text.append(line_text)
+        if not first_span_seen:
+            for span in line.get("spans", []):
+                size = span.get("size", 0.0)
+                bold = _is_bold_span(span.get("font", ""), span.get("flags", 0))
+                first_span_seen = True
+                break
+    return "\n".join(lines_text), size, bold
+
+
 def _collect_filtered_text_blocks(
     page,
     blacklist: set[str] | None = None,
     top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
     bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
-) -> list[tuple[float, float, float, float, str]]:
-    """Sayfadaki metin bloklarını PyMuPDF'ten okuyup üç sezgisel filtre uygular:
-    (1) sayfanın üst/alt kenar payındaki kısa bloklar (koşu başlığı/sayfa no)
-    atlanır, (2) kitap başlığı/yazarıyla eşleşen bloklar (kara liste) atlanır,
-    (3) hiç harf içermeyen kısa veya tek karakterlik bloklar (gürültü) atlanır.
+) -> list[tuple[float, float, float, float, str, float, bool]]:
+    """Sayfadaki metin bloklarını PyMuPDF'ten (`get_text('dict')`, punto/
+    kalınlık bilgisi taşıması için -- bkz. ROADMAP.md madde 1) okuyup üç
+    sezgisel filtre uygular: (1) sayfanın üst/alt kenar payındaki kısa
+    bloklar (koşu başlığı/sayfa no) atlanır, (2) kitap başlığı/yazarıyla
+    eşleşen bloklar (kara liste) atlanır, (3) hiç harf içermeyen kısa veya
+    tek karakterlik bloklar (gürültü) atlanır.
 
-    Ham `(x0, y0, x1, y1, metin)` konumlarını (paragraf birleştirmesi
-    yapılmadan) döner -- hem `_extract_text_blocks`'un (paragraf sınırı
-    çıkarımı) hem `_build_interleaved_page_html`'in (görsellerle konum
-    bazlı harmanlama) ortak temeli."""
+    Ham `(x0, y0, x1, y1, metin, punto, kalın-mı)` konumlarını (paragraf
+    birleştirmesi yapılmadan) döner -- hem `_extract_text_blocks`'un (paragraf
+    sınırı çıkarımı) hem `_build_interleaved_page_html`'in (görsellerle konum
+    bazlı harmanlama) hem `detect_chapters`'ın (font-boyutu bölüm tespiti)
+    ortak temeli."""
     try:
-        raw_blocks = page.get_text("blocks", sort=False)
+        raw_blocks = page.get_text("dict").get("blocks", [])
     except Exception:
         return []
 
     page_height = page.rect.height
     has_macroman_font = _page_has_macroman_font(page)
 
-    kept: list[tuple[float, float, float, float, str]] = []
+    kept: list[tuple[float, float, float, float, str, float, bool]] = []
     for block in raw_blocks:
-        if len(block) < 7 or block[6] != 0:  # sadece metin blokları (1 = görsel)
+        if block.get("type") != 0:  # yalnızca metin blokları (1 = görsel)
             continue
-        text = _fix_mac_turkish_mojibake(block[4].strip(), has_macroman_font)
+        raw_text, size, bold = _block_text_and_font(block)
+        text = _fix_mac_turkish_mojibake(raw_text.strip(), has_macroman_font)
         if not text:
             continue
-        if _is_in_margin(block, page_height, top_margin_ratio, bottom_margin_ratio) and len(text) <= HEADER_FOOTER_MAX_CHARS:
+        x0, y0, x1, y1 = block.get("bbox", (0.0, 0.0, 0.0, 0.0))
+        if _is_in_margin((x0, y0, x1, y1), page_height, top_margin_ratio, bottom_margin_ratio) and len(text) <= HEADER_FOOTER_MAX_CHARS:
             continue
         if _is_blacklisted(text, blacklist or set()):
             continue
         if _is_noise_block(text):
             continue
-        kept.append((block[0], block[1], block[2], block[3], text))
+        kept.append((x0, y0, x1, y1, text, size, bold))
     return kept
 
 
@@ -467,7 +548,7 @@ def _extract_text_blocks(
     kept = _collect_filtered_text_blocks(page, blacklist, top_margin_ratio, bottom_margin_ratio)
     paragraphs: list[str] = []
     for segment in _split_into_reading_order_segments(kept, page.rect.width):
-        paragraphs.extend(_merge_blocks_into_paragraphs(segment))
+        paragraphs.extend(text for text, _size, _bold in _merge_blocks_into_paragraphs(segment))
     return paragraphs
 
 
@@ -575,7 +656,7 @@ def _extract_ocr_text_blocks(
         left, top, width, height = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
         lines.setdefault(key, []).append((left, top, left + width, top + height, text))
 
-    kept: list[tuple[float, float, float, float, str]] = []
+    kept: list[tuple[float, float, float, float, str, float, bool]] = []
     for key in sorted(lines.keys()):
         words = lines[key]
         x0 = min(w[0] for w in words)
@@ -591,9 +672,14 @@ def _extract_ocr_text_blocks(
             continue
         if _is_noise_block(text):
             continue
-        kept.append((x0, y0, x1, y1, text))
+        # OCR çıktısının gerçek bir punto boyutu yok -- (0.0, False) dummy
+        # değerleri, `_merge_blocks_into_paragraphs`'ın ortak (font-farkındalı)
+        # imzasına uymak için var, başlık kararında kullanılmıyor (bu yol
+        # yalnızca `_paragraph_text_to_html`'i font bilgisi VERMEDEN çağıran
+        # eski düz `text_to_html_blocks` akışında tüketiliyor).
+        kept.append((x0, y0, x1, y1, text, 0.0, False))
 
-    return _merge_blocks_into_paragraphs(kept)
+    return [text for text, _size, _bold in _merge_blocks_into_paragraphs(kept)]
 
 
 def try_ocr_page(
@@ -806,29 +892,355 @@ def extract_embedded_page_images(
 # Otomatik tespit (bölümler / başlık / yazar) — `/analyze` ve plan fazı kullanır
 # ---------------------------------------------------------------------------
 
-def detect_chapters(doc) -> list[dict[str, Any]]:
-    """PDF'in gömülü outline/bookmark'larından üst seviye bölümleri çıkarır."""
+CHAPTER_HEADING_MIN_WORDS = 2  # tek harf/kısaltmalar (ör. dizin sayfalarındaki "A","B","C") elenir
+CHAPTER_HEADING_MAX_WORDS = 12  # çok uzun satırlar (yanlışlıkla büyük/kalın basılmış bir cümle) elenir
+CHAPTER_TIER_RATIO = 0.9  # gömülü-metin (punto) adayları için: yalnızca en büyük katmana yakın olanlar
+CHAPTER_TIER_RATIO_OCR = 0.75  # OCR (piksel satır yüksekliği) adayları için -- ölçüm daha gürültülü, gerçek örnekte (bkz. scanned_002) aynı bölüm başlığı stilinde bile ~%25'e varan yükseklik sapması gözlendi
+CHAPTER_OUTLIER_CAP_RATIO = 2.0  # medyanın bu katından büyük TEK seferlik bir aday (ör. bir kapak illüstrasyonunun OCR yanlış okuması) tavan hesaplamasından hariç tutulur
+CHAPTER_MIN_PAGE_GAP = 2  # ardışık iki bölüm başlığı arasında beklenen en az sayfa farkı (kısa bir "Giriş" bölümünü bir sonraki bölümden ayırt edecek kadar gevşek)
+CHAPTER_OCR_SAMPLE_STRIDE = 5  # taranmış (embedded metni olmayan) sayfalarda kaç sayfada bir örnek OCR'lanır
+CHAPTER_OCR_MAX_SAMPLES = 60  # çok uzun taranmış kitaplarda maliyeti sınırlamak için üst sınır
+
+
+def _is_chapter_heading_shaped(text: str) -> bool:
+    if not any(ch.isalpha() for ch in text):
+        return False  # salt noktalama/süsleme (ör. "◆ ◆ ◆" bölüm-ayracı) bir başlık olamaz
+    word_count = len(text.split())
+    return CHAPTER_HEADING_MIN_WORDS <= word_count <= CHAPTER_HEADING_MAX_WORDS
+
+
+def _is_mostly_uppercase(text: str, min_ratio: float = 0.8) -> bool:
+    """OCR (piksel yükseklik) adayları için ek bir güvenilirlik süzgeci --
+    gerçek bölüm başlıkları tipografik olarak sıkça BÜYÜK HARFLE dizilir,
+    gövde metni ise değil. Gömülü-metin yolunun aksine (font/kalınlık
+    metadata'sı var) OCR yolunda tek sinyal piksel satır yüksekliği, ve bu
+    tek başına yetersiz kalabiliyor: gerçek bir örnekte (`scanned_001`, hiç
+    gömülü metni olmayan, kötü kalite bir tarama), sayfa başına örneklenen
+    OCR satırları arasında gerçek bir başlık YOKKEN bile rastgele gürültü
+    (bir satırın biraz daha büyük ölçülmesi) 40'tan fazla sahte "bölüm"
+    üretmişti -- hiçbiri büyük harfle değildi, sıradan gövde cümleleriydi."""
+    letters = [ch for ch in text if ch.isalpha()]
+    if not letters:
+        return False
+    return sum(1 for ch in letters if ch.isupper()) / len(letters) >= min_ratio
+
+
+_TURKISH_ASCII_FOLD = str.maketrans(
+    {"İ": "I", "ı": "i", "Ü": "U", "ü": "u", "Ö": "O", "ö": "o", "Ç": "C", "ç": "c", "Ş": "S", "ş": "s", "Ğ": "G", "ğ": "g"}
+)
+
+
+def _fold_turkish_for_loose_match(text: str) -> str:
+    """Türkçe'ye özgü harfleri ASCII karşılıklarına çevirip küçük harfe indirger
+    -- `.casefold()` Türkçe İ/ı için beklenmedik sonuçlar üretir (`"İ".casefold()`
+    tek bir "i" değil, "i" + birleşen nokta işareti verir), bu yüzden ÖNCE
+    Türkçe harfleri ASCII'ye çevirip SONRA `.lower()` uyguluyoruz. Bir gerçek
+    örnekte, kitabın kapak sayfasındaki başlık ("BiR GUN") gömülü fontta
+    Türkçe aksanları (ü, İ) kaybetmiş şekilde çıkarılmıştı -- gerçek başlıkla
+    ("Bir Gün") harfiyen karşılaştırma bu yüzden zaten başarısız olurdu; bu
+    katlama olmadan bile normal casefold tek başına yetmezdi."""
+    return re.sub(r"\s+", " ", text.translate(_TURKISH_ASCII_FOLD)).strip().lower()
+
+
+def _matches_known_title_or_author(text: str, title: str | None, author: str | None) -> bool:
+    """Bir bölüm başlığı adayı, kitabın kendi (kapaktan/metadata'dan tespit
+    edilen) başlığı ya da yazarıyla mı örtüşüyor? Gerçek bir örnekte
+    (`scanned_002`) kitabın başlığı ("Bir Gün Kediler Dünyadan Yok Olsaydı")
+    kapak/başlık sayfasında BÜYÜK puntoyla iki kez tekrarlıyordu -- bunlar
+    metinsel olarak gerçek bölüm başlıklarından (aynı ya da benzer büyük
+    punto) ayırt edilemezdi, yalnızca "kitabın kendi başlığı" olduklarını
+    bilerek elenebilirler. `_is_blacklisted` (koşu başlığı filtresi) burada
+    kullanılamaz çünkü o, blacklist girdisinin (uzun başlık) aday metnin
+    (kısa, başlığın yalnızca bir parçası) İÇİNDE aranmasını bekler -- burada
+    ihtiyaç ters yönde (aday, başlığın bir parçası mı)."""
+    normalized = _fold_turkish_for_loose_match(text)
+    if len(normalized) < 3:
+        return False
+    for known in (title, author):
+        if not known:
+            continue
+        known_normalized = _fold_turkish_for_loose_match(str(known))
+        if len(known_normalized) < 3:
+            continue
+        if normalized in known_normalized or known_normalized in normalized:
+            return True
+    return False
+
+
+def _detect_chapter_candidate_from_dict_page(page, body_font_size: float | None) -> tuple[str, float] | None:
+    """Sayfanın gömülü metin katmanında en büyük punto/kalın başlık adayını
+    (varsa) döner -- (metin, punto) ikilisi. Yalnızca `_looks_like_heading_font`
+    testini geçen VE makul uzunlukta (`_is_chapter_heading_shaped`) satırlar
+    aday sayılır; sayfadaki en büyük payı olan aday seçilir.
+
+    `body_font_size` yoksa (belgenin tamamında güvenilir bir gövde-punto
+    tabanı bulunamadıysa) bilerek HİÇBİR aday üretmiyoruz -- `_looks_like_heading_font`
+    kendi başına `body_font_size is None` durumunda "her şey başlık" (True)
+    döner (paragraf-başlık ayrımı bağlamında makul bir varsayılan), ama
+    bölüm-tespiti bağlamında bu YIKICI: gerçek bir örnekte (`scanned_001`,
+    kötü OCR'lanmış taranmış bir roman) gövde-punto tespit edilemeyince
+    kitaptaki HER rastgele cümle "bölüm başlığı" sayılıp 40'tan fazla
+    sahte bölüm üretiliyordu. Gövde-punto tabanı yoksa büyüklüğe güvenilecek
+    hiçbir referans yok demektir -- boş liste dönmek (fallback'in üstünde,
+    `detect_chapters` bunu "bölüm bulunamadı" olarak ele alır), 40 uydurma
+    bölümden çok daha dürüst bir sonuç."""
+    if not body_font_size:
+        return None
+    try:
+        page_dict = page.get_text("dict")
+    except Exception:
+        return None
+
+    best: tuple[float, str] | None = None
+    for block in page_dict.get("blocks", []):
+        if block.get("type") != 0:
+            continue
+        for line in block.get("lines", []):
+            spans = line.get("spans", [])
+            if not spans:
+                continue
+            text = "".join(s.get("text", "") for s in spans).strip()
+            if not text or not _is_chapter_heading_shaped(text):
+                continue
+            size = spans[0].get("size", 0.0)
+            bold = _is_bold_span(spans[0].get("font", ""), spans[0].get("flags", 0))
+            if not _looks_like_heading_font(size, bold, body_font_size):
+                continue
+            if best is None or size > best[0]:
+                best = (size, text)
+    return (best[1], best[0]) if best else None
+
+
+def _detect_chapter_candidate_from_ocr(doc, page_index: int, ocr_lang: str) -> tuple[str, float] | None:
+    """Taranmış (gömülü metni olmayan) bir sayfayı OCR'layıp en büyük satır-
+    yüksekliğine sahip başlık adayını (varsa) döner -- (metin, piksel
+    yüksekliği) ikilisi. Satır yüksekliği, gömülü-metin yolundaki punto
+    boyutunun taranmış sayfalardaki karşılığıdır (bkz. kapak sayfası için
+    aynı tekniği kullanan `_extract_cover_title_author_via_ocr`); "gövde"
+    referansı olarak SAYFANIN KENDİ satırlarının medyanı kullanılıyor (ayrı
+    bir doküman-geneli OCR taraması gerektirmemek için)."""
+    try:
+        import pytesseract
+        from pytesseract import Output
+    except ImportError:
+        return None
+
+    data = _ocr_with_retry(
+        doc, page_index, lambda img: pytesseract.image_to_data(img, lang=ocr_lang, output_type=Output.DICT)
+    )
+    if data is None:
+        return None
+
+    line_groups: dict[tuple[int, int, int], list[int]] = {}
+    for i, word in enumerate(data.get("text", [])):
+        if not word.strip():
+            continue
+        key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
+        line_groups.setdefault(key, []).append(i)
+
+    lines: list[tuple[float, str]] = []
+    for indices in line_groups.values():
+        words = [data["text"][i].strip() for i in indices if data["text"][i].strip()]
+        if not words:
+            continue
+        height = sum(data["height"][i] for i in indices) / len(indices)
+        lines.append((height, " ".join(words)))
+
+    if not lines:
+        return None
+
+    body_height = statistics.median(h for h, _ in lines)
+    candidates = [
+        (h, t)
+        for h, t in lines
+        if _is_chapter_heading_shaped(t) and _looks_like_heading_font(h, False, body_height) and _is_mostly_uppercase(t)
+    ]
+    if not candidates:
+        return None
+    best_height, best_text = max(candidates, key=lambda c: c[0])
+    return best_text, best_height
+
+
+CHAPTER_NUMBERING_PATTERN = re.compile(r"^(chapter|appendix)?\s*([0-9]+|[a-z])[.\):]\s", re.IGNORECASE)
+CHAPTER_NUMBERING_MIN_MATCHES = 2  # en az bu kadar aday numaralandırma deseniyle eşleşirse, kitabın gerçekten numaralı bir bölüm şeması olduğu varsayılır
+
+
+def _filter_chapter_candidates(
+    candidates: list[tuple[int, str, float]], tier_ratio: float
+) -> list[dict[str, Any]]:
+    """TEK bir ölçüm biriminde (ya hep punto ya hep OCR piksel-yüksekliği) olan
+    bir aday havuzunu nihai bölüm listesine indirger.
+
+    Önce boyut süzgeçleri uygulanır: (1) medyanın `CHAPTER_OUTLIER_CAP_RATIO`
+    katından büyük TEK seferlik uç değerler (ör. bir kapak illüstrasyonunun
+    OCR yanlış okuması, gerçek bir örnekte 190px ölçülmüştü) tavan
+    (`max_size`) hesabından hariç tutulur -- yoksa tek bir gürültülü aday,
+    tüm gerçek adayları tavanın ALTINA düşürüp eleyebilir.
+
+    Sonra "1. Chapter Title" / "Appendix A. ..." gibi açık bir numaralandırma
+    deseniyle eşleşen adaylara bakılır: eşleşen en az
+    `CHAPTER_NUMBERING_MIN_MATCHES` aday VARSA VE bu adayların kendi
+    tavanı genel tavana (`tier_ratio` içinde) yakınsa, yalnızca bu
+    numaralı adaylar kullanılır -- boyut katmanına bakılmaksızın (gerçek bir
+    örnekte: `technical-with-code_functional-programing`, tüm gömülü
+    outline düz/tek seviyeli olduğu için TOC'tan ayırt edilemeyen alt-
+    başlıklarla dolu, ama gerçek bölümler HEP "N. Başlık" örüntüsünde VE en
+    büyük punto katmanında). Numaralı adayların tavanı genel tavandan
+    belirgin şekilde düşükse (gerçek bir örnekte:
+    `book-with-images_ankaranin-trekking-rotalari`, numaralandırılmış
+    olanlar aslında yürüyüş rotası alt-maddeleri, gerçek bölüm başlıkları
+    numarasız ama daha büyük puntoda) numaralandırma sinyaline GÜVENİLMEZ,
+    normal boyut-katmanı süzgecine düşülür: yalnızca (temizlenmiş) tavana
+    yakın (`tier_ratio`) adaylar bölüm başlığı sayılır -- daha küçük
+    katmanlar alt-başlık ya da dizin/sözlük ayracı olabilir.
+
+    Her iki yolda da son adım aynı: ardışık iki aday arasında en az
+    `CHAPTER_MIN_PAGE_GAP` sayfa olmalı, aynı bölgede kümelenenlerden
+    yalnızca ilki alınır."""
+    if not candidates:
+        return []
+
+    sizes = [size for _, _, size in candidates]
+    median_size = statistics.median(sizes)
+    plausible = [c for c in candidates if c[2] <= median_size * CHAPTER_OUTLIER_CAP_RATIO] or candidates
+    max_size = max(size for _, _, size in plausible)
+
+    numbered = [c for c in plausible if CHAPTER_NUMBERING_PATTERN.match(c[1].strip())]
+    if len(numbered) >= CHAPTER_NUMBERING_MIN_MATCHES and max(s for _, _, s in numbered) >= max_size * tier_ratio:
+        selected = sorted(((page_num, title) for page_num, title, _size in numbered), key=lambda c: c[0])
+    else:
+        selected = sorted(
+            ((page_num, title) for page_num, title, size in plausible if size >= max_size * tier_ratio),
+            key=lambda c: c[0],
+        )
+
+    chapters: list[dict[str, Any]] = []
+    last_page = -CHAPTER_MIN_PAGE_GAP
+    for page_num, title in selected:
+        if page_num - last_page < CHAPTER_MIN_PAGE_GAP:
+            continue
+        chapters.append({"start_page": page_num, "title": title})
+        last_page = page_num
+    return chapters
+
+
+def _detect_chapters_by_layout(doc, ocr_lang: str = DEFAULT_OCR_LANGUAGE) -> list[dict[str, Any]]:
+    """TOC yoksa çağrılan fallback -- gömülü metin katmanı olan sayfalarda
+    (ek maliyet yok, zaten okunan sayfa içeriğinden) font-boyutu/kalınlık
+    sezgisiyle, hiç embedded metni olmayan (taranmış) sayfalarda ise yalnızca
+    ÖRNEKLENEN sayfaları (`CHAPTER_OCR_SAMPLE_STRIDE`) OCR'layıp satır-
+    yüksekliği sezgisiyle bölüm başlığı adayları arar. Örneklem yaklaşımı
+    kullanıcı onayıyla seçildi (bkz. ROADMAP.md madde 3) -- tüm taranmış
+    sayfaları OCR'lamanın maliyetinden/gecikmesinden kaçınmak için bazı
+    bölümler kaçırılabilir.
+
+    Gömülü-metin (punto, pt) ve OCR (satır yüksekliği, px) adayları FARKLI
+    ölçüm birimlerinde olduğundan asla TEK bir havuzda kıyaslanmaz -- ilk
+    denemede tam bunu yapan bir sürüm, gerçek bir taranmış kitapta (px
+    biriminde) 190 değerindeki bir OCR yanlış okumasının (pt biriminde 17-23
+    aralığındaki) 10 doğru bölüm adayını tavanın altına düşürüp elemesine yol
+    açmıştı. Ayrıca kitabın kendi başlığı/yazarı (kapak sayfasında büyük
+    puntoyla, gerçek bölüm başlıklarıyla ayırt edilemeyecek şekilde tekrar
+    edebiliyor -- bkz. `_matches_known_title_or_author`) adaylardan ayrıca
+    elenir."""
+    total_pages = len(doc)
+    body_font_size = detect_body_font_size(doc, 1, total_pages)
+    title, author = detect_title_author(doc)
+
+    embedded_candidates: list[tuple[int, str, float]] = []
+    scanned_page_indices: list[int] = []
+
+    for page_index in range(total_pages):
+        page = doc[page_index]
+        candidate = _detect_chapter_candidate_from_dict_page(page, body_font_size)
+        if candidate is not None:
+            if not _matches_known_title_or_author(candidate[0], title, author):
+                embedded_candidates.append((page_index + 1, candidate[0], candidate[1]))
+            continue
+        try:
+            has_text = bool((page.get_text() or "").strip())
+        except Exception:
+            has_text = False
+        if not has_text:
+            scanned_page_indices.append(page_index)
+
+    ocr_candidates: list[tuple[int, str, float]] = []
+    if scanned_page_indices:
+        sample_indices = scanned_page_indices[::CHAPTER_OCR_SAMPLE_STRIDE][:CHAPTER_OCR_MAX_SAMPLES]
+        for page_index in sample_indices:
+            candidate = _detect_chapter_candidate_from_ocr(doc, page_index, ocr_lang)
+            if candidate is not None and not _matches_known_title_or_author(candidate[0], title, author):
+                ocr_candidates.append((page_index + 1, candidate[0], candidate[1]))
+
+    chapters = _filter_chapter_candidates(embedded_candidates, CHAPTER_TIER_RATIO)
+    chapters.extend(_filter_chapter_candidates(ocr_candidates, CHAPTER_TIER_RATIO_OCR))
+    chapters.sort(key=lambda c: c["start_page"])
+    return chapters
+
+
+CHAPTER_TOC_MIN_PAGES_PER_CHAPTER = 2.0  # TOC'tan üretilen "bölüm" sayısı bunun altında bir sayfa/bölüm ortalaması veriyorsa (ör. sayfa başına bir bookmark) TOC güvenilmez sayılır
+
+
+def _toc_chapters_look_plausible(raw_level1_count: int, total_pages: int) -> bool:
+    """Bazı PDF'lerin gömülü outline'ı gerçek bölüm yapısını değil, tarayıcı
+    yazılımının her sayfa için ürettiği bir dosya-adı bookmark'ını taşıyor
+    (gerçek bir örnekte: `scanned_002`'nin 188 sayfası için 188 outline
+    girdisi, hepsi "Kedi - 0004_1L" gibi kaynak dosya adları) ya da tamamen
+    DÜZ (tek seviyeli) bir outline'da alt-başlıklar da level-1 olarak
+    işaretlenmiş olabiliyor (gerçek bir örnekte:
+    `technical-with-code_functional-programing`, 148 ham level-1 girdisi,
+    gerçek bölüm sayısı yalnızca 7). Sayfa sayısına göre "bölüm" sayısı
+    gerçekçi olmayacak kadar yüksekse (ör. ortalama <
+    `CHAPTER_TOC_MIN_PAGES_PER_CHAPTER` sayfa/bölüm) TOC'a güvenmiyoruz,
+    font-boyutu tabanlı fallback'e düşüyoruz -- kalibrasyon: gerçek kısa-
+    makale TOC'ları (ör. 11 sayfada 5 bölüm, ~2.2 sayfa/bölüm) üstünde
+    kalırken, sayfa-başına-bookmark/düz-outline örnekleri (~1.0-1.8) altında
+    kalıyor. HAM (sayfa çakışmasına göre henüz deduplike edilmemiş) level-1
+    sayısı kullanılır -- bazı düz outline'larda birden fazla girdi aynı
+    sayfayı paylaşabiliyor (ör. "Global scope"/"Local scope" ikisi de aynı
+    sayfada), bu da deduplike edilmiş sayıyı eşiğin yanlış tarafına
+    kaydırabilir."""
+    if raw_level1_count <= 1:
+        return True
+    return (total_pages / raw_level1_count) >= CHAPTER_TOC_MIN_PAGES_PER_CHAPTER
+
+
+def detect_chapters(doc, ocr_lang: str = DEFAULT_OCR_LANGUAGE) -> list[dict[str, Any]]:
+    """Önce PDF'in gömülü outline/bookmark'ından üst seviye bölümleri okumayı
+    dener; TOC yoksa/boşsa/güvenilmezse (bkz. `_toc_chapters_look_plausible`)
+    font-boyutu/kalınlık tabanlı bir fallback'e düşer (bkz.
+    `_detect_chapters_by_layout`, ROADMAP.md madde 3)."""
     try:
         toc = doc.get_toc(simple=True)
     except Exception:
-        return []
+        toc = []
 
     chapters: list[dict[str, Any]] = []
     seen_pages: set[int] = set()
+    raw_level1_count = 0
     for level, title, page in toc:
         if level != 1:
             continue
         clean_title = title.strip()
-        if not clean_title or page < 1 or page in seen_pages:
+        if not clean_title or page < 1:
+            continue
+        raw_level1_count += 1
+        if page in seen_pages:
             continue
         seen_pages.add(page)
         chapters.append({"start_page": page, "title": clean_title})
 
     chapters.sort(key=lambda c: c["start_page"])
 
+    if chapters and not _toc_chapters_look_plausible(raw_level1_count, len(doc)):
+        chapters = []
+
+    if not chapters:
+        chapters = _detect_chapters_by_layout(doc, ocr_lang)
+
     if chapters and chapters[0]["start_page"] > 1:
-        # TOC ilk bölümden önceki (kapak/önsöz gibi) sayfaları atlıyorsa, onları
-        # kaybetmemek için başa bir giriş bölümü ekliyoruz.
+        # TOC (ya da fallback) ilk bölümden önceki (kapak/önsöz gibi) sayfaları
+        # atlıyorsa, onları kaybetmemek için başa bir giriş bölümü ekliyoruz.
         chapters.insert(0, {"start_page": 1, "title": "Giriş"})
 
     return chapters
@@ -1114,6 +1526,53 @@ def detect_header_footer_margins(
 
 
 # ---------------------------------------------------------------------------
+# Gövde punto tespiti — yalnızca plan fazında, madde 1'deki başlık/paragraf
+# sezgiselinin ve font-boyutu tabanlı bölüm tespitinin "normal" kabul edeceği
+# referans punto boyutunu üretir (bkz. ROADMAP.md madde 1)
+# ---------------------------------------------------------------------------
+
+BODY_FONT_SIZE_SAMPLE_COUNT = 10  # HEADER_FOOTER_SAMPLE_COUNT ile aynı örneklem yoğunluğu
+
+
+def detect_body_font_size(
+    doc, start_page: int, end_page: int, sample_count: int = BODY_FONT_SIZE_SAMPLE_COUNT
+) -> float | None:
+    """Kitaba yayılmış birkaç sayfayı örnekleyip gövde metninin baskın punto
+    boyutunu tahmin eder -- her punto boyutunun kapladığı toplam KARAKTER
+    sayısına göre (satır/blok sayısına göre değil) en çok kullanılanı seçer,
+    ki kısa ama sık başlıklar çoğunluk gövde metnini domine edemesin. Yeterli
+    örnek/metin yoksa None döner (çağıran taraf font-boyutu kontrolünü atlar,
+    salt şekil sezgiseline döner -- bkz. `_looks_like_heading_font`)."""
+    total_pages = end_page - start_page + 1
+    if total_pages < 1:
+        return None
+
+    char_counts_by_size: dict[float, int] = {}
+    for page_num in _sample_page_numbers(start_page, end_page, sample_count):
+        page_index = page_num - 1
+        if not (0 <= page_index < len(doc)):
+            continue
+        try:
+            page_dict = doc[page_index].get_text("dict")
+        except Exception:
+            continue
+        for block in page_dict.get("blocks", []):
+            if block.get("type") != 0:
+                continue
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    char_count = len(span.get("text", "").strip())
+                    if not char_count:
+                        continue
+                    size = round(span.get("size", 0.0), 1)
+                    char_counts_by_size[size] = char_counts_by_size.get(size, 0) + char_count
+
+    if not char_counts_by_size:
+        return None
+    return max(char_counts_by_size, key=char_counts_by_size.get)
+
+
+# ---------------------------------------------------------------------------
 # Plan fazı — tek container, paralelleşmez
 # ---------------------------------------------------------------------------
 
@@ -1156,6 +1615,7 @@ def plan_conversion(pdf_bytes: bytes, config: dict[str, Any]) -> PlanResult:
         resolved_config = dict(resolved_config)
         resolved_config["header_margin_ratio"] = top_margin_ratio
         resolved_config["footer_margin_ratio"] = bottom_margin_ratio
+        resolved_config["body_font_size"] = detect_body_font_size(doc, start_page, end_page)
 
         chapters_cfg = resolved_config.get("chapters") or [
             {"start_page": start_page, "title": resolved_config.get("title", "Kitap")}
@@ -1208,12 +1668,16 @@ class PageResult:
 
 
 def _flush_text_run(
-    run: list[tuple[float, float, float, float, str]], html_parts: list[str]
+    run: list[tuple[float, float, float, float, str, float, bool]],
+    html_parts: list[str],
+    body_font_size: float | None,
 ) -> None:
     """`run`'daki (tek okuma-sırası segmentindeki ardışık) metin bloklarını
-    paragraflara birleştirip HTML'e ekler, `run`'ı temizler."""
-    for paragraph in _merge_blocks_into_paragraphs(run):
-        block_html = _paragraph_text_to_html(clean_text(paragraph))
+    paragraflara birleştirip HTML'e ekler, `run`'ı temizler. `body_font_size`
+    dolu ise (bkz. `detect_body_font_size`) başlık kararı şekil sezgiselinin
+    yanına punto/kalınlık kontrolünü de ekler (bkz. ROADMAP.md madde 1)."""
+    for paragraph, size, bold in _merge_blocks_into_paragraphs(run):
+        block_html = _paragraph_text_to_html(clean_text(paragraph), size, bold, body_font_size)
         if block_html:
             html_parts.append(block_html)
     run.clear()
@@ -1226,6 +1690,7 @@ def _build_interleaved_page_html(
     blacklist: set[str] | None,
     top_margin_ratio: float,
     bottom_margin_ratio: float,
+    body_font_size: float | None = None,
 ) -> tuple[str, list[tuple[str, bytes, str]]]:
     """Sayfanın metin ve gömülü-görsel bloklarını TEK bir okuma-sırası akışında
     birleştirir -- görseller artık sayfanın SONUNA değil, PDF'teki gerçek
@@ -1249,7 +1714,7 @@ def _build_interleaved_page_html(
     image_blocks = extract_embedded_page_images(doc, page_index, page_num)
 
     combined: list[tuple[float, float, float, float, str, Any]] = [
-        (x0, y0, x1, y1, "text", text) for x0, y0, x1, y1, text in text_blocks
+        (x0, y0, x1, y1, "text", (text, size, bold)) for x0, y0, x1, y1, text, size, bold in text_blocks
     ]
     combined.extend(
         (x0, y0, x1, y1, "image", (img_name, img_bytes, media_type))
@@ -1259,16 +1724,17 @@ def _build_interleaved_page_html(
     html_parts: list[str] = []
     images: list[tuple[str, bytes, str]] = []
     for segment in _split_into_reading_order_segments(combined, page.rect.width):
-        text_run: list[tuple[float, float, float, float, str]] = []
+        text_run: list[tuple[float, float, float, float, str, float, bool]] = []
         for x0, y0, x1, y1, kind, payload in segment:
             if kind == "text":
-                text_run.append((x0, y0, x1, y1, payload))
+                text, size, bold = payload
+                text_run.append((x0, y0, x1, y1, text, size, bold))
                 continue
-            _flush_text_run(text_run, html_parts)
+            _flush_text_run(text_run, html_parts, body_font_size)
             img_name, img_bytes, media_type = payload
             images.append((img_name, img_bytes, media_type))
             html_parts.append(f'<img src="{img_name}" alt="Sayfa {page_num} görseli" />')
-        _flush_text_run(text_run, html_parts)
+        _flush_text_run(text_run, html_parts, body_font_size)
 
     return "\n".join(html_parts), images
 
@@ -1297,6 +1763,7 @@ def process_page(
     page_captions = config.get("page_captions", {})
     top_margin_ratio = config.get("header_margin_ratio", HEADER_FOOTER_DEFAULT_MARGIN_RATIO)
     bottom_margin_ratio = config.get("footer_margin_ratio", HEADER_FOOTER_DEFAULT_MARGIN_RATIO)
+    body_font_size = config.get("body_font_size")
 
     html_parts: list[str] = []
     images: list[tuple[str, bytes, str]] = []
@@ -1390,7 +1857,7 @@ def process_page(
         # Normal gömülü-metin sayfası: metin ve görselleri PDF'teki gerçek
         # okuma sırasına göre TEK bir akışta harmanla (bkz. ROADMAP.md madde 2).
         page_html, page_images = _build_interleaved_page_html(
-            doc, page_index, page_num, header_blacklist, top_margin_ratio, bottom_margin_ratio
+            doc, page_index, page_num, header_blacklist, top_margin_ratio, bottom_margin_ratio, body_font_size
         )
         if page_html:
             html_parts.append(page_html)

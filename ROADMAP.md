@@ -27,7 +27,9 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
 → 76.8 (complex-headings golden düzeltmesi, sonra cross-page görsel dedup — skor sabit kaldı)
 → 77.3 (text_to_html_blocks'un h2 sezgiseli sıkılaştırıldı — yalnızca book-with-images_966108'i etkiledi)
 → 77.4 (sayfada hiç çizilmeyen "hayalet" görsel kaynakları artık atlanıyor — images %90.4→%91.6)
-→ **77.6 (görsel konumlandırma/interleaving + boyut filtresi düzeltmesi, iki golden `expected_image_count` hatası giderildi — images %91.6→%91.8, aşağıya bkz.)**
+→ 77.6 (görsel konumlandırma/interleaving + boyut filtresi düzeltmesi, iki golden `expected_image_count` hatası giderildi — images %91.6→%91.8)
+→ 78.9 (madde 1: font-boyutu/kalınlık sinyali `complex-headings`'in sahte `<h2>`'lerini düzeltti — o kitap 80.7→85.8, `scanned_002`'de küçük/kabul edilen bir yan etki dışında tüm kitaplarda iyileşme — aşağıya bkz.)
+→ **78.9 (madde 3: bölüm tespiti fallback'i eklendi — skor KASITLI OLARAK değişmedi: `eval/`'daki hiçbir dosya `detect_chapters`/`analyze_pdf` çağırmıyor, `structure`'ın `chapter_recall`'ü üretilen EPUB'ın KENDİ TOC'undan geliyor (`config["chapters"]`'a bağlı, `plan_conversion`/`assemble_epub`'ın işi) — `detect_chapters` yalnızca `/analyze` önizleme uç noktasını besliyor, dönüşüm pipeline'ına hiç girmiyor. Doğrulama bu yüzden eval yerine 5 golden `expected_chapters` kitabı üzerinde doğrudan `detect_chapters(doc)` çağrılarak elle yapıldı, aşağıya bkz.)**
 
 ## Tamamlanan adaylar
 
@@ -81,33 +83,52 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
   render'ları elle incelenerek doğrulandı) çıktı, golden düzeltilince 77.4→77.6. Detay:
   `TAMAMLANANLAR.md`.
 
-## Sıradaki adaylar (öncelik sırasına göre)
-
-### 1. `complex-headings_tu-rkiye-sigorta-klavuz` paragraf-sayısı düşüklüğü — font-boyutu sinyali gerekiyor
-2026-08-24'te araştırıldı; `book-with-images_966108` ile "aynı kökten" olduğu varsayımı
-YANLIŞ çıktı — o kitap ayrı bir bug'dan (`text_to_html_blocks`'un h2 sezgiseli, aşağıya
-bkz. TAMAMLANANLAR) etkileniyordu ve düzeltildi (53.4→54.9). Bu kitap (skor 80.7,
-`structure` hâlâ %44.8, 26 paragraf üretiliyor, golden [58, 86] bekliyor) AYNI metrik
-sorununu (paragraf yerine `<h2>` üretimi) yaşıyor ama farklı sebepten: sahte başlıklar
-("Kaydır" x4, "Detay 1/2/3", "Kalan Limit") düz Türkçe kısa kelimeler — denklem/atıf/TOC
-gibi metinsel bir ayrım sinyalleri yok, gerçek başlıklardan ("İntro", "Poliçe Bilgileri")
-salt metinle ayırt edilemiyor.
-
-**Sonraki adım:** Güvenilir ayrım için yazı tipi boyutu/kalınlığı gerekir (`_extract_text_blocks`
-şu an `page.get_text("blocks")` kullanıyor, font bilgisi taşımıyor; `page.get_text("dict")`'e
-geçmek gerekir) — bu tam olarak madde 3'teki (bölüm tespiti) font-heuristiği kararıyla aynı
-mimari genişleme. Ayrı ele alınmamalı, madde 3 gündeme gelince birlikte değerlendirilmeli.
-
-### 3. Bölüm tespiti (chapter detection) — ERTELENDİ, kullanıcı onayı gerek
-Kullanıcı 2026-08-22'de "şimdilik dokunma" dedi. Sebep: ölçülebilir etki dar (golden
-sette yalnızca 2-3 kitapta `expected_chapters` dolu), taranmış kitaplarda font-boyutu
-heuristiği eklemek OCR'ı plan fazında bir kez daha çalıştırmayı gerektirir (maliyet
-ikiye katlanabilir). Detay: `NOTES.md` satır 56-57. Not: madde 1 (complex-headings'in
-paragraf-sayısı sorunu) de aynı font-boyutu sinyaline ihtiyaç duyuyor — gündeme gelirse
-ikisi birlikte değerlendirilmeli.
-
-**Yeniden gündeme gelirse önce sorulacak:** Örneklem sayfa mı (hızlı, bazı bölümleri
-kaçırabilir) yoksa tüm sayfaları OCR'lama mı (yavaş, tam)?
+- ~~Madde 1: `complex-headings_tu-rkiye-sigorta-klavuz` paragraf-sayısı düşüklüğü — font-boyutu sinyali~~ —
+  2026-08-25/26'da düzeltildi. Kullanıcı "Font-boyutu sinyali (madde 1 + bölüm tespiti
+  birlikte)" seçeneğini seçti. Gerçek kitap incelemesiyle doğrulandı: font boyutu (20pt
+  kalın) vs gövde (12pt normal) AYNI metin ("Kalan Limit") farklı yerlerde farklı
+  roller (gerçek başlık / sahte başlık) oynasa bile temiz bir ayrım sağlıyor. Yeni
+  `HEADING_FONT_SIZE_RATIO=1.15` + kalınlık bayrağı kontrolü (`_is_bold_span`,
+  `_looks_like_heading_font`), mevcut interleaved-sayfa pipeline'ına eklendi (eski düz/OCR
+  pipeline'a dokunulmadı). Sonuç: kitap skoru 80.7→85.8, `structure` %44.8→%72.4. Fast
+  eval (16 kitap): 77.6→78.9, `scanned_002` hariç TÜM kitaplarda iyileşme (`scanned_002`
+  82.9→81.4, kitabın önceden bilinen bozuk gömülü tarayıcı-OCR font katmanının kabul
+  edilen bir yan etkisi — ayrı bir veri kalitesi sorunu, genel bir regresyon riski değil).
+  Detay: `TAMAMLANANLAR.md`.
+- ~~Madde 3: Bölüm tespiti (chapter detection) fallback'i~~ — 2026-08-26'da eklendi.
+  Kullanıcı önce "Evet, örneklem sayfa OCR'la dene" sonra (sparse-sample recall düşük
+  çıkınca) "Daha yoğun örneklem (~5 sayfada bir)" seçeneklerini seçti. `detect_chapters`
+  yalnızca `/analyze` önizleme uç noktasını besliyor (dönüşüm pipeline'ına hiç girmiyor,
+  bkz. yukarıdaki skor notu) — bu yüzden 5 golden `expected_chapters` kitabı üzerinde
+  doğrudan `detect_chapters(doc)` çağrılarak elle doğrulandı: `scanned_002` artık 8/8
+  gerçek bölümü doğru buluyor (önceden: kitabın kendi bozuk TOC'u yüzünden tek bir
+  yanlış "bölüm"), `book-with-images_ankaranin-trekking-rotalari` 7 gerçek bölümün
+  tamamını (+2 makul fazladan aday) buluyor, `technical-with-code_functional-programing`
+  7 gerçek bölümün tamamını (+2 ek bulunan gerçek ek/appendix) buluyor,
+  `turkish_bilimsel-makale-nasil-yazilir` 2 beklenenden 1'ini buluyor (önceden: 31 sahte
+  dekoratif-ayraç "bölümü"), `scanned_001` artık boş liste dönüyor (önceden: kitapta hiç
+  gerçek bölüm yokken 40 rastgele cümleyi "bölüm" sayıyordu — expected de zaten tek bir
+  `'Sabrina'` etiketi, yani gerçek bir alt-yapı yok, dürüst boş liste doğru davranış).
+  Uygulama sırasında 5 ayrı bug bulunup düzeltildi: (1) pt (gömülü-metin punto) ve px
+  (OCR satır-yüksekliği) birimli adayların TEK bir havuzda kıyaslanması — bir OCR
+  yanlış-okuması (190px) 8 doğru pt-bazlı bölümü tavanın altına düşürüp eliyordu; (2)
+  kitabın kendi başlığının kapak sayfasında büyük puntoyla tekrarı gerçek bir bölüm
+  başlığıyla ayırt edilemiyordu — `_matches_known_title_or_author` eklendi (Türkçe
+  İ/ı/Ü aksan kaybı normalizasyonuyla, `_fold_turkish_for_loose_match`); (3) düz/tek-
+  seviyeli ya da tarayıcı-üretimi sayfa-başına-bookmark gömülü outline'lara körü körüne
+  güvenilmesi (`technical-with-code_functional-programing`: 148 ham girdi/7 gerçek bölüm,
+  `scanned_002`: 188 girdi/188 sayfa) — `_toc_chapters_look_plausible` (sayfa/bölüm oranı
+  eşiği) eklendi; (4) gövde-punto tabanı tespit edilemeyince (`body_font_size=None`)
+  font-boyutu sezgisinin "her şey başlık" varsayımına düşmesi (`scanned_001`'de HER
+  rastgele cümleyi bölüm sayıyordu) — taban yoksa gömülü-metin yolu artık hiç aday
+  üretmiyor; (5) dekoratif noktalama ayraçlarının ("◆ ◆ ◆") başlık şekli testini geçmesi
+  — metinde en az bir harf zorunluluğu eklendi. Ayrıca numaralandırma deseni ("Chapter
+  N.", "Appendix A.") en büyük punto katmanındaysa boyut-katmanı sezgisinden daha
+  güvenilir bir sinyal sayılıyor (düz outline'lı kitaplarda alt-başlıklar bölümlerle aynı
+  punto/kalınlıkta basılı olabildiğinden), ama numaralı adaylar genel tavandan belirgin
+  düşükse (ör. bir gezi rehberinin numaralı yürüyüş-rotası alt-maddeleri) bu sinyale
+  güvenilmiyor. 16 yeni birim/entegrasyon testi eklendi (`test_converter.py`), suite
+  71/71 yeşil. Detay: `TAMAMLANANLAR.md`.
 
 ## Diğer (bu roadmap'in kapsamı dışı, ayrı konular)
 

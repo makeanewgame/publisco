@@ -389,6 +389,24 @@ def pdf_with_two_paragraphs_bytes() -> bytes:
 
 
 @pytest.fixture
+def pdf_with_wrapped_sentence_in_margin_bytes() -> bytes:
+    """Sayfanın (agresif kalibre edilmiş bir üst kenar payı şeridi altında
+    kalacak kadar) üst kısmında, bir cümlenin satır sarmasıyla ikiye
+    bölündüğü bir PDF üretir -- ilk satır uzun (60 karakterden fazla, cümle
+    NOKTAYLA BİTMİYOR), hemen altındaki ikinci satır kısa (60 karakterden az,
+    cümleyi TAMAMLIYOR). Gerçek bir kitapta (`book-with-images_966108`,
+    NOTES.md/ROADMAP.md'deki bulgu) tam bu düzende bir paragraf kuyruğu
+    kenar payı filtresi tarafından sessizce siliniyordu."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((72, 60), "katkisi eklendikten sonra standartlarina uygun tek eksenli sikisma", fontsize=11)
+    page.insert_text((72, 78), "dayanimi tayin edilmistir.", fontsize=11)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
 def pdf_with_toc_bytes() -> bytes:
     """Gömülü outline/bookmark'ı olan, ilk bölümü sayfa 1'den başlamayan bir PDF üretir."""
     doc = pymupdf.open()

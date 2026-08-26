@@ -30,7 +30,8 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
 → 77.6 (görsel konumlandırma/interleaving + boyut filtresi düzeltmesi, iki golden `expected_image_count` hatası giderildi — images %91.6→%91.8)
 → 78.9 (madde 1: font-boyutu/kalınlık sinyali `complex-headings`'in sahte `<h2>`'lerini düzeltti — o kitap 80.7→85.8, `scanned_002`'de küçük/kabul edilen bir yan etki dışında tüm kitaplarda iyileşme — aşağıya bkz.)
 → 78.9 (madde 3: bölüm tespiti fallback'i eklendi — skor KASITLI OLARAK değişmedi: `eval/`'daki hiçbir dosya `detect_chapters`/`analyze_pdf` çağırmıyor, `structure`'ın `chapter_recall`'ü üretilen EPUB'ın KENDİ TOC'undan geliyor (`config["chapters"]`'a bağlı, `plan_conversion`/`assemble_epub`'ın işi) — `detect_chapters` yalnızca `/analyze` önizleme uç noktasını besliyor, dönüşüm pipeline'ına hiç girmiyor. Doğrulama bu yüzden eval yerine 5 golden `expected_chapters` kitabı üzerinde doğrudan `detect_chapters(doc)` çağrılarak elle yapıldı, aşağıya bkz.)
-→ **79.0 (N-sütun okuma sırası bug'ı düzeltildi — `_split_into_reading_order_segments` artık gerçekten 3+ sütunlu sayfaları doğru sıralıyor, eskiden yalnızca sayfayı orta çizgiden ikiye ayırıp her yarının kendi içindeki alt-sütunları karıştırıyordu. Küçük bir iyileşme çünkü golden setteki çoğu sayfa hâlâ tek/iki sütunlu, aşağıya bkz.)**
+→ 79.0 (N-sütun okuma sırası bug'ı düzeltildi — `_split_into_reading_order_segments` artık gerçekten 3+ sütunlu sayfaları doğru sıralıyor, eskiden yalnızca sayfayı orta çizgiden ikiye ayırıp her yarının kendi içindeki alt-sütunları karıştırıyordu. Küçük bir iyileşme çünkü golden setteki çoğu sayfa hâlâ tek/iki sütunlu, aşağıya bkz.)
+→ **79.9 (kenar payı devam-satırı bug'ı düzeltildi — agresif kalibre edilmiş bir üst kenar payı şeridine düşen, bir cümlenin satır sarmasıyla oluşan paragraf kuyrukları artık gerçek koşu başlığı/sayfa no gibi silinmiyor. `book-with-images_966108`'de tek başına +14.6 puan/kitap; aşağıya bkz.)**
 
 ## Tamamlanan adaylar
 
@@ -141,6 +142,16 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
   paragraf ilk-satır girintisinin sahte 2-sütun sayılması, harita etiketlerinin sahte
   sütun sayılması). 3 yeni regresyon testi, suite 71→74 yeşil. Fast eval: 78.9→79.0,
   hiçbir kitapta gerileme yok; hedef kitap tam eval'da 34.9→35.2. Detay: `TAMAMLANANLAR.md`.
+- ~~Kenar payı devam-satırı bug'ı (en düşük skorlu kitaba bakılırken bulundu, `book-with-images_966108`)~~ —
+  2026-08-26'da düzeltildi. `--book` diagnostic'inin tek bir `Missing phrases` maddesinden
+  (`"ASTM D 7012 standartlarına uygun tek eksenli sıkışma dayanımı"`) izlenen kök neden:
+  agresif kalibre edilmiş (%15) bir üst kenar payı şeridinde kalan KISA bloklar, hemen
+  üstündeki (şerit dışına taşan) bir paragrafın satır-sarması devamı olsalar bile gerçek
+  koşu başlığı/sayfa no gibi sessizce siliniyordu. Yeni `_looks_like_paragraph_continuation`,
+  silmeden önce hemen üstte noktalamayla BİTMEYEN bir blok olup olmadığına bakıyor.
+  Tek bir cümleyle sınırlı değildi -- `text_completeness` %66.7→%100, kitap skoru
+  61.2→75.8 (+14.6). Fast eval: 79.0→79.9, hiçbir kitapta gerileme yok. 2 yeni regresyon
+  testi, suite 74→76 yeşil. Detay: `TAMAMLANANLAR.md`.
 
 ## Diğer (bu roadmap'in kapsamı dışı, ayrı konular)
 

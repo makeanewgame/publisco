@@ -19,6 +19,7 @@ from converter import (
     text_to_html_blocks,
 )
 from converter import (
+    _collect_filtered_text_blocks,
     _detect_chapter_candidate_from_dict_page,
     _detect_column_bands,
     _filter_chapter_candidates,
@@ -670,3 +671,35 @@ def test_detect_header_footer_margins_catches_pattern_outside_default_band(
     assert "gercek bir paragraftir" in combined.lower()
     # Header/footer tamamen kırpılmışsa her sayfadan tam olarak bir <p> kalmalı.
     assert combined.count("<p>") == 22
+
+
+def test_collect_filtered_text_blocks_keeps_wrapped_sentence_tail_in_margin(
+    pdf_with_wrapped_sentence_in_margin_bytes,
+):
+    """Regresyon testi (NOTES.md/ROADMAP.md'deki bulgu, `book-with-images_966108`):
+    agresif kalibre edilmiş bir üst kenar payı şeridinde kalan KISA bir blok,
+    hemen üstündeki (şerit dışına taşan) noktalamayla bitmeyen bir bloğun
+    devamıysa, gerçek bir koşu başlığı/sayfa no gibi silinmemeli."""
+    doc = pymupdf.open(stream=pdf_with_wrapped_sentence_in_margin_bytes, filetype="pdf")
+    page = doc[0]
+    blocks = _collect_filtered_text_blocks(page, top_margin_ratio=0.3, bottom_margin_ratio=0.08)
+    doc.close()
+
+    texts = [b[4] for b in blocks]
+    assert any("dayanimi tayin edilmistir" in t for t in texts), (
+        f"paragraf kuyruğu kenar payı filtresiyle silinmiş olmamalı: {texts}"
+    )
+
+
+def test_collect_filtered_text_blocks_still_drops_standalone_header_in_margin(pdf_with_recurring_header_footer_bytes):
+    """Üstte yarım kalmış bir cümle OLMADAN, kenar payı şeridinde YALNIZ
+    başına duran gerçek bir koşu başlığı/sayfa no hâlâ filtrelenmeli --
+    devam-satırı istisnası yalnızca gerçek devam satırlarını korumalı,
+    genel kenar payı filtresini devre dışı bırakmamalı."""
+    doc = pymupdf.open(stream=pdf_with_recurring_header_footer_bytes, filetype="pdf")
+    page = doc[0]
+    blocks = _collect_filtered_text_blocks(page, top_margin_ratio=0.3, bottom_margin_ratio=0.3)
+    doc.close()
+
+    texts = [b[4].lower() for b in blocks]
+    assert not any("kosu basligi" in t for t in texts)

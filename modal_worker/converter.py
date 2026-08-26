@@ -205,6 +205,38 @@ def _is_in_margin(block: tuple, page_height: float, top_ratio: float, bottom_rat
     return y1 <= top_margin or y0 >= bottom_margin
 
 
+_SENTENCE_END_CHARS = ".!?:;…\"'”’)»›」"
+MARGIN_CONTINUATION_X_TOLERANCE = 30.0  # bir bloğun, üstündeki bloğun devamı sayılması için izin verilen x0 farkı (pt)
+MARGIN_CONTINUATION_MIN_GAP = 12.0  # dikey boşluk eşiği için taban (çok kısa bloklarda satır yüksekliği yetersiz kalmasın diye)
+
+
+def _looks_like_paragraph_continuation(
+    all_blocks: list[tuple[float, float, float, float, str]], x0: float, y0: float, y1: float
+) -> bool:
+    """Kenar payı şeridindeki KISA bir blok, gerçekten tekrarlayan bir koşu
+    başlığı/sayfa no mu, yoksa hemen üstündeki (şerit dışındaki) bir
+    paragrafın normal satır sarmasıyla oraya düşmüş devamı mı? Hemen üstünde
+    (küçük dikey boşluk, benzer x0) duran ve NOKTALAMAYLA BİTMEYEN (cümle
+    tamamlanmamış) bir blok varsa bu bir devam satırıdır -- gerçek koşu
+    başlıkları/sayfa no'ları sayfada YALNIZ başına durur, üstlerinde yarım
+    kalan bir cümle olmaz. Bkz. NOTES.md/ROADMAP.md: `book-with-images_966108`
+    sayfa 30'da agresif kalibre edilmiş (%15) bir üst kenar payı yüzünden
+    "dayanımı tayin edilmiştir." gibi bir paragraf kuyruğu sessizce
+    kayboluyordu."""
+    height = max(y1 - y0, 1.0)
+    gap_threshold = max(height * 1.5, MARGIN_CONTINUATION_MIN_GAP)
+    for ox0, _oy0, _ox1, oy1, other_text in all_blocks:
+        if oy1 > y0 or oy1 < y0 - gap_threshold:
+            continue
+        if abs(ox0 - x0) > MARGIN_CONTINUATION_X_TOLERANCE:
+            continue
+        stripped = other_text.rstrip()
+        if not stripped or stripped[-1] in _SENTENCE_END_CHARS:
+            continue
+        return True
+    return False
+
+
 def _is_noise_block(text: str) -> bool:
     """Tek karakterlik parçaları (dikey çizgi/süslemenin OCR/metin çıkarıcı
     tarafından "i", "#" gibi yanlış yorumlanması) ve kısa, hiç harf
@@ -578,7 +610,12 @@ def _collect_filtered_text_blocks(
     page_height = page.rect.height
     has_macroman_font = _page_has_macroman_font(page)
 
-    kept: list[tuple[float, float, float, float, str, float, bool]] = []
+    # İki geçişli: önce TÜM metin bloklarının konumu/metni (filtre uygulanmadan)
+    # toplanıyor -- kenar payı filtresinin "bu blok gerçekten yalnız başına
+    # duran bir koşu başlığı/sayfa no mu, yoksa üstündeki bir paragrafın
+    # devamı mı" ayrımını yapabilmesi (`_looks_like_paragraph_continuation`)
+    # için tüm sayfanın bağlamına ihtiyacı var.
+    positioned: list[tuple[float, float, float, float, str, float, bool]] = []
     for block in raw_blocks:
         if block.get("type") != 0:  # yalnızca metin blokları (1 = görsel)
             continue
@@ -587,7 +624,17 @@ def _collect_filtered_text_blocks(
         if not text:
             continue
         x0, y0, x1, y1 = block.get("bbox", (0.0, 0.0, 0.0, 0.0))
-        if _is_in_margin((x0, y0, x1, y1), page_height, top_margin_ratio, bottom_margin_ratio) and len(text) <= HEADER_FOOTER_MAX_CHARS:
+        positioned.append((x0, y0, x1, y1, text, size, bold))
+
+    all_positions = [(x0, y0, x1, y1, text) for x0, y0, x1, y1, text, _size, _bold in positioned]
+
+    kept: list[tuple[float, float, float, float, str, float, bool]] = []
+    for x0, y0, x1, y1, text, size, bold in positioned:
+        if (
+            _is_in_margin((x0, y0, x1, y1), page_height, top_margin_ratio, bottom_margin_ratio)
+            and len(text) <= HEADER_FOOTER_MAX_CHARS
+            and not _looks_like_paragraph_continuation(all_positions, x0, y0, y1)
+        ):
             continue
         if _is_blacklisted(text, blacklist or set()):
             continue

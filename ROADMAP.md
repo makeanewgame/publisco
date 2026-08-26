@@ -31,7 +31,11 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
 → 78.9 (madde 1: font-boyutu/kalınlık sinyali `complex-headings`'in sahte `<h2>`'lerini düzeltti — o kitap 80.7→85.8, `scanned_002`'de küçük/kabul edilen bir yan etki dışında tüm kitaplarda iyileşme — aşağıya bkz.)
 → 78.9 (madde 3: bölüm tespiti fallback'i eklendi — skor KASITLI OLARAK değişmedi: `eval/`'daki hiçbir dosya `detect_chapters`/`analyze_pdf` çağırmıyor, `structure`'ın `chapter_recall`'ü üretilen EPUB'ın KENDİ TOC'undan geliyor (`config["chapters"]`'a bağlı, `plan_conversion`/`assemble_epub`'ın işi) — `detect_chapters` yalnızca `/analyze` önizleme uç noktasını besliyor, dönüşüm pipeline'ına hiç girmiyor. Doğrulama bu yüzden eval yerine 5 golden `expected_chapters` kitabı üzerinde doğrudan `detect_chapters(doc)` çağrılarak elle yapıldı, aşağıya bkz.)
 → 79.0 (N-sütun okuma sırası bug'ı düzeltildi — `_split_into_reading_order_segments` artık gerçekten 3+ sütunlu sayfaları doğru sıralıyor, eskiden yalnızca sayfayı orta çizgiden ikiye ayırıp her yarının kendi içindeki alt-sütunları karıştırıyordu. Küçük bir iyileşme çünkü golden setteki çoğu sayfa hâlâ tek/iki sütunlu, aşağıya bkz.)
-→ **79.9 (kenar payı devam-satırı bug'ı düzeltildi — agresif kalibre edilmiş bir üst kenar payı şeridine düşen, bir cümlenin satır sarmasıyla oluşan paragraf kuyrukları artık gerçek koşu başlığı/sayfa no gibi silinmiyor. `book-with-images_966108`'de tek başına +14.6 puan/kitap; aşağıya bkz.)**
+→ 79.9 (kenar payı devam-satırı bug'ı düzeltildi — agresif kalibre edilmiş bir üst kenar payı şeridine düşen, bir cümlenin satır sarmasıyla oluşan paragraf kuyrukları artık gerçek koşu başlığı/sayfa no gibi silinmiyor. `book-with-images_966108`'de tek başına +14.6 puan/kitap; aşağıya bkz.)
+→ 82.9 (eval'ın kendi `duplicates.py` yanlış-pozitifi düzeltildi — sayfa oranına göre gerçek sızıntı/zararsız tekrar ayrımı eklendi, `converter.py`'ye dokunulmadı. `book-with-images_966108`'de tek başına +3.8 puan/kitap; aşağıya bkz.)
+→ 83.5 (eval'ın kendi apostrof+boşluk normalizasyon eksikliği düzeltildi — Türkçe özel-ad+ek apostrofundaki PDF-çıkarım kaynaklı sahte boşluk artık `normalize_phrase`'de siliniyor, `converter.py`'ye dokunulmadı. `two-column-academic_farkindalik-gelistirme-programi`'de tek başına +10.9 puan/kitap; aşağıya bkz.)
+→ 83.3 (eval'ın kendi `images` metriği artık benzersiz dosya sayısını ölçüyor, `<img>` occurrence sayısını değil — genel skor -0.2 net düştü ama metrik artık gerçeği ölçüyor, birkaç kitapta gizli kalmış boşluklar görünür oldu; `converter.py`'ye dokunulmadı, aşağıya bkz.)
+→ **86.3 (`unsupported: true` bayrağı artık gerçekten skor/gate'e dahil edilmiyor — README'nin belgelediği niyet buydu ama hiç uygulanmamıştı, `mathematical_singular-integrals` artık overall ortalamayı düşürmüyor/gate uyarısı tetiklemiyor. `converter.py`'ye dokunulmadı, aşağıya bkz.)**
 
 ## Tamamlanan adaylar
 
@@ -152,6 +156,48 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
   Tek bir cümleyle sınırlı değildi -- `text_completeness` %66.7→%100, kitap skoru
   61.2→75.8 (+14.6). Fast eval: 79.0→79.9, hiçbir kitapta gerileme yok. 2 yeni regresyon
   testi, suite 74→76 yeşil. Detay: `TAMAMLANANLAR.md`.
+- ~~`eval/metrics/duplicates.py` yanlış-pozitifi (NOTES.md'de ayrı bir "Sorunlar"
+  maddesiydi, kenar payı bug'ının manuel doğrulamasında bulunmuştu)~~ — 2026-08-26'da
+  düzeltildi. `book-with-images_966108`'deki 30+ neredeyse özdeş gerilme-deformasyon
+  grafiğinin meşru şekilde tekrar eden eksen/lejant etiketleri (549 occurrence, 43 farklı
+  metin) `block_penalty`'yi tavana (1.0) vurduruyordu — pipeline'da düzeltilecek bir şey
+  yoktu, saf eval metrik bug'ı. Fix: `evaluate_duplicates` artık `total_pages` alıp her
+  tekrar eden bloğun `count/total_pages` oranına bakıyor, yalnızca sayfaların yarısından
+  fazlasında görülenler (gerçek koşu başlığı/sayfa no deseni) skoru etkiliyor — bu kitapta
+  en yüksek oran bile %45'te kalıyor (67/149 sayfa), hiçbiri eşiği geçmiyor. Test:
+  `book-with-images_966108` 75.8→79.6, fast eval 79.9→82.9, hiçbir kitapta gerileme yok.
+  Detay: `TAMAMLANANLAR.md`.
+- ~~Apostrof+boşluk normalizasyon eksikliği (NOTES.md'de ayrı bir "Sorunlar" maddesiydi,
+  görsel boyut-filtresi çalışması sırasında rastlantıyla bulunmuştu)~~ — 2026-08-26'da
+  düzeltildi. `two-column-academic_farkindalik-gelistirme-programi`'de bir must_include
+  ifadesi sürekli "Missing phrase" düşüyordu: ham PDF'te `"UG' nin"` (Türkçe özel-ad+ek
+  apostrofunda PDF-çıkarım kaynaklı sahte boşluk) çıkıyor, golden ifade boşluksuz
+  `"UG'nin"` bekliyordu — `_QUOTE_VARIANTS` tırnak tipini düzeltiyordu ama boşluğu değil.
+  Fix: `eval/text_utils.py`'deki `normalize_phrase`'e harf-apostrof-boşluk-harf dizisini
+  boşluksuza indirgeyen bir regex eklendi. Test: hedef kitap 86.3→97.2, fast eval
+  82.9→83.5, diğer 15 kitapta değişiklik yok. Detay: `TAMAMLANANLAR.md`.
+- ~~`eval/metrics/images.py`'nin occurrence/benzersiz-dosya karışıklığı (madde 2'nin
+  cross-page dedup alt-adımı sırasında bulunmuştu, NOTES.md'de ayrı bir "Sorunlar"
+  maddesiydi)~~ — 2026-08-26'da düzeltildi. Golden `expected_image_count` benzersiz
+  xref/dosya sayısından tahmin ediliyor ama metrik `<img>` etiketi OCCURRENCE sayısıyla
+  karşılaştırıyordu. Fix: `evaluate_images` artık `EpubContent.total_image_items`
+  (benzersiz dosya, kapak hariç) alıp golden karşılaştırmasında bunu kullanıyor. Sonuç
+  KASITLI OLARAK karışık: fast eval overall -0.2 net düştü (`book-with-tables_table`
+  72.6→69.2, `scanned_002` 87.2→85.5) çünkü metrik artık bazı kitaplarda daha önce
+  occurrence-sayımının maskelediği gerçek benzersiz-görsel boşluklarını gösteriyor —
+  bu bir gerileme değil, metriğin daha doğru ölçmesinin sonucu (`book-with-tables_table`
+  zaten ayrı bir NOTES.md maddesinde golden-veri belirsizliği olarak takipte).
+  Detay: `TAMAMLANANLAR.md`.
+- ~~`unsupported: true` bayrağının skor/gate'i hiç etkilememesi (eski madde 4'ün yan
+  bulgusu, NOTES.md'de ayrı bir "Sorunlar" maddesiydi)~~ — 2026-08-26'da düzeltildi.
+  `eval/README.md` "skora dahil edilmez, yalnızca raporlanır" diyordu ama
+  `evaluate.py`/`scoring.py`/`run.py`'de bu alana hiç referans yoktu — belgelenen niyet
+  netti, eksik olan uygulamaydı. Fix: `BookResult.unsupported` eklendi, `report.py`'nin
+  `build_run_summary`'si overall skoru/metric ortalamalarını/"Dikkat gerektiren
+  kitaplar" listesini yalnızca desteklenen kitaplardan hesaplıyor; unsupported kitap
+  yine de per-kitap satırında/JSON'da görünüyor (raporlanıyor, gate'e girmiyor). Test:
+  fast eval (`mathematical_singular-integrals` dahil) 83.3→86.3, "Dikkat gerektiren
+  kitaplar" artık boş. Detay: `TAMAMLANANLAR.md`.
 
 ## Diğer (bu roadmap'in kapsamı dışı, ayrı konular)
 

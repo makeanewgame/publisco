@@ -16,6 +16,7 @@ from converter import (
     extract_page_text,
     plan_conversion,
     process_page_range,
+    slice_pdf_pages,
     text_to_html_blocks,
 )
 from converter import (
@@ -637,6 +638,52 @@ def test_convert_pdf_to_epub_reassembles_chapter_spanning_multiple_chunks(multi_
     result = convert_pdf_to_epub(multi_chunk_pdf_bytes, config)
 
     with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        content = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
+
+    assert "sayfa 1 " in content.lower()
+    assert "sayfa 30 " in content.lower()
+
+
+def test_slice_pdf_pages_produces_identical_output_to_full_pdf_range(multi_chunk_pdf_bytes):
+    """Regresyon testi (NOTES.md: `process_chunk` egress israfı fix'i):
+    `process_chunk` artık orijinal PDF'in tamamını değil `slice_pdf_pages`'in
+    ürettiği küçük bir dilimi kullanıyor -- bu dilim + `sliced=True`, orijinal
+    PDF'in tamamı + `sliced=False` ile TAM OLARAK aynı sonucu üretmeli (sayfa
+    numaraları, metin, dosya adları dahil)."""
+    plan = plan_conversion(multi_chunk_pdf_bytes, {"title": "Cok Sayfali"})
+    start_page, end_page = plan.chunks[1]  # ikinci chunk (26, 30) -- 1. sayfa olmayan bir aralık
+    assert start_page > 1
+
+    baseline = process_page_range(multi_chunk_pdf_bytes, start_page, end_page, plan.resolved_config)
+
+    chunk_bytes = slice_pdf_pages(multi_chunk_pdf_bytes, start_page, end_page)
+    sliced = process_page_range(chunk_bytes, start_page, end_page, plan.resolved_config, sliced=True)
+
+    assert [pr.page_num for pr in sliced] == [pr.page_num for pr in baseline]
+    assert [pr.html for pr in sliced] == [pr.html for pr in baseline]
+    assert [[img[0] for img in pr.images] for pr in sliced] == [[img[0] for img in pr.images] for pr in baseline]
+    # Dilimlenmiş chunk yalnızca kendi sayfalarını içermeli, tüm kitabı değil.
+    assert len(pymupdf.open(stream=chunk_bytes, filetype="pdf")) == end_page - start_page + 1
+
+
+def test_process_chunk_style_pipeline_reassembles_correctly_via_sliced_chunks(multi_chunk_pdf_bytes):
+    """Modal'ın gerçek akışını (plan -> her chunk için slice_pdf_pages ->
+    process_page_range(sliced=True) -> reduce) taklit eder, `main.py`'ye
+    dokunmadan converter.py seviyesinde uçtan uca doğrular."""
+    from converter import assemble_epub
+
+    plan = plan_conversion(
+        multi_chunk_pdf_bytes, {"title": "Cok Sayfali", "chapters": [{"start_page": 1, "title": "Tek Bolum"}]}
+    )
+    all_page_results = []
+    for start_page, end_page in plan.chunks:
+        chunk_bytes = slice_pdf_pages(multi_chunk_pdf_bytes, start_page, end_page)
+        all_page_results.extend(
+            process_page_range(chunk_bytes, start_page, end_page, plan.resolved_config, sliced=True)
+        )
+
+    epub_bytes = assemble_epub(plan, all_page_results)
+    with zipfile.ZipFile(io.BytesIO(epub_bytes)) as archive:
         content = archive.read("EPUB/chap_01.xhtml").decode("utf-8")
 
     assert "sayfa 1 " in content.lower()

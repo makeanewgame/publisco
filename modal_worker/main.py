@@ -39,6 +39,7 @@ from converter import (
     assemble_epub,
     plan_conversion,
     process_page_range,
+    slice_pdf_pages,
 )
 from schemas import AnalyzeRequest, ConvertRequest
 
@@ -230,20 +231,26 @@ def _require_bearer(authorization: str | None) -> None:
 # ---------------------------------------------------------------------------
 
 @app.function(secrets=secrets, timeout=300)
-def plan(pdf_url: str, config: dict[str, Any]) -> PlanResult:
+def plan(pdf_url: str, config: dict[str, Any]) -> tuple[PlanResult, list[bytes]]:
+    """PDF'i indirip planı çıkarır, AYRICA her chunk için yalnızca o sayfa
+    aralığını içeren küçük bir PDF dilimi üretir (`slice_pdf_pages`) — bu
+    dilimler `process_chunk`'a Blob üzerinden değil doğrudan Modal RPC'siyle
+    geçiriliyor, her map container'ının orijinal PDF'in TAMAMINI ayrıca
+    indirmesini önlüyor (bkz. NOTES.md: `process_chunk` egress israfı)."""
     pdf_bytes = download_pdf(pdf_url)
-    return plan_conversion(pdf_bytes, config)
+    plan_result = plan_conversion(pdf_bytes, config)
+    chunk_pdf_bytes = [slice_pdf_pages(pdf_bytes, start_page, end_page) for start_page, end_page in plan_result.chunks]
+    return plan_result, chunk_pdf_bytes
 
 
 @app.function(secrets=secrets, timeout=600)
 def process_chunk(
-    pdf_url: str, start_page: int, end_page: int, config: dict[str, Any], force_ocr: bool
+    chunk_pdf_bytes: bytes, start_page: int, end_page: int, config: dict[str, Any], force_ocr: bool
 ) -> list[PageResult]:
-    """Kendi `(start_page, end_page)` aralığını blob URL'inden kendisi indirir
-    (bytes'ı Modal RPC'siyle taşımak yerine — büyük PDF'lerde gereksiz
-    serileştirme yükünden kaçınmak için); `.map()` ile paralel çağrılır."""
-    pdf_bytes = download_pdf(pdf_url)
-    return process_page_range(pdf_bytes, start_page, end_page, config, force_ocr=force_ocr)
+    """`chunk_pdf_bytes`, `plan()`'ın bu `(start_page, end_page)` aralığı için
+    önceden dilimlediği küçük bir PDF (bkz. `slice_pdf_pages`) — Blob'dan ayrıca
+    bir şey indirmez, `.map()` ile paralel çağrılır."""
+    return process_page_range(chunk_pdf_bytes, start_page, end_page, config, force_ocr=force_ocr, sliced=True)
 
 
 @app.function(secrets=secrets, memory=2048, timeout=300)
@@ -278,24 +285,24 @@ def run_pipeline(
         if language:
             config["language"] = language
 
-        plan_result = plan.remote(pdf_url, config)
+        plan_result, chunk_pdf_bytes = plan.remote(pdf_url, config)
 
         if not plan_result.chunks:
             raise ConversionError("PDF'te işlenecek sayfa bulunamadı.")
 
+        # Kaynak PDF'e artık yalnızca plan fazı ihtiyaç duydu (chunk'lar kendi
+        # dilimlerini RPC'yle aldı, Blob'a hiç dokunmuyor) — map fazını beklemeden
+        # hemen silinebilir.
+        delete_blob(pdf_url)
+
         page_results_per_chunk = list(
             process_chunk.starmap(
                 [
-                    (pdf_url, start_page, end_page, plan_result.resolved_config, force_ocr)
-                    for start_page, end_page in plan_result.chunks
+                    (chunk_bytes, start_page, end_page, plan_result.resolved_config, force_ocr)
+                    for (start_page, end_page), chunk_bytes in zip(plan_result.chunks, chunk_pdf_bytes)
                 ]
             )
         )
-
-        # Kaynak PDF, her chunk container'ı kendi sayfa aralığını Blob'dan kendisi
-        # indirdiği için (bkz. process_chunk) map fazı tamamlanana kadar silinemez —
-        # daha erken silinirse (ör. plan'dan hemen sonra) tüm process_chunk çağrıları 404 alır.
-        delete_blob(pdf_url)
 
         epub_bytes = reduce_and_build_epub.remote(plan_result, page_results_per_chunk)
 

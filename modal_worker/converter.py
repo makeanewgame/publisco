@@ -1765,6 +1765,25 @@ def plan_conversion(pdf_bytes: bytes, config: dict[str, Any]) -> PlanResult:
         doc.close()
 
 
+def slice_pdf_pages(pdf_bytes: bytes, start_page: int, end_page: int) -> bytes:
+    """1-based `[start_page, end_page]` aralığını içeren, bağımsız ve geçerli
+    yeni bir PDF üretir. Modal orkestrasyonunda (`main.py`) her map-fazı
+    container'ının Blob'dan orijinal PDF'in TAMAMINI indirmesi yerine yalnızca
+    kendi sayfa aralığını içeren bu küçük PDF'i (plan fazında dilimlenip Modal
+    RPC'siyle taşınıyor) almasını sağlamak için eklendi — bkz. NOTES.md
+    (`process_chunk` egress israfı)."""
+    src = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        sub = fitz.open()
+        try:
+            sub.insert_pdf(src, from_page=start_page - 1, to_page=end_page - 1)
+            return sub.tobytes()
+        finally:
+            sub.close()
+    finally:
+        src.close()
+
+
 # ---------------------------------------------------------------------------
 # Map fazı — paralel, `.map()` ile çağrılır
 # ---------------------------------------------------------------------------
@@ -1854,6 +1873,7 @@ def process_page(
     config: dict[str, Any],
     force_ocr: bool = False,
     header_blacklist: set[str] | None = None,
+    doc_page_index: int | None = None,
 ) -> PageResult:
     """Tek bir sayfayı işler (metin/OCR/görsel), sonucu mutlak sayfa numarasıyla
     etiketlenmiş `PageResult` olarak döner — görsel dosya adları da sayfa
@@ -1862,8 +1882,15 @@ def process_page(
 
     `header_blacklist`, kitap başlığı/yazarından kurulmuş bir küme --
     `extract_page_text`'e geçirilip koşu başlığı/yazar satırlarının paragraf
-    olarak sızmasını engeller (bkz. `build_header_blacklist`)."""
-    page_index = page_num - 1
+    olarak sızmasını engeller (bkz. `build_header_blacklist`).
+
+    `doc_page_index`: `doc` yalnızca bir sayfa aralığını içeren dilimlenmiş
+    bir PDF'se (bkz. `slice_pdf_pages`), `page_num - 1` artık `doc` içindeki
+    gerçek indeksle eşleşmez -- bu durumda çağıran, `doc` içindeki gerçek
+    (0-based) indeksi burada açıkça geçirir. `page_num` yine de tüm çıktı
+    etiketlemesinde (görsel dosya adları, `PageResult.page_num`) MUTLAK sayfa
+    numarası olarak kullanılmaya devam eder."""
+    page_index = doc_page_index if doc_page_index is not None else page_num - 1
     diagram_pages = set(config.get("diagram_pages", []))
     ocr_lang = config.get("ocr_language", DEFAULT_OCR_LANGUAGE)
     visual_mode = bool(config.get("visual_mode", False))
@@ -1981,24 +2008,44 @@ def process_page_range(
     end_page: int,
     config: dict[str, Any],
     force_ocr: bool = False,
+    sliced: bool = False,
 ) -> list[PageResult]:
-    """Bir `(start_page, end_page)` chunk'ını işler — Modal'ın `process_chunk`
-    fonksiyonu bu PDF baytlarını blob URL'inden kendisi indirip burayı çağırır."""
+    """Bir `(start_page, end_page)` chunk'ını işler.
+
+    `sliced=False` (varsayılan): `pdf_bytes` kitabın TAMAMI, `page_num - 1`
+    doğrudan `doc`'un indeksi (eski davranış — `convert_pdf_to_epub`/testler).
+
+    `sliced=True`: `pdf_bytes`, `slice_pdf_pages(orijinal, start_page, end_page)`
+    ile üretilmiş, yalnızca bu aralığı içeren küçük bir PDF (Modal'ın
+    `process_chunk`'ı artık orijinal PDF'in tamamını Blob'dan indirmek yerine
+    bunu kullanıyor, bkz. NOTES.md/`main.py`) -- `doc`'daki gerçek indeks
+    `page_num - start_page`'dir, `page_num` yine de çıktıda mutlak sayfa
+    numarası olarak kullanılmaya devam eder."""
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     except Exception as exc:
         raise ConversionError(f"PDF açılamadı: {exc}") from exc
 
     skip_pages = set(config.get("skip_pages", []))
-    total_pages = len(doc)
+    doc_page_count = len(doc)
     header_blacklist = build_header_blacklist(config)
     results: list[PageResult] = []
     try:
         for page_num in range(start_page, end_page + 1):
-            if page_num < 1 or page_num > total_pages or page_num in skip_pages:
+            if page_num in skip_pages:
+                continue
+            doc_page_index = (page_num - start_page) if sliced else (page_num - 1)
+            if doc_page_index < 0 or doc_page_index >= doc_page_count:
                 continue
             results.append(
-                process_page(doc, page_num, config, force_ocr=force_ocr, header_blacklist=header_blacklist)
+                process_page(
+                    doc,
+                    page_num,
+                    config,
+                    force_ocr=force_ocr,
+                    header_blacklist=header_blacklist,
+                    doc_page_index=doc_page_index,
+                )
             )
     finally:
         doc.close()

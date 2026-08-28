@@ -198,6 +198,28 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
   yine de per-kitap satırında/JSON'da görünüyor (raporlanıyor, gate'e girmiyor). Test:
   fast eval (`mathematical_singular-integrals` dahil) 83.3→86.3, "Dikkat gerektiren
   kitaplar" artık boş. Detay: `TAMAMLANANLAR.md`.
+- ~~Uzun/tekrarlayan koşu başlığı-altbilgi sızıntısı (tam 50 kitaplık eval'da bulundu,
+  `two-column-academic_elektrofarazi` 60.2→54.3 gerileme)~~ — 2026-08-27'de düzeltildi.
+  60 karakteri aşan (`HEADER_FOOTER_MAX_CHARS`), birden fazla parçaya bölünmüş TEK bir
+  koşu başlığı/altbilgi bloğu (yazar-atıf+sayfa no, dergi adı+URL+cilt/sayı) filtreden
+  tamamen kaçıyordu. Cap'i yükseltmek (60→90) hem yetersiz kaldı (hemen üstündeki gövde
+  metnine punto olarak yakın duran altbilgiler hâlâ sızıyordu) hem de `book-with-images_966108`'i
+  fast eval'da 79.6→39.0 (-40.6) ile çökertti (agresif %15 kalibre edilmiş üst kenar
+  payında, üstünde eşleşecek blok olmayan gerçek bir paragraf başlangıcı yeni cap'e
+  girip yanlışlıkla silindi). Asıl fix konum/punto sezgisini terk edip İÇERİĞİN sayfa
+  sayfa BİREBİR tekrarına bakıyor: yeni `detect_recurring_margin_text` (plan fazında,
+  kalibre edilmiş kenar payı şeridinde örneklenen sayfaların en az yarısında aynen
+  tekrar eden metinleri toplar) `header_blacklist`'e ekleniyor — bu, mevcut
+  margin/uzunluk/continuation filtresinden tamamen bağımsız bir kanal (`_is_blacklisted`
+  zaten ayrı bir kontrol). `HEADER_FOOTER_MAX_CHARS` 60'a geri alındı; bunu yaparken
+  `_is_blacklisted`'ın alt-dize eşleşmesinin de yanlışlıkla aynı sabite bağlı olduğu
+  (ayrı bir regresyona yol açtığı) bulunup `BLACKLIST_SUBSTRING_MAX_CHARS=90`'a ayrıldı.
+  Test: suite 78/78, fast eval 86.3'te sabit (hedef kitap fast subset'te değil,
+  `book-with-images_966108` 79.6'da gerilemedi). Tam 50 kitaplık eval + yeni baseline:
+  genel 73.4→74.3 (+0.9), hedef kitap 54.3→87.7 (orijinal 60.2'nin de üstünde), yan
+  fayda olarak `two-column-academic_vibe-coding` 52.4→61.1 (+8.7). Tek gözlemlenen yan
+  etki `multilingual_azerice-kitap-2` 77.0→73.4 (-3.6, nedeni bu turda araştırılmadı,
+  ayrı bileşenlerde hem iyileşme hem kötüleşme karışık). Detay: `TAMAMLANANLAR.md`.
 
 ## Diğer (bu roadmap'in kapsamı dışı, ayrı konular)
 

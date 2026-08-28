@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-08-22T08:11:05.049015+00:00",
+  "timestamp": "2026-08-28T16:24:26.608000+00:00",
   "variant": "local",
   "book_count": 50,
-  "overall_score": 54.8,
+  "overall_score": 74.3,
   "metric_averages": {
-    "text_completeness": 0.388,
-    "structure": 0.634,
-    "cleanliness": 0.581,
-    "ocr_quality": 0.765,
-    "images": 0.828,
+    "text_completeness": 0.639,
+    "structure": 0.792,
+    "cleanliness": 0.887,
+    "ocr_quality": 0.762,
+    "images": 0.803,
     "reading_order": null
   },
   "books": [
@@ -51,6 +51,8 @@
         "duplicates": {
           "repeated_short_blocks": {},
           "repeated_short_block_total_occurrences": 0,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.05714285714285714
         },
         "broken_words": {
@@ -70,6 +72,7 @@
         "images": {
           "pdf_image_count": 0,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": 0,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -91,7 +94,8 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.0059588750009424984
+      "duration_seconds": 0.01044625003123656,
+      "unsupported": false
     },
     {
       "book_id": "smoke-scanned",
@@ -129,6 +133,8 @@
         "duplicates": {
           "repeated_short_blocks": {},
           "repeated_short_block_total_occurrences": 0,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.0
         },
         "broken_words": {
@@ -148,6 +154,7 @@
         "images": {
           "pdf_image_count": 2,
           "epub_content_image_count": 1,
+          "epub_unique_image_count": 1,
           "expected_image_count": 1,
           "missing_vs_pdf": 1,
           "missing_vs_expected": 0,
@@ -168,7 +175,8 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 1.1339562920038588
+      "duration_seconds": 1.3330900419969112,
+      "unsupported": false
     },
     {
       "book_id": "smoke-header-footer",
@@ -209,6 +217,8 @@
         "duplicates": {
           "repeated_short_blocks": {},
           "repeated_short_block_total_occurrences": 0,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.14676616915422885
         },
         "broken_words": {
@@ -228,6 +238,7 @@
         "images": {
           "pdf_image_count": 0,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": 0,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -248,31 +259,27 @@
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.006585083989193663
+      "duration_seconds": 0.038807583041489124,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_966108",
       "category": "book-with-images",
-      "score": 24.3,
-      "category_label": "Failed",
+      "score": 79.6,
+      "category_label": "Good",
       "metric_scores": {
-        "text_completeness": 0.0,
-        "structure": 0.2291052114060964,
-        "cleanliness": 0.4666666666666667,
+        "text_completeness": 1.0,
+        "structure": 0.4398557849885284,
+        "cleanliness": 0.6657375526042522,
         "ocr_quality": null,
-        "images": 0.7834146341463414,
+        "images": 0.987719298245614,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.6666666666666666,
-          "phrase_include_misses": [
-            "ASTM D 7012 standartlarına uygun tek eksenli sıkışma dayanımı"
-          ],
-          "phrase_exclude_violations": [
-            "Ankara Üniversitesi",
-            "Jeoloji Mühendisliği Anabilim Dalı"
-          ],
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -280,7 +287,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 699,
+          "paragraph_count": 1342,
           "expected_paragraph_range": [
             3051,
             4576
@@ -289,7 +296,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 722
+          "heading_count": 122
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -299,10 +306,16 @@
             "AF-5": 3,
             "(mm)": 3,
             "Kesme Gerilmesi (MPa)": 35,
-            "0,5 MPa 1,0 MPa 2,0 MPa 4,0 MPa 6,0 MPa 8,0 MPa": 3,
+            "0,5 MPa": 35,
+            "1,0 MPa": 35,
+            "2,0 MPa": 35,
+            "4,0 MPa": 35,
+            "6,0 MPa": 35,
+            "8,0 MPa": 35,
             "Yerdeğiştirme (mm)": 35,
+            "Kesme gerilmesi, (MPa)": 61,
             "Normal gerilme, (MPa)": 67,
-            "Kesme gerilmesi, (MPa)": 60,
+            "normal gerilme grafiği": 3,
             "gerilme grafikleri": 9,
             "Dolgusuz": 29,
             "3 mm kalınlığında sert-1 dolgu": 4,
@@ -323,12 +336,6 @@
             "Model Özetib": 3,
             "Model R R Kare Düzeltilmiş R Kare Tahminin Standart": 3,
             "Hatası Durbin-Watson": 3,
-            "0,5 MPa": 32,
-            "1,0 MPa": 32,
-            "2,0 MPa": 32,
-            "4,0 MPa": 32,
-            "6,0 MPa": 32,
-            "8,0 MPa": 32,
             "1 mm yumuşak dolgu": 3,
             "3 mm yumuşak dolgu": 3,
             "5 mm yumuşak dolgu": 3,
@@ -337,12 +344,14 @@
             "5 mm sert-1 dolgu": 4,
             "1 mm sert-2 dolgu": 4
           },
-          "repeated_short_block_total_occurrences": 530,
-          "duplicate_ngram_ratio": 0.12304912107770659
+          "repeated_short_block_total_occurrences": 549,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.12534841777340547
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 3,
+          "candidate_count": 15,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -356,11 +365,12 @@
         },
         "images": {
           "pdf_image_count": 205,
-          "epub_content_image_count": 205,
+          "epub_content_image_count": 56,
+          "epub_unique_image_count": 56,
           "expected_image_count": 57,
-          "missing_vs_pdf": 0,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 148
+          "missing_vs_pdf": 149,
+          "missing_vs_expected": 1,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -373,23 +383,24 @@
         "chapter_titles": [
           "Süreksizliklerde Dolgunun Kesme Dayanımına Etkisinin Nicelleştirilmesi"
         ],
-        "paragraph_count": 699
+        "paragraph_count": 1342
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.5799963749886956
+      "duration_seconds": 1.6911555419792421,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_active-skills-for-reading-4",
       "category": "book-with-images",
-      "score": 86.1,
-      "category_label": "Good",
+      "score": 93.9,
+      "category_label": "Excellent",
       "metric_scores": {
         "text_completeness": 1.0,
-        "structure": 0.9451697127937336,
-        "cleanliness": 0.4666666666666667,
+        "structure": 1.0,
+        "cleanliness": 0.9007647995892882,
         "ocr_quality": 0.7746743295019158,
-        "images": 0.8856145251396648,
+        "images": 0.8240223463687151,
         "reading_order": null
       },
       "metric_details": {
@@ -404,7 +415,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 2896,
+          "paragraph_count": 3186,
           "expected_paragraph_range": [
             3064,
             4597
@@ -413,7 +424,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 692
+          "heading_count": 450
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -427,17 +438,17 @@
             "from A.": 21,
             "A Discuss the following questions with a partner.": 3,
             "A Choose the correct answer for the following questions.": 13,
-            "Critical Thinking": 9,
+            "Critical Thinking": 8,
             "Comprehension Odd Word Out": 3,
-            "Vocabulary Skill": 3,
             "Example:": 8,
+            "Vocabulary Skill": 3,
             "1 2 3 4 5 6 7 8": 3,
             "B Discuss your answers in A with a partner.": 4,
             "What do you think?": 12,
             "A Answer the following questions.": 14,
             "B Discuss your answers with a partner.": 12,
             "Reading Skill Understanding Inference": 3,
-            "C Discuss the following questions with a partner.": 12,
+            "C Discuss the following questions with a partner.": 11,
             "Vocabulary Comprehension Definitions": 4,
             "Vocabulary Comprehension Words in Context": 4,
             "partner. The words in blue are from the passage.": 6,
@@ -445,7 +456,7 @@
             "words are from the passage.": 7,
             "A Choose the correct answers for the following questions.": 3,
             "Comprehension Words in Context": 6,
-            "Answer the following questions.": 4,
+            "Answer the following questions.": 3,
             "Reading Comprehension": 8,
             "words next to the correct definitions.": 5,
             "Reading Skill Identifying Meaning from Context": 4,
@@ -455,12 +466,14 @@
             "number": 4,
             "Chapter2": 10
           },
-          "repeated_short_block_total_occurrences": 264,
-          "duplicate_ngram_ratio": 0.03758240264594613
+          "repeated_short_block_total_occurrences": 261,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0372132001540169
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 11,
+          "candidate_count": 14,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -474,10 +487,11 @@
         },
         "images": {
           "pdf_image_count": 716,
-          "epub_content_image_count": 599,
+          "epub_content_image_count": 536,
+          "epub_unique_image_count": 536,
           "expected_image_count": 716,
-          "missing_vs_pdf": 117,
-          "missing_vs_expected": 117,
+          "missing_vs_pdf": 180,
+          "missing_vs_expected": 180,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -491,23 +505,24 @@
         "chapter_titles": [
           "Active Skills for Reading"
         ],
-        "paragraph_count": 2896
+        "paragraph_count": 3186
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 9.59833875001641
+      "duration_seconds": 19.812266666966025,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_ankaranin-trekking-rotalari",
       "category": "book-with-images",
-      "score": 28.0,
+      "score": 35.2,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
-        "structure": 0.19075144508670522,
-        "cleanliness": 0.4666666666666667,
-        "ocr_quality": 0.5220510476190476,
-        "images": 0.9201754385964911,
+        "structure": 0.5,
+        "cleanliness": 0.4552266552266552,
+        "ocr_quality": 0.5725584821428571,
+        "images": 0.9109649122807018,
         "reading_order": null
       },
       "metric_details": {
@@ -525,7 +540,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 330,
+          "paragraph_count": 965,
           "expected_paragraph_range": [
             865,
             1298
@@ -544,27 +559,28 @@
           "unmatched_generated_chapters": [
             "Ankara'nın Trekking Rotaları"
           ],
-          "heading_count": 687
+          "heading_count": 99
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "Zorluk Derecesi 2": 25,
-            "Mesafe": 26,
-            "YAYLASI": 47,
-            "Yükseklik": 26,
+            "Mesafe": 22,
+            "Zorluk Derecesi 2": 23,
+            "YAYLASI": 46,
+            "Yükseklik": 38,
             "KÜRT": 4,
-            "SORGUN": 14,
+            "SORGUN": 15,
             "GÖLETİ": 27,
-            "Çamlıdere Belediyesi Arşivi": 4,
             "ALAKOÇ": 4,
             "KÖYÜ": 30,
-            "TABİAT PARKI": 3,
+            "Çamlıdere Belediyesi Arşivi": 4,
+            "Mesafe Zorluk Derecesi 2": 3,
+            "TABİAT PARKI": 5,
+            "ÇAMKORU": 4,
             "ÇAMLIDERE": 9,
             "Zorluk Derecesi 3": 33,
-            "BENLİ": 5,
+            "BENLİ": 4,
             "EĞRİOVA": 4,
             "11 km": 3,
-            "ÇAMKORU": 3,
             "1385m": 3,
             "ESKİ GÜREŞ": 3,
             "YERİ": 3,
@@ -574,7 +590,7 @@
             "HACILAR": 3,
             "KARAGÖL": 5,
             "USTA": 5,
-            "YAYLAK": 3,
+            "YAYLAK": 4,
             "1759m": 3,
             "2.1m": 3,
             "YILDIRIMEVCİ": 3,
@@ -584,29 +600,37 @@
             "ÇATAK": 3,
             "WE": 10
           },
-          "repeated_short_block_total_occurrences": 340,
-          "duplicate_ngram_ratio": 0.0009203018590097553
+          "repeated_short_block_total_occurrences": 352,
+          "leaked_short_blocks": {
+            "YAYLASI": 46
+          },
+          "leaked_short_block_total_occurrences": 46,
+          "duplicate_ngram_ratio": 0.0009196811771919068
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 6,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 34,
+          "confirmed_count": 2,
+          "confirmed_samples": [
+            "yak-laşık -> yaklaşık",
+            "olu-şan -> oluşan"
+          ],
+          "per_1000_words": 0.12257155114297971
         },
         "ocr_quality": {
           "available": true,
-          "scanned_page_count": 5,
-          "avg_confidence": 63.6647619047619,
-          "low_confidence_page_pct": 0.6,
-          "low_confidence_block_pct": 0.603448275862069
+          "scanned_page_count": 8,
+          "avg_confidence": 67.35982142857142,
+          "low_confidence_page_pct": 0.5,
+          "low_confidence_block_pct": 0.5357142857142857
         },
         "images": {
           "pdf_image_count": 605,
-          "epub_content_image_count": 202,
+          "epub_content_image_count": 199,
+          "epub_unique_image_count": 199,
           "expected_image_count": 228,
-          "missing_vs_pdf": 403,
-          "missing_vs_expected": 26,
+          "missing_vs_pdf": 406,
+          "missing_vs_expected": 29,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -620,23 +644,24 @@
         "chapter_titles": [
           "Ankara'nın Trekking Rotaları"
         ],
-        "paragraph_count": 330
+        "paragraph_count": 965
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 2.9217739580199122
+      "duration_seconds": 6.530523541965522,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_astronomi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 56.1,
-      "category_label": "Poor",
+      "score": 83.6,
+      "category_label": "Good",
       "metric_scores": {
-        "text_completeness": 0.375,
-        "structure": 0.7945466074825618,
-        "cleanliness": 0.46573089095873565,
+        "text_completeness": 0.75,
+        "structure": 1.0,
+        "cleanliness": 0.9904990077639122,
         "ocr_quality": 0.672581047932437,
-        "images": 0.7727272727272727,
+        "images": 0.7379679144385027,
         "reading_order": null
       },
       "metric_details": {
@@ -645,9 +670,7 @@
           "phrase_include_misses": [
             "Ptolemaios'un Dünya­merkezli Evren modeli"
           ],
-          "phrase_exclude_violations": [
-            "Astronomi"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -655,7 +678,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 3759,
+          "paragraph_count": 5678,
           "expected_paragraph_range": [
             4731,
             7096
@@ -664,33 +687,43 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 1853
+          "heading_count": 547
         },
         "duplicates": {
           "repeated_short_blocks": {
             "geliştirir.": 3,
-            "KISACA": 82,
-            "Önemli eserleri": 21,
-            "SONRA": 38,
+            "KISACA": 92,
+            "Önemli eserleri": 20,
+            "SONRA": 40,
+            "Güneş": 3,
             "keşfeder.": 5,
             "yayımlar.": 3,
-            "ÖNCE": 62,
+            "ÖNCE": 60,
+            "olduğunu gösterir.": 3,
             "I I": 4,
             "gösterir.": 4,
             "Arthur Eddington": 3,
             "Albert Einstein": 4
           },
-          "repeated_short_block_total_occurrences": 229,
-          "duplicate_ngram_ratio": 0.0010026872017005575
+          "repeated_short_block_total_occurrences": 244,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0011449100850786631
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 152,
-          "confirmed_count": 1,
+          "candidate_count": 280,
+          "confirmed_count": 7,
           "confirmed_samples": [
-            "kar-şı -> karşı"
+            "Gü-neş -> güneş",
+            "geze-genler -> gezegenler",
+            "bulu-nan -> bulunan",
+            "azal-ması -> azalması",
+            "dü-şünce -> düşünce",
+            "etra-fında -> etrafında",
+            "ileti-şime -> iletişime"
           ],
-          "per_1000_words": 0.010026168299261071
+          "per_1000_words": 0.0690846286701209
         },
         "ocr_quality": {
           "available": true,
@@ -701,10 +734,11 @@
         },
         "images": {
           "pdf_image_count": 1325,
-          "epub_content_image_count": 884,
+          "epub_content_image_count": 825,
+          "epub_unique_image_count": 819,
           "expected_image_count": 1309,
-          "missing_vs_pdf": 441,
-          "missing_vs_expected": 425,
+          "missing_vs_pdf": 500,
+          "missing_vs_expected": 490,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -718,21 +752,22 @@
         "chapter_titles": [
           "Astronomi Kitabı"
         ],
-        "paragraph_count": 3759
+        "paragraph_count": 5678
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 54.59290312498342
+      "duration_seconds": 87.3345072089578,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_bilim-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 65.3,
-      "category_label": "Fair",
+      "score": 94.6,
+      "category_label": "Excellent",
       "metric_scores": {
-        "text_completeness": 0.5,
-        "structure": 0.9097905087644292,
-        "cleanliness": 0.4666666666666667,
+        "text_completeness": 1.0,
+        "structure": 1.0,
+        "cleanliness": 0.9409806244197048,
         "ocr_quality": 0.6252752205882353,
         "images": 0.9776811594202899,
         "reading_order": null
@@ -741,9 +776,7 @@
         "text_completeness": {
           "phrase_include_recall": 1.0,
           "phrase_include_misses": [],
-          "phrase_exclude_violations": [
-            "Bilim Kitabı"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -751,7 +784,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 6384,
+          "paragraph_count": 10451,
           "expected_paragraph_range": [
             7017,
             10527
@@ -760,43 +793,57 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 4345
+          "heading_count": 1006
         },
         "duplicates": {
           "repeated_short_blocks": {
+            "KISACA": 80,
             "BİLİM DALI Astronomi": 5,
-            "KISACA": 73,
             "BİLİM DALI Kimya": 14,
-            "BİLİM DALI Biyoloji": 20,
-            "SONRA": 38,
-            "BİLİM DALI Fizik": 27,
-            "Önemli eserleri": 43,
+            "BİLİM DALI Biyoloji": 23,
+            "SONRA": 47,
+            "BİLİM DALI Fizik": 28,
+            "Önemli eserleri": 47,
             "olduğunu öne sürer.": 3,
-            "geliştirdi.": 4,
-            "yazdı.": 3,
-            "ÖNCE": 8,
-            "yayımlar.": 5,
-            "açıklar.": 4,
+            "geliştirdi.": 5,
+            "yazdı.": 4,
+            "ÖNCE": 10,
+            "yayımlar.": 6,
+            "açıklar.": 5,
+            "tanımlar.": 3,
             "adını verdi.": 3,
             "BİLİM DALI Meteoroloji": 4,
             "kanıtlar.": 3,
-            "çıkardı.": 3,
-            "oluştuğunu öne sürer.": 3,
+            "göstermişti.": 3,
             "keşfeder.": 3,
-            "Robert FitzRoy": 4,
+            "vardır.": 3,
+            "Robert FitzRoy": 3,
             "Albert Einstein": 3,
             "Elektron": 3,
             "Ayrıca bkz. Alhazen 28-29": 3
           },
-          "repeated_short_block_total_occurrences": 279,
-          "duplicate_ngram_ratio": 0.00137025232942896
+          "repeated_short_block_total_occurrences": 311,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.001367645136311984
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 182,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 595,
+          "confirmed_count": 59,
+          "confirmed_samples": [
+            "tara-fından -> tarafından",
+            "dün-yanın -> dünyanın",
+            "kay-nağı -> kaynağı",
+            "ay-nı -> aynı",
+            "yarat-tığı -> yarattığı",
+            "böce-ğin -> böceğin",
+            "ara-sında -> arasında",
+            "yap-tı -> yaptı",
+            "ge-rektiğini -> gerektiğini",
+            "ka-nıt -> kanıt"
+          ],
+          "per_1000_words": 0.593274877322822
         },
         "ocr_quality": {
           "available": true,
@@ -808,6 +855,7 @@
         "images": {
           "pdf_image_count": 345,
           "epub_content_image_count": 334,
+          "epub_unique_image_count": 334,
           "expected_image_count": 345,
           "missing_vs_pdf": 11,
           "missing_vs_expected": 11,
@@ -824,21 +872,22 @@
         "chapter_titles": [
           "Bilim Kitabı"
         ],
-        "paragraph_count": 6384
+        "paragraph_count": 10451
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 36.754966124979546
+      "duration_seconds": 50.25094712502323,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_dunya-tarihi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 60.5,
-      "category_label": "Fair",
+      "score": 95.7,
+      "category_label": "Excellent",
       "metric_scores": {
-        "text_completeness": 0.5,
-        "structure": 0.6370164011614219,
-        "cleanliness": 0.4666666666666667,
+        "text_completeness": 1.0,
+        "structure": 1.0,
+        "cleanliness": 0.9268253330541465,
         "ocr_quality": 0.7496333281296268,
         "images": 0.9689189189189189,
         "reading_order": null
@@ -847,9 +896,7 @@
         "text_completeness": {
           "phrase_include_recall": 1.0,
           "phrase_include_misses": [],
-          "phrase_exclude_violations": [
-            "Dünya Tarihi"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -857,7 +904,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 16235,
+          "paragraph_count": 29250,
           "expected_paragraph_range": [
             25486,
             38228
@@ -866,50 +913,66 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 10553
+          "heading_count": 1720
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "ANAHTAR": 58,
+            "ANAHTAR": 68,
             "ATLAS OKYANUSU": 8,
             "AVRUPA": 6,
             "KUZEY": 5,
+            "Suriye": 3,
             "MİLYON": 4,
-            "Arap": 5,
-            "ASYA": 4,
+            "Arap": 4,
+            "aldı.": 6,
             "Akdeniz": 3,
-            "AFRİKA": 9,
+            "AFRİKA": 11,
+            "süslenmiştir.": 4,
+            "açtı.": 8,
             "Karadeniz": 3,
-            "kazandı.": 3,
-            "aldı.": 4,
-            "Güney": 5,
+            "olacaktı.": 4,
+            "mişti.": 3,
+            "başlattı.": 5,
+            "YIL": 3,
+            "MISIR": 4,
+            "Denizi": 3,
+            "Güney": 6,
+            "BİN": 3,
             "vardı.": 4,
-            "kaldı.": 4,
+            "tı.": 3,
+            "kaldı.": 6,
             "IMP.": 4,
+            "Çın": 3,
             "İSPANYA": 12,
+            "madı.": 5,
             "Etiyopya": 3,
             "İMP.": 4,
-            "dı.": 6,
+            "dı.": 7,
             "ÇİN": 3,
-            "HiNT OKYANUSU": 3,
+            "HiNT OKYANUSU": 4,
             "yapılmıştır.": 5,
             "kıldı.": 3,
-            "açtı.": 5,
-            "başladı.": 5,
+            "ASYA": 3,
+            "başladı.": 7,
             "HANLIGI": 3,
             "kullanıldı.": 4,
-            "başardı.": 4,
-            "başlattı.": 3,
+            "İmparatorluğunun": 3,
+            "başardı.": 3,
             "kaldılar.": 3,
             "arasındaydı.": 3,
-            "sağladı.": 5,
-            "hakimiyeti": 3,
+            "olmuştu.": 3,
+            "dılar.": 3,
+            "sağladı.": 6,
+            "hakimiyeti": 5,
+            "OSMANLI": 3,
+            "kullanılır.": 3,
             "POLONYA": 4,
-            "çıktı.": 3,
+            "çıktı.": 4,
+            "ölü": 3,
             "İmparatorluğu": 5,
-            "RUSYA": 12,
-            "FRANSA": 40,
-            "yerleşimleri": 3,
+            "RUSYA": 13,
+            "FRANSA": 42,
+            "yerleşimleri": 4,
             "AFRiKA": 3,
             "HiNDiSTAN": 5,
             "Avusturya": 6,
@@ -917,57 +980,72 @@
             "Prusya": 3,
             "İngiltere": 11,
             "Namlu": 3,
+            "ABD": 42,
             "Alman": 3,
             "Belçika": 7,
-            "ABD": 38,
             "ALMANYA": 20,
-            "BRITANYA": 41,
-            "JAPONYA": 18,
-            "BRİTANYA": 3,
+            "BRITANYA": 40,
+            "JAPONYA": 21,
+            "BRİTANYA": 4,
             "işgal etti.": 3,
             "SSCB": 4,
             "KANADA": 3,
             "Kore": 3,
             "İRAN": 3,
             "İtalya": 24,
-            "Norveç": 5,
-            "AVUSTRALYA": 4,
+            "Norveç": 4,
+            "AVUSTRALYA": 3,
             "İ S İ M": 6,
-            "İSİM": 57,
             "İSİM ili": 5,
-            "İ SİM": 3,
-            "SÜRE": 37,
+            "İSİM": 62,
+            "İSiM": 3,
+            "İ SİM": 8,
+            "SÜRE": 38,
             "İSİM SÜRE": 12,
-            "iSiM": 7,
-            "BAŞBAKANLAR": 4,
+            "iSiM": 9,
+            "BAŞBAKANLAR": 6,
+            "TARİH": 7,
             "karşı": 5,
             "KÖKEN": 6,
+            "İSİM DÖNEMİ": 3,
             "Portekiz": 3,
             "ltalya": 7,
             "ispanya": 4,
-            "lngiltere": 3,
-            "İSİM DÖNEMİ": 3,
             "lrlanda": 3,
-            "Çin": 23,
+            "lngiltere": 3,
+            "Çin": 22,
             "Mezopotamya": 3,
             "Sümer halkı": 3,
-            "TARİH": 5,
-            "Şair": 6,
             "Romancı": 5,
-            "ÖNEMLİ ESERLERİ": 3,
-            "Felemenk": 7,
-            "TANIMLAMA": 3,
+            "İrlanda": 4,
+            "Şair": 6,
+            "Felemenk": 6,
+            "YER": 3,
+            "TANIMLAMA": 4,
             "Osmanlı imparatorluğuyla": 3
           },
-          "repeated_short_block_total_occurrences": 712,
-          "duplicate_ngram_ratio": 0.00046253158956689614
+          "repeated_short_block_total_occurrences": 824,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0005821645938078857
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 223,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 3010,
+          "confirmed_count": 232,
+          "confirmed_samples": [
+            "sa-yısı -> sayısı",
+            "Av-rupa -> avrupa",
+            "Bunla-rın -> bunların",
+            "ayçi-çeği -> ayçiçeği",
+            "do-ğu -> doğu",
+            "civa-rında -> civarında",
+            "anla-mına -> anlamına",
+            "meza-rını -> mezarını",
+            "Di-ğer -> diğer",
+            "hakla-rını -> haklarını"
+          ],
+          "per_1000_words": 0.7673810145967777
         },
         "ocr_quality": {
           "available": true,
@@ -979,6 +1057,7 @@
         "images": {
           "pdf_image_count": 518,
           "epub_content_image_count": 495,
+          "epub_unique_image_count": 495,
           "expected_image_count": 518,
           "missing_vs_pdf": 23,
           "missing_vs_expected": 23,
@@ -995,21 +1074,22 @@
         "chapter_titles": [
           "Dünya Tarihi Kitabı"
         ],
-        "paragraph_count": 16235
+        "paragraph_count": 29250
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 195.67815575000714
+      "duration_seconds": 223.76814754196675,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_haritalarla-cografya",
       "category": "book-with-images",
-      "score": 33.5,
+      "score": 39,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.16666666666666666,
         "structure": null,
-        "cleanliness": 0.4666666666666667,
+        "cleanliness": 0.9932861264096512,
         "ocr_quality": 0.6599892889862271,
         "images": 0.39887005649717516,
         "reading_order": null
@@ -1031,13 +1111,13 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 430,
+          "paragraph_count": 613,
           "expected_paragraph_range": null,
           "chapter_recall": null,
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 1076
+          "heading_count": 893
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -1051,6 +1131,8 @@
             "ERZINCAN": 3
           },
           "repeated_short_block_total_occurrences": 28,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.0025177025963808025
         },
         "broken_words": {
@@ -1070,6 +1152,7 @@
         "images": {
           "pdf_image_count": 177,
           "epub_content_image_count": 25,
+          "epub_unique_image_count": 25,
           "expected_image_count": 177,
           "missing_vs_pdf": 152,
           "missing_vs_expected": 152,
@@ -1086,25 +1169,26 @@
         "chapter_titles": [
           "Haritalarla Coğrafya 2022"
         ],
-        "paragraph_count": 430
+        "paragraph_count": 613
       },
       "gates_triggered": [
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 260.0796267919941
+      "duration_seconds": 260.4222092500422,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_mitoloji-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 84.2,
-      "category_label": "Good",
+      "score": 92.6,
+      "category_label": "Excellent",
       "metric_scores": {
         "text_completeness": 1.0,
         "structure": 1.0,
-        "cleanliness": 0.4666666666666667,
+        "cleanliness": 0.9907095399627095,
         "ocr_quality": 0.6429845052083333,
-        "images": 0.7348484848484849,
+        "images": 0.7085858585858585,
         "reading_order": null
       },
       "metric_details": {
@@ -1119,7 +1203,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 4649,
+          "paragraph_count": 6170,
           "expected_paragraph_range": [
             4361,
             6541
@@ -1128,35 +1212,42 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 1748
+          "heading_count": 711
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "KlSACA": 71,
+            "KlSACA": 82,
             "KAYNAKLAR": 18,
-            "Theogonia": 3,
             "Bibliotheca": 3,
+            "ORTAM": 4,
             "Odysseia": 3,
             "BAŞLICA KARAKTERLER": 3,
             "• I": 3,
             "KAYNAKLAR Dönüşümler, Ovidius, MS 8.": 4,
             "KONU Dünyanın Yaratılışı": 4,
             "ORTAM Zamanın başlangıcı.": 5,
-            "Nesir Edda": 4,
+            "Nesir Edda": 6,
             "öldürülür.": 4,
             "KONU Yaratılış": 3,
             "RAMAYANA": 3,
             "Mitolojisi": 3
           },
-          "repeated_short_block_total_occurrences": 134,
-          "duplicate_ngram_ratio": 0.0019986000589448864
+          "repeated_short_block_total_occurrences": 148,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0022104774813291976
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 119,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 244,
+          "confirmed_count": 4,
+          "confirmed_samples": [
+            "topra-ğın -> toprağın",
+            "ti-yatro -> tiyatro",
+            "Bri-tanyalı -> britanyalı",
+            "hika-yede -> hikayede"
+          ],
+          "per_1000_words": 0.036384143790136256
         },
         "ocr_quality": {
           "available": true,
@@ -1167,10 +1258,11 @@
         },
         "images": {
           "pdf_image_count": 1386,
-          "epub_content_image_count": 861,
+          "epub_content_image_count": 809,
+          "epub_unique_image_count": 809,
           "expected_image_count": 1386,
-          "missing_vs_pdf": 525,
-          "missing_vs_expected": 525,
+          "missing_vs_pdf": 577,
+          "missing_vs_expected": 577,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -1184,21 +1276,22 @@
         "chapter_titles": [
           "Mitoloji Kitabı"
         ],
-        "paragraph_count": 4649
+        "paragraph_count": 6170
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 17.053862250002567
+      "duration_seconds": 25.983084791980218,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_sanat-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 60.4,
+      "score": 69.0,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.5,
-        "structure": 0.8724586608837084,
-        "cleanliness": 0.4666666666666667,
+        "structure": 0.9961142237484186,
+        "cleanliness": 0.8181859182243627,
         "ocr_quality": 0.24803333333333327,
         "images": 0.9940340909090908,
         "reading_order": null
@@ -1218,7 +1311,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 6437,
+          "paragraph_count": 11109,
           "expected_paragraph_range": [
             7378,
             11066
@@ -1227,30 +1320,46 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 3753
+          "heading_count": 920
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "KISACA": 86,
-            "SONRA": 16,
-            "YAKLAŞIM": 15,
-            "ÖNCE": 16,
+            "Pablo Picasso": 3,
+            "KISACA": 89,
+            "SONRA": 17,
+            "YAKLAŞIM": 17,
+            "ÖNCE": 17,
+            "başlar.": 3,
             "değildir.": 3,
             "•• PORTFOY": 6,
-            "Önemli eserleri": 51,
-            "kullanır.": 4,
+            "Önemli eserleri": 64,
+            "kullanır.": 5,
             "yapar.": 3,
-            "üretir.": 3
+            "üretir.": 3,
+            "Francisco de Goya": 3
           },
-          "repeated_short_block_total_occurrences": 203,
-          "duplicate_ngram_ratio": 0.0010112136369381896
+          "repeated_short_block_total_occurrences": 233,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0011875116314105688
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 199,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 1474,
+          "confirmed_count": 216,
+          "confirmed_samples": [
+            "Örne-ğin -> örneğin",
+            "etra-fında -> etrafında",
+            "Örne-ğin -> örneğin",
+            "ka-dın -> kadın",
+            "tara-fından -> tarafından",
+            "hayvanla-rın -> hayvanların",
+            "yakla-şık -> yaklaşık",
+            "alanla-rında -> alanlarında",
+            "mik-tarda -> miktarda",
+            "ola-ğanüstü -> olağanüstü"
+          ],
+          "per_1000_words": 1.9140791152700978
         },
         "ocr_quality": {
           "available": true,
@@ -1262,6 +1371,7 @@
         "images": {
           "pdf_image_count": 352,
           "epub_content_image_count": 349,
+          "epub_unique_image_count": 349,
           "expected_image_count": 352,
           "missing_vs_pdf": 3,
           "missing_vs_expected": 3,
@@ -1278,23 +1388,24 @@
         "chapter_titles": [
           "Sanat Kitabı"
         ],
-        "paragraph_count": 6437
+        "paragraph_count": 11109
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 82.27088079199893
+      "duration_seconds": 89.74952258402482,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_sinema-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 72.3,
-      "category_label": "Fair",
+      "score": 84.6,
+      "category_label": "Good",
       "metric_scores": {
         "text_completeness": 0.75,
-        "structure": 0.7760378732702112,
-        "cleanliness": 0.4666666666666667,
+        "structure": 1.0,
+        "cleanliness": 0.9952729301280662,
         "ocr_quality": 0.7554121031746031,
-        "images": 0.8725146198830409,
+        "images": 0.7450292397660818,
         "reading_order": null
       },
       "metric_details": {
@@ -1311,7 +1422,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 4262,
+          "paragraph_count": 6708,
           "expected_paragraph_range": [
             5492,
             8238
@@ -1320,40 +1431,49 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 2178
+          "heading_count": 315
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "Roger Ebert": 6,
+            "Roger Ebert": 7,
+            "olur.": 3,
             "1 l l": 3,
-            "ÖNCE Sİ": 79,
-            "Önemli filmleri": 19,
-            "SONRA SI": 17,
-            "KlSACA": 49,
+            "ÖNCE Sİ": 81,
+            "Önemli filmleri": 20,
+            "SONRA SI": 19,
+            "KlSACA": 54,
             "TÜR Korku": 3,
             "SONRASI": 60,
-            "ON CE Sİ": 4,
-            "Dakika Dakika": 10,
-            "Önemli ftlmleri": 5,
+            "Önemli ftlmleri": 6,
+            "Bilimkurgu": 3,
+            "ON CE Sİ": 3,
+            "Dakika Dakika": 11,
             "ÖNCESi": 8,
+            "Yönetmen": 9,
             "TÜR Dram": 14,
-            "Yönetmen": 5,
-            "ÖNCESİ": 3,
-            "ÖNCE": 3,
+            "ÖNCESİ": 4,
+            "ÖNCE": 4,
             "SONRA": 4,
-            "TÜR Bilimkurgu": 3,
             "TÜR Müzikal": 3,
-            "En önemli filmleri": 26
+            "En önemli filmleri": 26,
+            "TÜR Tarihi dram": 3
           },
-          "repeated_short_block_total_occurrences": 324,
-          "duplicate_ngram_ratio": 0.000417107215954836
+          "repeated_short_block_total_occurrences": 348,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.00042391660404262287
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 60,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 196,
+          "confirmed_count": 4,
+          "confirmed_samples": [
+            "bun-dan -> bundan",
+            "bulun-duğu -> bulunduğu",
+            "yakla-şımı -> yaklaşımı",
+            "tehli-keye -> tehlikeye"
+          ],
+          "per_1000_words": 0.03853527422664522
         },
         "ocr_quality": {
           "available": true,
@@ -1364,10 +1484,11 @@
         },
         "images": {
           "pdf_image_count": 1197,
-          "epub_content_image_count": 979,
+          "epub_content_image_count": 761,
+          "epub_unique_image_count": 761,
           "expected_image_count": 1197,
-          "missing_vs_pdf": 218,
-          "missing_vs_expected": 218,
+          "missing_vs_pdf": 436,
+          "missing_vs_expected": 436,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -1381,23 +1502,24 @@
         "chapter_titles": [
           "Sinema Kitabı"
         ],
-        "paragraph_count": 4262
+        "paragraph_count": 6708
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 38.64833954200731
+      "duration_seconds": 51.881537042034324,
+      "unsupported": false
     },
     {
       "book_id": "book-with-images_tarih-kitabi-alfa-yayinlari",
       "category": "book-with-images",
-      "score": 76.6,
+      "score": 85.0,
       "category_label": "Good",
       "metric_scores": {
         "text_completeness": 0.75,
-        "structure": 0.9873009040034438,
-        "cleanliness": 0.4666666666666667,
+        "structure": 1.0,
+        "cleanliness": 0.9855436720670053,
         "ocr_quality": 0.774182935913232,
-        "images": 0.8163841807909604,
+        "images": 0.7700564971751411,
         "reading_order": null
       },
       "metric_details": {
@@ -1414,7 +1536,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 4587,
+          "paragraph_count": 6118,
           "expected_paragraph_range": [
             4646,
             6970
@@ -1423,11 +1545,11 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 2251
+          "heading_count": 484
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "KISACA": 85,
+            "KISACA": 82,
             "artar.": 3,
             "zayıflar.": 3,
             "Perikles": 3,
@@ -1438,15 +1560,26 @@
             "Christopher Columbus": 3,
             "haline gelir.": 4
           },
-          "repeated_short_block_total_occurrences": 187,
-          "duplicate_ngram_ratio": 0.003092992597099686
+          "repeated_short_block_total_occurrences": 184,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.003067845615922539
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 35,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 141,
+          "confirmed_count": 8,
+          "confirmed_samples": [
+            "çoğun-lukla -> çoğunlukla",
+            "sağla-mış -> sağlamış",
+            "yetiştir-meye -> yetiştirmeye",
+            "döne-minde -> döneminde",
+            "çıkarla-rını -> çıkarlarını",
+            "itiba-riyle -> itibariyle",
+            "savunu-cuları -> savunucuları",
+            "mil-yonlarca -> milyonlarca"
+          ],
+          "per_1000_words": 0.06723649597001252
         },
         "ocr_quality": {
           "available": true,
@@ -1457,10 +1590,11 @@
         },
         "images": {
           "pdf_image_count": 1267,
-          "epub_content_image_count": 914,
+          "epub_content_image_count": 852,
+          "epub_unique_image_count": 832,
           "expected_image_count": 1239,
-          "missing_vs_pdf": 353,
-          "missing_vs_expected": 325,
+          "missing_vs_pdf": 415,
+          "missing_vs_expected": 407,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -1474,23 +1608,24 @@
         "chapter_titles": [
           "Tarih Kitabı"
         ],
-        "paragraph_count": 4587
+        "paragraph_count": 6118
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 56.40486187499482
+      "duration_seconds": 56.66489529097453,
+      "unsupported": false
     },
     {
       "book_id": "book-with-tables_introductory-statistics",
       "category": "book-with-tables",
-      "score": 76.3,
+      "score": 84.1,
       "category_label": "Good",
       "metric_scores": {
         "text_completeness": 0.75,
-        "structure": 0.8521551336272833,
-        "cleanliness": 0.4663483879181387,
+        "structure": 1.0,
+        "cleanliness": 0.7625379622155298,
         "ocr_quality": 0.8536400246578818,
-        "images": 0.988235294117647,
+        "images": 0.9510204081632652,
         "reading_order": null
       },
       "metric_details": {
@@ -1507,7 +1642,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 9470,
+          "paragraph_count": 11254,
           "expected_paragraph_range": [
             11113,
             16669
@@ -1516,7 +1651,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 3772
+          "heading_count": 2169
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -1525,7 +1660,7 @@
             "Key Terms": 9,
             "NOTE": 81,
             "1.2 Data, Sampling, and Variation in Data and Sampling": 3,
-            "USING THE TI-83, 83+, 84, 84+ CALCULATOR": 67,
+            "USING THE TI-83, 83+, 84, 84+ CALCULATOR": 65,
             "1.3 Frequency, Frequency Tables, and Levels of Measurement": 3,
             "Frequency": 3,
             "CUMULATIVE": 4,
@@ -1533,34 +1668,37 @@
             "c.": 18,
             "1.4 Experimental Design and Ethics": 4,
             "Stats Lab": 22,
+            "Names:": 4,
+            "Student Learning Outcomes": 4,
             "Discussion Questions": 7,
-            "Names: Student Learning Outcomes": 16,
             "d.": 8,
             "Stem Leaf": 5,
             "President Age President Age President Age": 3,
-            "Solution": 26,
+            "Solution": 25,
             "2.2 Histograms, Frequency Polygons, and Time Series Graphs": 3,
             "Lower Bound Upper Bound Frequency Cumulative Frequency": 4,
-            "Press ENTER.": 4,
-            "2.6 Skewness and the Mean, Median, and Mode": 3,
+            "Press ENTER.": 3,
             "Solution a.": 6,
             "a.": 7,
+            "Names: Student Learning Outcomes": 14,
+            "2.3 Measures of the Location of the Data": 3,
             "Grade Frequency": 3,
-            "b.": 17,
+            "b.": 18,
             "State Percent (%) State Percent (%) State Percent (%)": 3,
             "# of books Freq. Rel. Freq.": 5,
             "Amount($) Frequency Rel. Frequency": 3,
             "Percent of Underweight Children Number of Countries": 3,
             "e.": 3,
-            "3.1 Terminology": 3,
-            "3.4 Contingency Tables": 3,
+            "3.1 Terminology": 4,
+            "3.2 Independent and Mutually Exclusive Events": 5,
+            "3.3 Two Basic Rules of Probability": 4,
+            "3.4 Contingency Tables": 4,
             "Total": 3,
-            "Totals": 3,
+            "Totals": 4,
             "3.5 Tree and Venn Diagrams": 3,
             "a. b. c. d.": 10,
             "With Replacement Without Replacement": 3,
             "( __ , __ ) ( __ , __ ) ( __ , __ ) ( __ , __ )": 12,
-            "3.2 Independent and Mutually Exclusive Events": 3,
             "x P(x)": 21,
             "0 P(x = 0) =": 3,
             "1 P(x = 1) =": 3,
@@ -1568,13 +1706,13 @@
             "3 P(x = 3) =": 3,
             "4 P(x = 4) =": 3,
             "5 P(x = 5) =": 3,
-            "4.2 Mean or Expected Value and Standard Deviation": 4,
+            "4.2 Mean or Expected Value and Standard Deviation": 5,
             "x P(x) x*P(x)": 11,
             "x P(x) xP(x)": 5,
             "1. Complete the table.": 4,
             "4.5 Hypergeometric Distribution": 3,
             "4.6 Poisson Distribution": 3,
-            "REMINDER": 7,
+            "4.3 Binomial Distribution": 3,
             "5.2 The Uniform Distribution": 3,
             "5.3 The Exponential Distribution": 3,
             "6.2 Using the Normal Distribution": 3,
@@ -1584,35 +1722,40 @@
             "2nd DISTR": 4,
             "where:": 10,
             "7.2 The Central Limit Theorem for Sums": 5,
+            "REMINDER": 6,
             "7.3 Using the Central Limit Theorem": 3,
-            "8.1 A Single Population Mean using the Normal Distribution": 4,
-            "Press STAT and arrow over to TESTS.": 8,
-            "Arrow down to Calculate and press ENTER.": 8,
-            "8.3 A Population Proportion": 5,
+            "8.1 A Single Population Mean using the Normal Distribution": 3,
+            "Press STAT and arrow over to TESTS.": 7,
+            "Arrow down to Calculate and press ENTER.": 7,
+            "8.3 A Population Proportion": 4,
             "Arrow down to A:1-PropZint. Press ENTER.": 4,
             "c. n = _____": 3,
             "__________ __________ __________ __________ __________": 8,
             "ii.": 5,
-            "9.1 Null and Alternative Hypotheses": 3,
+            "9.1 Null and Alternative Hypotheses": 4,
             "9.2 Outcomes and the Type I and Type II Errors": 5,
             "9.3 Probability Distribution Needed for Hypothesis Testing": 3,
             "Population": 4,
             "9.4 Rare Events, the Sample, Decision and Conclusion": 3,
             "Solution Set up the Hypothesis Test:": 6,
             "Therefore,": 3,
-            "Graph:": 3,
+            "Graph:": 4,
             "Degrees of freedom": 3,
+            "where": 3,
             "10.2 Two Population Means with Known Standard Deviations": 4,
-            "10.3 Comparing Two Independent Population Proportions": 3,
-            "10.1 Two Population Means with Unknown Standard Deviations": 3,
+            "10.3 Comparing Two Independent Population Proportions": 4,
+            "10.1 Two Population Means with Unknown Standard Deviations": 4,
+            "10.4 Matched or Paired Samples": 4,
             "c. d.": 3,
             "Number of absences per term Expected number of students": 3,
             "Number produced Number defective": 3,
             "calculate.": 3,
             "Anxiety": 3,
             "11.4 Test for Homogeneity": 5,
-            "11.5 Comparison of the Chi-Square Tests": 3,
+            "11.5 Comparison of the Chi-Square Tests": 4,
+            "11.1 Facts About the Chi-Square Distribution": 3,
             "11.2 Goodness-of-Fit Test": 3,
+            "11.3 Test of Independence": 3,
             "12.2 Scatter Plots": 3,
             "12.6 Outliers": 3,
             "1. Calculate the following: a. a = ______ b. b = ______": 3,
@@ -1631,9 +1774,9 @@
             "Wisconsin 9 1848 30 65,499": 3,
             "Source of Variation": 3,
             "Sum of Squares": 3,
-            "13.4 Test of Two Variances": 3,
+            "13.4 Test of Two Variances": 4,
             "i. = ______ ii. = ______ iii. n = ______": 3,
-            "13.2 The F Distribution and the F-Ratio": 4,
+            "13.2 The F Distribution and the F-Ratio": 5,
             "Northeast South West Central East": 4,
             "16.3 16.9 16.4 16.2 17.1": 3,
             "16.1 16.5 16.5 16.6 17.2": 3,
@@ -1655,21 +1798,24 @@
             "Variables": 7,
             "Linear Regression and": 7,
             "Correlation": 7,
-            ", [L1] ,": 3,
-            ", [L2] ,": 3,
-            ", [STAT PLOT]": 7
+            ", [L1] ,": 4,
+            ", [L2] ,": 5,
+            "1. Access graphing mode.": 3,
+            ", [STAT PLOT]": 8
           },
-          "repeated_short_block_total_occurrences": 823,
-          "duplicate_ngram_ratio": 0.08909516875428408
+          "repeated_short_block_total_occurrences": 861,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0889289039400047
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 20,
+          "candidate_count": 38,
           "confirmed_count": 1,
           "confirmed_samples": [
             "AB-out -> about"
           ],
-          "per_1000_words": 0.0034101294485138654
+          "per_1000_words": 0.0034102922620468574
         },
         "ocr_quality": {
           "available": true,
@@ -1680,11 +1826,12 @@
         },
         "images": {
           "pdf_image_count": 407,
-          "epub_content_image_count": 357,
+          "epub_content_image_count": 350,
+          "epub_unique_image_count": 319,
           "expected_image_count": 343,
-          "missing_vs_pdf": 50,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 14
+          "missing_vs_pdf": 57,
+          "missing_vs_expected": 24,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -1697,23 +1844,24 @@
         "chapter_titles": [
           "Introductory Statistics"
         ],
-        "paragraph_count": 9470
+        "paragraph_count": 11254
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 13.355191958980868
+      "duration_seconds": 26.84561570797814,
+      "unsupported": false
     },
     {
       "book_id": "book-with-tables_table",
       "category": "book-with-tables",
-      "score": 70.1,
+      "score": 69.2,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.75,
-        "structure": 0.401595744680851,
-        "cleanliness": 0.8666666666666667,
+        "structure": 0.47606382978723405,
+        "cleanliness": 0.9278504449620737,
         "ocr_quality": null,
-        "images": 0.8833333333333333,
+        "images": 0.5704545454545454,
         "reading_order": null
       },
       "metric_details": {
@@ -1730,7 +1878,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 151,
+          "paragraph_count": 179,
           "expected_paragraph_range": [
             376,
             564
@@ -1739,14 +1887,16 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 44
+          "heading_count": 17
         },
         "duplicates": {
           "repeated_short_blocks": {
             "Functionality": 5
           },
           "repeated_short_block_total_occurrences": 5,
-          "duplicate_ngram_ratio": 0.027060931899641576
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.02705608313922236
         },
         "broken_words": {
           "available": true,
@@ -1764,11 +1914,12 @@
         },
         "images": {
           "pdf_image_count": 92,
-          "epub_content_image_count": 72,
+          "epub_content_image_count": 34,
+          "epub_unique_image_count": 17,
           "expected_image_count": 44,
-          "missing_vs_pdf": 20,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 28
+          "missing_vs_pdf": 58,
+          "missing_vs_expected": 27,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -1781,32 +1932,30 @@
         "chapter_titles": [
           "CodelessML: A Beginner's Web Application for Getting Started with Machine Learning"
         ],
-        "paragraph_count": 151
+        "paragraph_count": 179
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.3895120419911109
+      "duration_seconds": 0.7095744580146857,
+      "unsupported": false
     },
     {
       "book_id": "complex-headings_tu-rkiye-sigorta-klavuz",
       "category": "complex-headings",
-      "score": 58.8,
-      "category_label": "Poor",
+      "score": 90.4,
+      "category_label": "Excellent",
       "metric_scores": {
-        "text_completeness": 0.5,
-        "structure": 0.4482758620689655,
-        "cleanliness": 0.7866666666666667,
+        "text_completeness": 1.0,
+        "structure": 0.7241379310344828,
+        "cleanliness": 0.8814814814814814,
         "ocr_quality": null,
-        "images": 0.877,
+        "images": 0.964406779661017,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.5,
-          "phrase_include_misses": [
-            "Müşteri Platformu Sağlık Kullanıcı Kılavuzu",
-            "www.turkiyesigorta.com.tr"
-          ],
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
           "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
@@ -1815,7 +1964,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 26,
+          "paragraph_count": 42,
           "expected_paragraph_range": [
             58,
             86
@@ -1824,14 +1973,16 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 30
+          "heading_count": 17
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "Kaydır": 5,
-            "Kalan Limit": 3
+            "ANA SAYFA": 4,
+            "Kaydır": 5
           },
-          "repeated_short_block_total_occurrences": 8,
+          "repeated_short_block_total_occurrences": 9,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.044444444444444446
         },
         "broken_words": {
@@ -1850,11 +2001,12 @@
         },
         "images": {
           "pdf_image_count": 104,
-          "epub_content_image_count": 100,
+          "epub_content_image_count": 89,
+          "epub_unique_image_count": 56,
           "expected_image_count": 59,
-          "missing_vs_pdf": 4,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 41
+          "missing_vs_pdf": 15,
+          "missing_vs_expected": 3,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -1867,21 +2019,22 @@
         "chapter_titles": [
           "Müşteri Platformu - Sağlık Kullanıcı Kılavuzu"
         ],
-        "paragraph_count": 26
+        "paragraph_count": 42
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.8642579170118552
+      "duration_seconds": 3.1977522499510087,
+      "unsupported": false
     },
     {
       "book_id": "english_molecules",
       "category": "english",
-      "score": 77.6,
+      "score": 77.9,
       "category_label": "Good",
       "metric_scores": {
         "text_completeness": 0.5,
-        "structure": 0.9863013698630136,
-        "cleanliness": 0.9893455098934552,
+        "structure": 1.0,
+        "cleanliness": 0.9904721070935163,
         "ocr_quality": null,
         "images": 1.0,
         "reading_order": null
@@ -1900,7 +2053,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 72,
+          "paragraph_count": 73,
           "expected_paragraph_range": [
             73,
             111
@@ -1909,12 +2062,14 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 6
+          "heading_count": 4
         },
         "duplicates": {
           "repeated_short_blocks": {},
           "repeated_short_block_total_occurrences": 0,
-          "duplicate_ngram_ratio": 0.003995433789954338
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0035729598399313993
         },
         "broken_words": {
           "available": true,
@@ -1932,9 +2087,10 @@
         },
         "images": {
           "pdf_image_count": 5,
-          "epub_content_image_count": 5,
-          "expected_image_count": 5,
-          "missing_vs_pdf": 0,
+          "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
+          "expected_image_count": 0,
+          "missing_vs_pdf": 5,
           "missing_vs_expected": 0,
           "unexpected_vs_expected": 0
         },
@@ -1949,11 +2105,12 @@
         "chapter_titles": [
           "From Plant Compounds to Botanicals and Back: A Current Snapshot"
         ],
-        "paragraph_count": 72
+        "paragraph_count": 73
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.2164913339947816
+      "duration_seconds": 0.3951736250310205,
+      "unsupported": false
     },
     {
       "book_id": "mathematical_franctional",
@@ -1985,7 +2142,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 219,
+          "paragraph_count": 288,
           "expected_paragraph_range": [
             216,
             324
@@ -1994,7 +2151,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 76
+          "heading_count": 1
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -2017,7 +2174,17 @@
             "p p p": 3
           },
           "repeated_short_block_total_occurrences": 99,
-          "duplicate_ngram_ratio": 0.23868175765645805
+          "leaked_short_blocks": {
+            "1 q q q q q": 7,
+            "          ": 8,
+            "b f b a f b a f b a f  ": 7,
+            "                 ": 7,
+            " ]. , 4 3 max 2 , 4 3 max": 7,
+            "q q": 8,
+            "r q": 11
+          },
+          "leaked_short_block_total_occurrences": 55,
+          "duplicate_ngram_ratio": 0.2376271186440678
         },
         "broken_words": {
           "available": true,
@@ -2036,6 +2203,7 @@
         "images": {
           "pdf_image_count": 0,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": 0,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -2052,22 +2220,23 @@
         "chapter_titles": [
           "Fractional Order Derivatives and Applications"
         ],
-        "paragraph_count": 219
+        "paragraph_count": 288
       },
       "gates_triggered": [
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 0.10070941699086688
+      "duration_seconds": 0.22123370796907693,
+      "unsupported": true
     },
     {
       "book_id": "mathematical_gumusfenbil",
       "category": "mathematical",
-      "score": 30.7,
+      "score": 39,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.125,
-        "structure": 0.15880893300248144,
+        "structure": 1.0,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": null,
         "images": 1.0,
@@ -2091,7 +2260,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 64,
+          "paragraph_count": 411,
           "expected_paragraph_range": [
             403,
             605
@@ -2100,23 +2269,22 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 342
+          "heading_count": 1
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "𝑣2": 20,
-            "𝜓(𝑣1 + 𝑣2": 6,
-            "𝑣1": 20,
             "1 𝑣2−𝑣1": 20,
+            "𝑣2": 22,
+            "𝜓(𝑣1 + 𝑣2": 8,
             "𝑑𝑥)": 19,
             "(𝜓(𝑥))": 11,
+            "𝑣1": 22,
             "𝑣2 𝑣1 (𝜓(𝑥))": 9,
             "𝑑𝑥": 9,
+            "𝑑𝑥. ∫": 6,
             "𝑣2 𝑣1 (𝜙(𝑥))": 8,
-            "𝑑𝑥. ∫": 5,
             "2 𝑣2−𝑣1": 6,
             "= 𝑒": 4,
-            "(𝜙(𝑥))": 3,
             "1 𝜓(𝑣2)−𝜓(𝑣1)": 8,
             "𝜓(𝑣2)": 6,
             "((𝜓(𝑣2))": 6,
@@ -2125,23 +2293,58 @@
             "Proof. Note that": 3,
             "= (𝑒∫𝑣2": 6,
             "𝑣1 ln(𝜙(𝑥))𝑑𝑥)": 6,
+            "(𝜙(𝑥))": 3,
             "= 𝑒∫1": 3,
             "ln": 3,
             "0 𝑑𝜆": 3,
+            ". (𝜙(𝑣1)𝜙(𝑣2))": 3,
             "1 𝜙(𝑣2)−𝜙(𝑣1)": 4,
             "𝜙(𝑣2)": 3,
+            "𝑒 .": 3,
             "((𝜙(𝑣2))": 3,
             "𝜙(𝑣1))": 3,
-            "(𝜙(𝑣1))": 3,
-            ". (𝜙(𝑣1)𝜙(𝑣2))": 3,
-            "𝑒 .": 3
+            "(𝜙(𝑣1))": 3
           },
-          "repeated_short_block_total_occurrences": 218,
-          "duplicate_ngram_ratio": 0.22009408602150538
+          "repeated_short_block_total_occurrences": 225,
+          "leaked_short_blocks": {
+            "1 𝑣2−𝑣1": 20,
+            "𝑣2": 22,
+            "𝜓(𝑣1 + 𝑣2": 8,
+            "𝑑𝑥)": 19,
+            "(𝜓(𝑥))": 11,
+            "𝑣1": 22,
+            "𝑣2 𝑣1 (𝜓(𝑥))": 9,
+            "𝑑𝑥": 9,
+            "𝑑𝑥. ∫": 6,
+            "𝑣2 𝑣1 (𝜙(𝑥))": 8,
+            "2 𝑣2−𝑣1": 6,
+            "= 𝑒": 4,
+            "1 𝜓(𝑣2)−𝜓(𝑣1)": 8,
+            "𝜓(𝑣2)": 6,
+            "((𝜓(𝑣2))": 6,
+            "𝜓(𝑣1))": 6,
+            "(𝜓(𝑣1))": 6,
+            "Proof. Note that": 3,
+            "= (𝑒∫𝑣2": 6,
+            "𝑣1 ln(𝜙(𝑥))𝑑𝑥)": 6,
+            "(𝜙(𝑥))": 3,
+            "= 𝑒∫1": 3,
+            "ln": 3,
+            "0 𝑑𝜆": 3,
+            ". (𝜙(𝑣1)𝜙(𝑣2))": 3,
+            "1 𝜙(𝑣2)−𝜙(𝑣1)": 4,
+            "𝜙(𝑣2)": 3,
+            "𝑒 .": 3,
+            "((𝜙(𝑣2))": 3,
+            "𝜙(𝑣1))": 3,
+            "(𝜙(𝑣1))": 3
+          },
+          "leaked_short_block_total_occurrences": 225,
+          "duplicate_ngram_ratio": 0.13200540175557057
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 1,
+          "candidate_count": 3,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -2156,6 +2359,7 @@
         "images": {
           "pdf_image_count": 0,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": 0,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -2172,22 +2376,23 @@
         "chapter_titles": [
           "Hermite-Hadamard Tipi Bazı İntegral Eşitsizlikleri"
         ],
-        "paragraph_count": 64
+        "paragraph_count": 411
       },
       "gates_triggered": [
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 0.057817624998278916
+      "duration_seconds": 0.12533837498631328,
+      "unsupported": true
     },
     {
       "book_id": "mathematical_integral",
       "category": "mathematical",
-      "score": 38.1,
+      "score": 21.2,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
-        "structure": 0.675,
+        "structure": 0.0,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": null,
         "images": 1.0,
@@ -2210,7 +2415,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 318,
+          "paragraph_count": 576,
           "expected_paragraph_range": [
             160,
             240
@@ -2219,34 +2424,44 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 259
+          "heading_count": 6
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "jm ls": 14,
-            "s W": 12,
-            "nljm": 12,
-            "v v": 3,
-            "^ h": 4,
-            "W W": 3,
-            "s s": 3,
             "l l l": 6,
             "uu": 3,
+            "nljm": 12,
+            "^ h": 4,
+            "v v": 3,
+            "W W": 3,
+            "jm ls": 14,
             "nlm": 3,
             "m m": 4,
-            "l l": 12,
+            "s W": 12,
+            "s s": 3,
             "nljm n l j m": 5,
             "n l j m": 4,
+            "l l": 12,
             "l l l l": 6,
             "l l l l l": 3,
             "l m l m kL": 3
           },
           "repeated_short_block_total_occurrences": 100,
-          "duplicate_ngram_ratio": 0.033505479279506235
+          "leaked_short_blocks": {
+            "l l l": 6,
+            "nljm": 12,
+            "jm ls": 14,
+            "s W": 12,
+            "nljm n l j m": 5,
+            "l l": 12,
+            "l l l l": 6
+          },
+          "leaked_short_block_total_occurrences": 67,
+          "duplicate_ngram_ratio": 0.022460438999489536
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 10,
+          "candidate_count": 15,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -2261,6 +2476,7 @@
         "images": {
           "pdf_image_count": 4,
           "epub_content_image_count": 4,
+          "epub_unique_image_count": 4,
           "expected_image_count": 4,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -2277,31 +2493,34 @@
         "chapter_titles": [
           "Fractional Integration Methods"
         ],
-        "paragraph_count": 318
+        "paragraph_count": 576
       },
       "gates_triggered": [
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 0.5098705829877872
+      "duration_seconds": 1.1606589579605497,
+      "unsupported": true
     },
     {
       "book_id": "mathematical_matematik-ders",
       "category": "mathematical",
-      "score": 43.7,
+      "score": 45.6,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.0,
-        "structure": 0.8698630136986302,
-        "cleanliness": 0.7066666666666667,
+        "structure": 0.8767123287671232,
+        "cleanliness": 0.9048142046494599,
         "ocr_quality": null,
-        "images": 0.69375,
+        "images": 0.5406249999999999,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 1.0,
-          "phrase_include_misses": [],
+          "phrase_include_recall": 0.75,
+          "phrase_include_misses": [
+            "Temel Eğitim Dergisi / Journal of Primary Education"
+          ],
           "phrase_exclude_violations": [
             "Bekiroğlu",
             "Yalçın"
@@ -2313,7 +2532,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 127,
+          "paragraph_count": 128,
           "expected_paragraph_range": [
             146,
             218
@@ -2322,14 +2541,14 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 31
+          "heading_count": 8
         },
         "duplicates": {
-          "repeated_short_blocks": {
-            "Ders Kitabı İncelemesi Bekiroğlu, D., & Yalçın, D.": 11
-          },
-          "repeated_short_block_total_occurrences": 11,
-          "duplicate_ngram_ratio": 0.05571227080394922
+          "repeated_short_blocks": {},
+          "repeated_short_block_total_occurrences": 0,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0356946732564525
         },
         "broken_words": {
           "available": true,
@@ -2347,10 +2566,11 @@
         },
         "images": {
           "pdf_image_count": 32,
-          "epub_content_image_count": 18,
+          "epub_content_image_count": 11,
+          "epub_unique_image_count": 11,
           "expected_image_count": 32,
-          "missing_vs_pdf": 14,
-          "missing_vs_expected": 14,
+          "missing_vs_pdf": 21,
+          "missing_vs_expected": 21,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -2364,20 +2584,21 @@
         "chapter_titles": [
           "Ders Kitabı İncelemesi (Matematik Ders Kitapları)"
         ],
-        "paragraph_count": 127
+        "paragraph_count": 128
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.15808258301694877
+      "duration_seconds": 0.3613875000155531,
+      "unsupported": true
     },
     {
       "book_id": "mathematical_order-integrations",
       "category": "mathematical",
-      "score": 62.5,
+      "score": 68.0,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.5,
-        "structure": 0.4933333333333333,
+        "structure": 0.7133333333333334,
         "cleanliness": 0.84,
         "ocr_quality": null,
         "images": 1.0,
@@ -2398,7 +2619,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 74,
+          "paragraph_count": 107,
           "expected_paragraph_range": [
             150,
             225
@@ -2407,7 +2628,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 34
+          "heading_count": 3
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -2415,11 +2636,16 @@
             "dx": 3
           },
           "repeated_short_block_total_occurrences": 6,
-          "duplicate_ngram_ratio": 0.019863438857852266
+          "leaked_short_blocks": {
+            "x df x": 3,
+            "dx": 3
+          },
+          "leaked_short_block_total_occurrences": 6,
+          "duplicate_ngram_ratio": 0.020471464019851116
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 0,
+          "candidate_count": 1,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -2434,6 +2660,7 @@
         "images": {
           "pdf_image_count": 1,
           "epub_content_image_count": 1,
+          "epub_unique_image_count": 1,
           "expected_image_count": 1,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -2450,21 +2677,22 @@
         "chapter_titles": [
           "Fractional Order Integration: A New Perspective based on Karcı's Fractional Order Derivative"
         ],
-        "paragraph_count": 74
+        "paragraph_count": 107
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.046761584002524614
+      "duration_seconds": 0.08762249996652827,
+      "unsupported": true
     },
     {
       "book_id": "mathematical_perelman-poincare",
       "category": "mathematical",
-      "score": 69.1,
+      "score": 62.2,
       "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.5,
-        "structure": 1.0,
-        "cleanliness": 0.52,
+        "structure": 0.3867521367521367,
+        "cleanliness": 0.969418229602198,
         "ocr_quality": null,
         "images": 1.0,
         "reading_order": null
@@ -2484,7 +2712,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 453,
+          "paragraph_count": 755,
           "expected_paragraph_range": [
             312,
             468
@@ -2493,17 +2721,21 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 226
+          "heading_count": 13
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "Z τ2": 4,
+            "Z τ2": 5,
             "τ1": 5,
             "Z ¯τ": 5,
-            "r2": 4
+            "τ + 1": 3,
+            "r2": 4,
+            "dt": 3
           },
-          "repeated_short_block_total_occurrences": 18,
-          "duplicate_ngram_ratio": 0.011323678407533226
+          "repeated_short_block_total_occurrences": 25,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.011468163899175725
         },
         "broken_words": {
           "available": true,
@@ -2522,6 +2754,7 @@
         "images": {
           "pdf_image_count": 0,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": 0,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -2538,20 +2771,21 @@
         "chapter_titles": [
           "The Poincaré Conjecture and Perelman's Proof"
         ],
-        "paragraph_count": 453
+        "paragraph_count": 755
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.24272137499065138
+      "duration_seconds": 0.5538261250476353,
+      "unsupported": true
     },
     {
       "book_id": "mathematical_singular-integrals",
       "category": "mathematical",
-      "score": 34.5,
+      "score": 39,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.06666666666666668,
-        "structure": 0.4125,
+        "structure": 0.9375,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": null,
         "images": 1.0,
@@ -2577,7 +2811,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 99,
+          "paragraph_count": 225,
           "expected_paragraph_range": [
             240,
             320
@@ -2586,7 +2820,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 129
+          "heading_count": 3
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -2610,7 +2844,28 @@
             "+ ν ν + ν": 3
           },
           "repeated_short_block_total_occurrences": 68,
-          "duplicate_ngram_ratio": 0.07532751091703056
+          "leaked_short_blocks": {
+            "t t ) t( t t": 7,
+            "+ σ": 4,
+            "σ σ σ + σ": 4,
+            "k k k ) 1 k (": 4,
+            "σν": 3,
+            ". dt t t": 3,
+            "t t {": 3,
+            "ϕ − − + ϕ −": 3,
+            ") 1 k (": 3,
+            ") t( t t": 3,
+            "+ σ σ + σ": 3,
+            ") 1 k ( k ) 1 k (": 4,
+            "t t": 8,
+            "+ ν": 4,
+            "0 ) 1 k (": 3,
+            "ν ν ν + ν": 3,
+            "k 0 k k ) 1 k (": 3,
+            "+ ν ν + ν": 3
+          },
+          "leaked_short_block_total_occurrences": 68,
+          "duplicate_ngram_ratio": 0.07914847161572053
         },
         "broken_words": {
           "available": true,
@@ -2629,6 +2884,7 @@
         "images": {
           "pdf_image_count": 0,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": null,
           "missing_vs_pdf": 0,
           "missing_vs_expected": null,
@@ -2645,23 +2901,24 @@
         "chapter_titles": [
           "On the Approximation of Singular Integrals"
         ],
-        "paragraph_count": 99
+        "paragraph_count": 225
       },
       "gates_triggered": [
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 0.03336658299667761
+      "duration_seconds": 0.07888174999970943,
+      "unsupported": true
     },
     {
       "book_id": "mathematical_test-soruolar",
       "category": "mathematical",
-      "score": 28.8,
+      "score": 37.5,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.25,
         "structure": 0.0,
-        "cleanliness": 0.4666666666666667,
+        "cleanliness": 0.9885092418825553,
         "ocr_quality": 0.6980363873493409,
         "images": 0.3206818181818182,
         "reading_order": null
@@ -2682,7 +2939,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 5939,
+          "paragraph_count": 8427,
           "expected_paragraph_range": [
             350,
             420
@@ -2691,7 +2948,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 10432
+          "heading_count": 7944
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -2836,6 +3093,8 @@
             "ala": 3
           },
           "repeated_short_block_total_occurrences": 672,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.004309034294041791
         },
         "broken_words": {
@@ -2855,6 +3114,7 @@
         "images": {
           "pdf_image_count": 440,
           "epub_content_image_count": 13,
+          "epub_unique_image_count": 13,
           "expected_image_count": 440,
           "missing_vs_pdf": 427,
           "missing_vs_expected": 427,
@@ -2871,25 +3131,26 @@
         "chapter_titles": [
           "Aşkar Operatorlar - Test Sualları (Risky Operators - Test Questions)"
         ],
-        "paragraph_count": 5939
+        "paragraph_count": 8427
       },
       "gates_triggered": [
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 700.0273290420009
+      "duration_seconds": 668.8918635420268,
+      "unsupported": true
     },
     {
       "book_id": "mathematical_ujma",
       "category": "mathematical",
-      "score": 37.9,
-      "category_label": "Failed",
+      "score": 64.2,
+      "category_label": "Fair",
       "metric_scores": {
-        "text_completeness": 0.3,
-        "structure": 0.15523809523809529,
+        "text_completeness": 0.6,
+        "structure": 0.7457142857142858,
         "cleanliness": 0.4666666666666667,
         "ocr_quality": null,
-        "images": 0.97,
+        "images": 0.8444444444444443,
         "reading_order": null
       },
       "metric_details": {
@@ -2899,9 +3160,7 @@
             "Jensen inequality",
             "For m > 1 the following inequality holds"
           ],
-          "phrase_exclude_violations": [
-            "Universal Journal of Mathematics and Applications"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -2909,7 +3168,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 163,
+          "paragraph_count": 783,
           "expected_paragraph_range": [
             1050,
             1280
@@ -2918,7 +3177,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 611
+          "heading_count": 12
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -2927,48 +3186,69 @@
             "R x": 16,
             "u(x) ≤f(x)+": 5,
             "Z x": 17,
+            "�Z x": 5,
             "u(x) ≤": 8,
             "dt": 11,
-            "t0": 25,
-            "�Z x": 5,
+            "t0": 26,
             "n ∑ i=1": 19,
             "× exp": 8,
             "ρIα": 4,
-            "and": 4,
-            "ρDα": 5,
-            "ϕ′(x)": 7,
+            "and": 5,
             "d dx": 6,
+            "ρDα": 5,
+            "ϕ′(x)": 8,
+            "a+,ϕ": 3,
             "� ϕ1−ρ(x)": 4,
+            "�R x": 26,
             "R t": 6,
             "= 1 Γ(1−α)Γ(α)": 3,
-            "�R x": 26,
             "F1−γ": 4,
             "1 (x)+(1−γ)B1": 3,
             "t0 exp": 4,
+            "×exp": 6,
             "2 (x)+(1−γ)B2": 3,
-            "×exp": 5,
             "� q": 7,
             "u(x)−f(x) ≤": 4,
+            "t0 e−qϕρ(t)ϕ′(t)ϕρ−1 (t) pq(t)uqγ(t)dt": 3,
             "p �R x": 3,
             "≤f(x)+": 3,
             "nϕ′(t)ϕρ−1 (t)e−2ϕρ(t)g2": 4,
-            "ρ pp(α−1)+1 epϕρ(x)": 3,
             "i (t)": 4,
             "γi": 6,
             "i (τ)dτ": 4,
+            "ρ pp(α−1)+1 epϕρ(x)": 3,
             "i (t)u2γi (t)dt": 3,
             "i (t)uqγi (t)dt": 3,
             "|u(x)| ≤": 5,
             "Γ(α)": 4,
             "u(x) = c Γ(α)": 3,
+            "ρ +1": 5,
             "ρ2": 3,
+            "Γ( 1ρ )(x−ρ)": 4,
             "Γ(α)(x−ρ)": 4,
             "Γ(α+ 2ρ +1)": 3,
-            "Γ( 1ρ )(x−ρ)": 4,
-            "Γ(α+ 1ρ +1)": 3
+            "Γ(α+ 1ρ +1)": 4
           },
-          "repeated_short_block_total_occurrences": 280,
-          "duplicate_ngram_ratio": 0.10332575326890278
+          "repeated_short_block_total_occurrences": 296,
+          "leaked_short_blocks": {
+            "∑ i=1": 6,
+            "R x": 16,
+            "Z x": 17,
+            "u(x) ≤": 8,
+            "dt": 11,
+            "t0": 26,
+            "n ∑ i=1": 19,
+            "× exp": 8,
+            "d dx": 6,
+            "ϕ′(x)": 8,
+            "�R x": 26,
+            "R t": 6,
+            "×exp": 6,
+            "� q": 7,
+            "γi": 6
+          },
+          "leaked_short_block_total_occurrences": 176,
+          "duplicate_ngram_ratio": 0.11192557090499013
         },
         "broken_words": {
           "available": true,
@@ -2986,11 +3266,12 @@
         },
         "images": {
           "pdf_image_count": 11,
-          "epub_content_image_count": 10,
+          "epub_content_image_count": 9,
+          "epub_unique_image_count": 7,
           "expected_image_count": 9,
-          "missing_vs_pdf": 1,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 1
+          "missing_vs_pdf": 2,
+          "missing_vs_expected": 2,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -3003,21 +3284,22 @@
         "chapter_titles": [
           "Universal Journal of Mathematics and Applications"
         ],
-        "paragraph_count": 163
+        "paragraph_count": 783
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.15840216699871235
+      "duration_seconds": 1.0985830000136048,
+      "unsupported": true
     },
     {
       "book_id": "multilingual_arapc-a-kitap",
       "category": "multilingual",
-      "score": 72.5,
-      "category_label": "Fair",
+      "score": 81.9,
+      "category_label": "Good",
       "metric_scores": {
         "text_completeness": 0.6,
-        "structure": 0.760377358490566,
-        "cleanliness": 0.6266666666666667,
+        "structure": 0.9954716981132076,
+        "cleanliness": 0.8790811472067419,
         "ocr_quality": 0.96,
         "images": 1.0,
         "reading_order": null
@@ -3037,7 +3319,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 2015,
+          "paragraph_count": 2638,
           "expected_paragraph_range": [
             2650,
             3150
@@ -3046,7 +3328,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 680
+          "heading_count": 69
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -3056,11 +3338,13 @@
             "– مدني– الوكالة": 3
           },
           "repeated_short_block_total_occurrences": 14,
-          "duplicate_ngram_ratio": 0.045345802522836015
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0453445697974718
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 33,
+          "candidate_count": 34,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -3075,6 +3359,7 @@
         "images": {
           "pdf_image_count": 0,
           "epub_content_image_count": 4,
+          "epub_unique_image_count": 4,
           "expected_image_count": null,
           "missing_vs_pdf": 0,
           "missing_vs_expected": null,
@@ -3091,21 +3376,22 @@
         "chapter_titles": [
           "عرض حول الوكالة - الحلقة التكوينية"
         ],
-        "paragraph_count": 2015
+        "paragraph_count": 2638
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 1.9294601660221815
+      "duration_seconds": 3.313387583999429,
+      "unsupported": false
     },
     {
       "book_id": "multilingual_azerice-kitap",
       "category": "multilingual",
-      "score": 26.3,
+      "score": 30.3,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.16666666666666669,
         "structure": 0.0,
-        "cleanliness": 0.76,
+        "cleanliness": 1.0,
         "ocr_quality": 0.3094215984557211,
         "images": 0.33645833333333336,
         "reading_order": null
@@ -3128,7 +3414,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 1043,
+          "paragraph_count": 1366,
           "expected_paragraph_range": [
             50,
             150
@@ -3137,7 +3423,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 1046
+          "heading_count": 723
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -3145,6 +3431,8 @@
             "Co": 3
           },
           "repeated_short_block_total_occurrences": 9,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.0
         },
         "broken_words": {
@@ -3164,6 +3452,7 @@
         "images": {
           "pdf_image_count": 96,
           "epub_content_image_count": 5,
+          "epub_unique_image_count": 5,
           "expected_image_count": 96,
           "missing_vs_pdf": 91,
           "missing_vs_expected": 91,
@@ -3180,32 +3469,31 @@
         "chapter_titles": [
           "2007-2015 Məntiq Qəbul Sualları"
         ],
-        "paragraph_count": 1043
+        "paragraph_count": 1366
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 446.0908680410066
+      "duration_seconds": 507.37508320901543,
+      "unsupported": false
     },
     {
       "book_id": "multilingual_azerice-kitap-2",
       "category": "multilingual",
-      "score": 35.7,
-      "category_label": "Failed",
+      "score": 73.4,
+      "category_label": "Fair",
       "metric_scores": {
-        "text_completeness": 0.0,
-        "structure": 0.38821428571428573,
+        "text_completeness": 1.0,
+        "structure": 0.6948214285714286,
         "cleanliness": 0.4666666666666667,
-        "ocr_quality": 0.7951851851851852,
-        "images": 0.9369380315917375,
+        "ocr_quality": 0.5898226492477995,
+        "images": 0.42600000000000005,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
           "phrase_include_recall": 1.0,
           "phrase_include_misses": [],
-          "phrase_exclude_violations": [
-            "Tel & WP : 070 611 33 00"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -3213,7 +3501,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 2174,
+          "paragraph_count": 3891,
           "expected_paragraph_range": [
             5600,
             6900
@@ -3222,87 +3510,94 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 2179
+          "heading_count": 457
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "bilikliol.az": 242,
+            "bilikliol.az": 238,
             "İ A": 3,
-            "A)": 42,
+            "A)": 83,
+            "X Y": 3,
             "B C": 5,
-            "M L": 3,
-            "A) B) C)": 214,
-            "D) E)": 241,
-            "A) B)": 62,
-            "C)": 49,
-            "C) B)": 8,
-            "E) D)": 16,
-            "B)": 20,
-            "E)": 47,
-            "D)": 23,
-            "C) D)": 26,
-            "A) B) C) D) E)": 46,
-            "B) C)": 7,
+            "M L": 5,
+            "A) B) C)": 200,
+            "D) E)": 233,
+            "A) B)": 61,
+            "C)": 94,
+            "B)": 67,
+            "E)": 93,
+            "D)": 66,
+            "C) D)": 25,
             "D) C)": 3,
-            "D) E) A) B) C)": 3,
-            "A B": 15,
+            "B) C)": 6,
+            "A) B) C) D) E)": 32,
+            "A B": 13,
+            "E = ?": 3,
             "b a": 7,
             "K L": 5,
             "K + L = ?": 3,
             "K, L, M = ?": 6,
             "K = ? L = ?": 3,
-            "II": 4,
+            "II": 5,
             "III": 6,
-            "A A": 4,
-            "C A B": 3,
             "M K L": 3,
             "L +": 3,
             "K L M": 5,
+            "C A B": 3,
+            "C B": 3,
             "A B B": 3,
             "A B C": 3,
-            "C B": 4,
             "C D": 3,
             "B = ?": 3,
-            "K M": 3,
-            "A = ?": 4,
-            "C C": 3,
-            "C C C": 3,
+            "A A": 3,
+            "K M": 5,
+            "A = ?": 5,
+            "D = ?": 3,
+            "c c c": 3,
+            "C C": 4,
             "F Z": 4,
-            "1. 2. 3.": 4,
+            "1. 2. 3.": 5,
             "M A G": 13,
             "İ S T R O L": 13,
             "C) D) E)": 4,
-            "1. 2. 3. 4. 5. 6.": 6,
+            "E) D)": 3,
+            "1. 2. 3. 4. 5. 6.": 5,
             "4. 5": 3,
             "K N": 6,
-            "Uzunluq (sm)": 3,
             "Açıq Tipli Test Tapşırıqları (46-50)": 3,
             "IV.": 3
           },
-          "repeated_short_block_total_occurrences": 1218,
-          "duplicate_ngram_ratio": 0.0776930921582309
+          "repeated_short_block_total_occurrences": 1382,
+          "leaked_short_blocks": {
+            "bilikliol.az": 238,
+            "A) B) C)": 200,
+            "D) E)": 233
+          },
+          "leaked_short_block_total_occurrences": 671,
+          "duplicate_ngram_ratio": 0.05116944842058452
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 8,
+          "candidate_count": 9,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
         },
         "ocr_quality": {
           "available": true,
-          "scanned_page_count": 3,
-          "avg_confidence": 79.51851851851852,
-          "low_confidence_page_pct": 0.0,
-          "low_confidence_block_pct": 0.04081632653061224
+          "scanned_page_count": 10,
+          "avg_confidence": 67.02530105088631,
+          "low_confidence_page_pct": 0.4,
+          "low_confidence_block_pct": 0.3793103448275862
         },
         "images": {
           "pdf_image_count": 1364,
-          "epub_content_image_count": 823,
+          "epub_content_image_count": 362,
+          "epub_unique_image_count": 117,
           "expected_image_count": 650,
-          "missing_vs_pdf": 541,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 173
+          "missing_vs_pdf": 1002,
+          "missing_vs_expected": 533,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -3315,37 +3610,31 @@
         "chapter_titles": [
           "Magistr, Müəllim, Dövlət Qulluqçusu Kurs Məteriyyatı"
         ],
-        "paragraph_count": 2174
+        "paragraph_count": 3891
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 5.964094875002047
+      "duration_seconds": 22.506082125008106,
+      "unsupported": false
     },
     {
       "book_id": "normal-text-novel_son-sans",
       "category": "normal-text-novel",
-      "score": 39,
-      "category_label": "Failed",
+      "score": 90.1,
+      "category_label": "Excellent",
       "metric_scores": {
-        "text_completeness": 0.1,
-        "structure": 0.5354929577464789,
-        "cleanliness": 0.46565962818700707,
+        "text_completeness": 1.0,
+        "structure": 0.6583802816901408,
+        "cleanliness": 0.9971548803790278,
         "ocr_quality": 0.8,
-        "images": 0.9987318840579709,
+        "images": 0.9923913043478261,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.2,
-          "phrase_include_misses": [
-            "T. L. SWAN",
-            "kollarım da uyumasına",
-            "Ancak zaman geçtikçe planla ilgili bir sorun olduğunu kırk ettim",
-            "Hayden tenimin altına işleyen tek kişiydi"
-          ],
-          "phrase_exclude_violations": [
-            "YETİŞKİN OKURLAR İÇİNDİ"
-          ],
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -3353,7 +3642,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 7604,
+          "paragraph_count": 9349,
           "expected_paragraph_range": [
             14200,
             17200
@@ -3362,7 +3651,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 1769
+          "heading_count": 144
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -3444,16 +3733,18 @@
             "Benim sıram.": 3
           },
           "repeated_short_block_total_occurrences": 464,
-          "duplicate_ngram_ratio": 0.0006905928307831754
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0006897443634952796
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 9,
+          "candidate_count": 15,
           "confirmed_count": 1,
           "confirmed_samples": [
             "Ken-dime -> kendime"
           ],
-          "per_1000_words": 0.010789697996353083
+          "per_1000_words": 0.010776442696265962
         },
         "ocr_quality": {
           "available": true,
@@ -3465,9 +3756,10 @@
         "images": {
           "pdf_image_count": 552,
           "epub_content_image_count": 551,
+          "epub_unique_image_count": 546,
           "expected_image_count": 552,
           "missing_vs_pdf": 1,
-          "missing_vs_expected": 1,
+          "missing_vs_expected": 6,
           "unexpected_vs_expected": 0
         },
         "epub_validity": {
@@ -3481,23 +3773,22 @@
         "chapter_titles": [
           "Son Şans"
         ],
-        "paragraph_count": 7604
+        "paragraph_count": 9349
       },
-      "gates_triggered": [
-        "text_completeness_below_threshold"
-      ],
+      "gates_triggered": [],
       "error": null,
-      "duration_seconds": 32.711405500012916
+      "duration_seconds": 101.18769854097627,
+      "unsupported": false
     },
     {
       "book_id": "poor-quality-scan_dikenler-sehri",
       "category": "poor-quality-scan",
-      "score": 52.6,
-      "category_label": "Poor",
+      "score": 64.0,
+      "category_label": "Fair",
       "metric_scores": {
         "text_completeness": 0.5,
         "structure": null,
-        "cleanliness": 0.46483964634106556,
+        "cleanliness": 0.9965023321679708,
         "ocr_quality": 0.9303835071951969,
         "images": 0.3028,
         "reading_order": null
@@ -3517,13 +3808,13 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 2652,
+          "paragraph_count": 2668,
           "expected_paragraph_range": null,
           "chapter_recall": null,
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 351
+          "heading_count": 335
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -3532,6 +3823,8 @@
             "DOKUZUNCU": 3
           },
           "repeated_short_block_total_occurrences": 36,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.000626492814910529
         },
         "broken_words": {
@@ -3553,6 +3846,7 @@
         "images": {
           "pdf_image_count": 279,
           "epub_content_image_count": 1,
+          "epub_unique_image_count": 1,
           "expected_image_count": 250,
           "missing_vs_pdf": 278,
           "missing_vs_expected": 249,
@@ -3569,21 +3863,22 @@
         "chapter_titles": [
           "DİKENLER ŞEHRİ"
         ],
-        "paragraph_count": 2652
+        "paragraph_count": 2668
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 295.1291082499956
+      "duration_seconds": 348.8071910419967,
+      "unsupported": false
     },
     {
       "book_id": "scanned-novel_sevgili-tas-kalbim",
       "category": "scanned-novel",
-      "score": 27.1,
+      "score": 38.6,
       "category_label": "Failed",
       "metric_scores": {
         "text_completeness": 0.0,
         "structure": null,
-        "cleanliness": 0.4390423572744015,
+        "cleanliness": 0.9723756906077348,
         "ocr_quality": 0.9408369166594911,
         "images": 0.3,
         "reading_order": null
@@ -3606,13 +3901,13 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 2472,
+          "paragraph_count": 2482,
           "expected_paragraph_range": null,
           "chapter_recall": null,
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 681
+          "heading_count": 671
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -3627,6 +3922,8 @@
             "“Niye?”": 3
           },
           "repeated_short_block_total_occurrences": 39,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.0
         },
         "broken_words": {
@@ -3657,6 +3954,7 @@
         "images": {
           "pdf_image_count": 361,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": 330,
           "missing_vs_pdf": 361,
           "missing_vs_expected": 330,
@@ -3673,23 +3971,24 @@
         "chapter_titles": [
           "Sevgili Taş Kalbim"
         ],
-        "paragraph_count": 2472
+        "paragraph_count": 2482
       },
       "gates_triggered": [
         "text_completeness_below_threshold"
       ],
       "error": null,
-      "duration_seconds": 223.63724799998454
+      "duration_seconds": 275.7852154169814,
+      "unsupported": false
     },
     {
       "book_id": "scanned_001",
       "category": "scanned-novel",
-      "score": 40.9,
+      "score": 49.8,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.5,
         "structure": 0.0,
-        "cleanliness": 0.4605873489398104,
+        "cleanliness": 0.9938164558934469,
         "ocr_quality": 0.9434506052320737,
         "images": 0.3,
         "reading_order": null
@@ -3708,7 +4007,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 4608,
+          "paragraph_count": 4615,
           "expected_paragraph_range": null,
           "chapter_recall": 0.0,
           "chapter_precision": 0.0,
@@ -3718,7 +4017,7 @@
           "unmatched_generated_chapters": [
             "HEDEF"
           ],
-          "heading_count": 660
+          "heading_count": 653
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -3731,6 +4030,8 @@
             "“Ne olmuş ona?”": 3
           },
           "repeated_short_block_total_occurrences": 64,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 3.908489238626296e-05
         },
         "broken_words": {
@@ -3756,6 +4057,7 @@
         "images": {
           "pdf_image_count": 748,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": 650,
           "missing_vs_pdf": 748,
           "missing_vs_expected": 650,
@@ -3772,23 +4074,24 @@
         "chapter_titles": [
           "HEDEF"
         ],
-        "paragraph_count": 4608
+        "paragraph_count": 4615
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 339.569122084009
+      "duration_seconds": 398.2869985839934,
+      "unsupported": false
     },
     {
       "book_id": "scanned_002",
       "category": "scanned-novel",
-      "score": 82.4,
+      "score": 85.5,
       "category_label": "Good",
       "metric_scores": {
         "text_completeness": 1.0,
-        "structure": 0.7375,
-        "cleanliness": 0.4508017451413678,
+        "structure": 0.6687903225806452,
+        "cleanliness": 0.8014656137354721,
         "ocr_quality": 0.8858410493827161,
-        "images": 0.8799999999999999,
+        "images": 0.7666666666666666,
         "reading_order": null
       },
       "metric_details": {
@@ -3803,7 +4106,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 1359,
+          "paragraph_count": 1763,
           "expected_paragraph_range": [
             1150,
             1550
@@ -3820,7 +4123,7 @@
             "Pazar: Elveda Dünya"
           ],
           "unmatched_generated_chapters": [],
-          "heading_count": 427
+          "heading_count": 23
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -3833,7 +4136,9 @@
             "\"Teşekkürler.\"": 4
           },
           "repeated_short_block_total_occurrences": 30,
-          "duplicate_ngram_ratio": 0.06851877040261153
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.06850246472887982
         },
         "broken_words": {
           "available": true,
@@ -3846,7 +4151,7 @@
             "kelimele-ri -> kelimeleri",
             "so-nunda -> sonunda"
           ],
-          "per_1000_words": 0.16998130205677375
+          "per_1000_words": 0.16994086058051797
         },
         "ocr_quality": {
           "available": true,
@@ -3857,11 +4162,12 @@
         },
         "images": {
           "pdf_image_count": 15,
-          "epub_content_image_count": 5,
+          "epub_content_image_count": 4,
+          "epub_unique_image_count": 2,
           "expected_image_count": 3,
-          "missing_vs_pdf": 10,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 2
+          "missing_vs_pdf": 11,
+          "missing_vs_expected": 1,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -3874,11 +4180,12 @@
         "chapter_titles": [
           "BİR GÜN KEDİLER DÜNYADAN YOK OLSAYDI"
         ],
-        "paragraph_count": 1359
+        "paragraph_count": 1763
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 2.640024583990453
+      "duration_seconds": 4.118370083975606,
+      "unsupported": false
     },
     {
       "book_id": "scanned_003",
@@ -3905,17 +4212,19 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 22,
+          "paragraph_count": 23,
           "expected_paragraph_range": null,
           "chapter_recall": null,
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 29
+          "heading_count": 28
         },
         "duplicates": {
           "repeated_short_blocks": {},
           "repeated_short_block_total_occurrences": 0,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.0
         },
         "broken_words": {
@@ -3935,6 +4244,7 @@
         "images": {
           "pdf_image_count": 196,
           "epub_content_image_count": 1,
+          "epub_unique_image_count": 1,
           "expected_image_count": 14,
           "missing_vs_pdf": 195,
           "missing_vs_expected": 13,
@@ -3951,29 +4261,33 @@
         "chapter_titles": [
           "Avucundaki Öpücük"
         ],
-        "paragraph_count": 22
+        "paragraph_count": 23
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 9.345312416000525
+      "duration_seconds": 10.521669458015822,
+      "unsupported": false
     },
     {
       "book_id": "scanned_004",
       "category": "bad-ocr-layer",
-      "score": 33.1,
-      "category_label": "Failed",
+      "score": 53.1,
+      "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.0,
-        "structure": 0.4942990654205608,
-        "cleanliness": 0.4666666666666667,
+        "structure": 1.0,
+        "cleanliness": 0.9838768972217846,
         "ocr_quality": 0.3079701430143014,
-        "images": 0.9852795739825028,
+        "images": 0.9952399999999999,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 1.0,
-          "phrase_include_misses": [],
+          "phrase_include_recall": 0.5,
+          "phrase_include_misses": [
+            "Beyni barındırdığından çoğu kültürde baş insan bedeninin en önemli parçası olarak görülür.",
+            "İçteki yaşam gücünün simgesidir."
+          ],
           "phrase_exclude_violations": [
             "RÜZGÂRLAR",
             "ZEPHYRUS",
@@ -3987,7 +4301,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 5289,
+          "paragraph_count": 13123,
           "expected_paragraph_range": [
             10700,
             14100
@@ -3996,50 +4310,73 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 7265
+          "heading_count": 1281
         },
         "duplicates": {
           "repeated_short_blocks": {
             "GİRİŞ": 8,
-            "görülür.": 5,
+            "görülür.": 8,
             "GÜNEŞ": 4,
-            "AYRICA BAKINIZ": 89,
-            "olmuştur.": 4,
+            "olmuştur.": 5,
+            "AYRICA BAKINIZ": 110,
+            "Mısır tanrıları, sf. 138-39": 6,
+            "sembolüdür.": 21,
+            "bağlantılıdır.": 4,
             "ATEŞ": 4,
-            "temsil eder.": 9,
-            "Yağmur": 3,
-            "simgeler.": 9,
+            "temsil eder.": 13,
+            "simgesidir.": 6,
+            "simgeler.": 16,
+            "ilişkilendirilmiştir.": 4,
+            "vardır.": 6,
             "kullanılırdı.": 4,
-            "inanılır.": 4,
-            "eder.": 13,
-            "kullanılır.": 4,
-            "anlamını taşır.": 4,
-            "görülmüştür.": 3,
+            "inanılır.": 5,
+            "eder.": 17,
+            "Renkler, sf. 280-83": 3,
+            "kullanılır.": 6,
+            "anlamını taşır.": 3,
+            "gelmektedir.": 3,
+            "görülmüştür.": 4,
             "Kuzgun": 3,
-            "sembolüdür.": 14,
-            "simgesidir.": 5,
-            "amblemidir.": 3,
-            "bağlantılıdır.": 3,
+            "amblemidir.": 6,
             "Güneş, sf. 16-17": 4,
-            "anlamına gelir.": 5,
-            "vardır.": 5,
-            "gelir.": 4,
-            "gelmiştir.": 3,
+            "anlamına gelir.": 6,
+            "Kutsal ağaçlar, sf. 96-97": 3,
+            "Budizm, sf. 164-69": 8,
+            "Arma amblemleri, sf 318-23": 3,
+            "Hıristiyanlık, sf. 176-79": 6,
+            "Yaradılış öyküleri, sf. 156-57": 3,
+            "Yahudilik, sf. 172-73": 4,
+            "haline geldi.": 3,
+            "Hinduizm, sf. 158-63": 3,
+            "gelmiştir.": 5,
+            "konukseverlik": 3,
+            "gelir.": 5,
+            "yer alır.": 3,
             "ı AYRICA BAKINIZ": 4,
+            "özdeşleşmiştir.": 3,
             "Aslan": 3,
+            "ifadesidir.": 3,
+            "Şekiller, sf. 284-89": 6,
+            "m İT LE R VE D İN LE R": 3,
+            "Dinsel mimari, sf. 228-31": 3,
             "taşır.": 3,
             "sembolü haline gelmiştir.": 3,
+            "Kutsal yerler, sf. 232-33": 3,
+            "olabilir.": 3,
+            "yorumlanır.": 4,
             "edilir.": 4,
-            "damgası": 3,
-            "uygulanır.": 3,
+            "RENKLER": 3,
+            "BAYRAKLAR": 3,
             "D İZ İN": 5
           },
-          "repeated_short_block_total_occurrences": 244,
-          "duplicate_ngram_ratio": 0.00585003401182565
+          "repeated_short_block_total_occurrences": 384,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.006046163541830786
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 37,
+          "candidate_count": 44,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -4053,11 +4390,12 @@
         },
         "images": {
           "pdf_image_count": 2675,
-          "epub_content_image_count": 2629,
+          "epub_content_image_count": 2484,
+          "epub_unique_image_count": 2483,
           "expected_image_count": 2500,
-          "missing_vs_pdf": 46,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 129
+          "missing_vs_pdf": 191,
+          "missing_vs_expected": 17,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -4070,23 +4408,24 @@
         "chapter_titles": [
           "RÜZGÂRLAR"
         ],
-        "paragraph_count": 5289
+        "paragraph_count": 13123
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 140.45587820801302
+      "duration_seconds": 309.11420908302534,
+      "unsupported": false
     },
     {
       "book_id": "scanned_005",
       "category": "bad-ocr-layer",
-      "score": 75.6,
+      "score": 86.9,
       "category_label": "Good",
       "metric_scores": {
         "text_completeness": 0.75,
-        "structure": 0.7462650602409638,
-        "cleanliness": 0.6266666666666667,
+        "structure": 0.9195180722891566,
+        "cleanliness": 0.9981334033307084,
         "ocr_quality": null,
-        "images": 0.9889518413597733,
+        "images": 0.993103448275862,
         "reading_order": null
       },
       "metric_details": {
@@ -4103,7 +4442,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 3097,
+          "paragraph_count": 3816,
           "expected_paragraph_range": [
             4150,
             6200
@@ -4112,7 +4451,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 423
+          "heading_count": 27
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -4122,11 +4461,13 @@
             "Hayır": 3
           },
           "repeated_short_block_total_occurrences": 14,
-          "duplicate_ngram_ratio": 0.0007042046888295531
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0006999737509843381
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 11,
+          "candidate_count": 21,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -4141,10 +4482,11 @@
         "images": {
           "pdf_image_count": 355,
           "epub_content_image_count": 353,
+          "epub_unique_image_count": 348,
           "expected_image_count": 340,
           "missing_vs_pdf": 2,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 13
+          "unexpected_vs_expected": 8
         },
         "epub_validity": {
           "available": true,
@@ -4157,30 +4499,30 @@
         "chapter_titles": [
           "SADECE İŞ İLİŞKİSİ"
         ],
-        "paragraph_count": 3097
+        "paragraph_count": 3816
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 24.562421791022643
+      "duration_seconds": 86.53591824998148,
+      "unsupported": false
     },
     {
       "book_id": "scanned_006",
       "category": "book-with-footnotes",
-      "score": 39,
-      "category_label": "Failed",
+      "score": 77.1,
+      "category_label": "Good",
       "metric_scores": {
-        "text_completeness": 0.25,
-        "structure": 0.9122340425531915,
-        "cleanliness": 0.4666666666666667,
+        "text_completeness": 0.5,
+        "structure": 0.9302178318135765,
+        "cleanliness": 0.9743025299674127,
         "ocr_quality": 0.8827714157187841,
-        "images": 0.9870813397129186,
+        "images": 0.988,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.25,
+          "phrase_include_recall": 0.5,
           "phrase_include_misses": [
-            "Shays' Rebellion strongly suggested the republic was falling into anarchy and chaos.",
             "The Adams-Onís Treaty upset many American expansionists, who criticized Adams for not laying claim to all of Texas.",
             "Vanderbilt consolidated several smaller railroad lines, called trunk lines, to create the powerful New York Central Railroad Company."
           ],
@@ -4192,7 +4534,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 7203,
+          "paragraph_count": 7345,
           "expected_paragraph_range": [
             7896.0,
             11844.0
@@ -4201,20 +4543,20 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 1269
+          "heading_count": 1056
         },
         "duplicates": {
           "repeated_short_blocks": {
             "CHAPTER OUTLINE": 30,
             "INTRODUCTION": 32,
-            "CLICK AND EXPLORE": 168,
+            "CLICK AND EXPLORE": 167,
             "MY STORY": 36,
             "AMERICANA": 31,
             "Key Terms": 10,
             "Review Questions": 30,
             "Critical Thinking Questions": 7,
-            "LEARNING OBJECTIVES": 38,
-            "By the end of this section, you will be able to:": 38,
+            "LEARNING OBJECTIVES": 30,
+            "By the end of this section, you will be able to:": 30,
             "DEFINING AMERICAN": 50,
             "New Deal Legislation Years Enacted Brief Description": 3,
             "28.5 The African American Struggle for Civil Rights": 3,
@@ -4226,12 +4568,14 @@
             "Section 3.": 5,
             "Section 4.": 3
           },
-          "repeated_short_block_total_occurrences": 502,
-          "duplicate_ngram_ratio": 0.009636635359055753
+          "repeated_short_block_total_occurrences": 485,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.009636551262220225
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 20,
+          "candidate_count": 24,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -4245,11 +4589,12 @@
         },
         "images": {
           "pdf_image_count": 606,
-          "epub_content_image_count": 627,
+          "epub_content_image_count": 625,
+          "epub_unique_image_count": 625,
           "expected_image_count": 600,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 27
+          "unexpected_vs_expected": 25
         },
         "epub_validity": {
           "available": true,
@@ -4262,33 +4607,30 @@
         "chapter_titles": [
           "American History Survey"
         ],
-        "paragraph_count": 7203
+        "paragraph_count": 7345
       },
-      "gates_triggered": [
-        "text_completeness_below_threshold"
-      ],
+      "gates_triggered": [],
       "error": null,
-      "duration_seconds": 19.038899707986275
+      "duration_seconds": 55.46854799997527,
+      "unsupported": false
     },
     {
       "book_id": "technical-with-code_c-primer-plus",
       "category": "technical-with-code",
-      "score": 47.2,
+      "score": 58.4,
       "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.0,
-        "structure": 0.9206091527520099,
-        "cleanliness": 0.4662053649390917,
+        "structure": 1.0,
+        "cleanliness": 0.8730130566161328,
         "ocr_quality": 0.9475,
-        "images": 0.7599999999999999,
+        "images": 1.0,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.75,
-          "phrase_include_misses": [
-            "Let's compare using references and using pointers in a common computer problem: swapping the values of two variables."
-          ],
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
           "phrase_exclude_violations": [
             "C++ Primer Plus",
             "Stephen Prata"
@@ -4300,7 +4642,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 11909,
+          "paragraph_count": 16087,
           "expected_paragraph_range": [
             12936.0,
             19404.0
@@ -4309,12 +4651,12 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 5412
+          "heading_count": 1306
         },
         "duplicates": {
           "repeated_short_blocks": {
             "#include <iostream> int main() {": 4,
-            "Compatibility Note": 87,
+            "Compatibility Note": 86,
             "Remember": 37,
             "Tip": 30,
             "Caution": 29,
@@ -4341,20 +4683,21 @@
             "with this:": 3,
             "body": 4,
             "statement1": 8,
-            "false": 4,
-            "statement3": 6,
             "true": 4,
-            "statement2": 4,
+            "statement2": 8,
+            "test_expr": 5,
+            "false": 4,
+            "statement3": 8,
             "statement": 3,
             "and": 4,
             "#include <iostream> using namespace std; int main() {": 5,
             "index 0 1 2 3 4": 4,
             "int maxtemps[4][5];": 3,
             "using namespace std; char ch;": 3,
+            "else": 4,
             "if (ch == ‘A’)": 3,
             "return true; else": 6,
             "return false; }": 15,
-            "else": 3,
             "using namespace std; for (int i = 0; i < n; i++)": 3,
             "double volume = cube(side);": 3,
             "for (int i = 0; i < n; i++)": 6,
@@ -4428,13 +4771,12 @@
             "private:": 10,
             "friend std::ostream & operator<<(std::ostream & os,": 3,
             "num_strings:": 5,
-            "Str:": 7,
-            "Len:": 6,
+            "Str:": 9,
+            "Len:": 9,
             "<< “\\” object created\\n”; // For Your Information }": 3,
             "Copy Constructors": 3,
-            "str: len:": 4,
             "Home Sweet Home": 5,
-            "Address: 2400": 4,
+            "Address: 2400": 6,
             "Assignment Operators": 3,
             "String::String() {": 5,
             "bool operator<(const String &st1, const String &st2) {": 3,
@@ -4448,16 +4790,15 @@
             "Address: 2000": 3,
             "ATM": 3,
             "struct Node {": 3,
-            "item": 7,
+            "item": 8,
             "next": 8,
-            "front:": 3,
-            "rear:": 3,
-            "items:": 3,
-            "qsize:": 3,
+            "front:": 5,
+            "rear:": 5,
+            "items:": 5,
+            "qsize:": 5,
             "bool Queue::enqueue(const Item & item) {": 3,
             "if (isfull())": 5,
             "front = add; // place item at front else": 3,
-            "front: rear: items: qsize:": 3,
             "Queue object": 5,
             "int main ( void ) {": 3,
             "rating = r; }": 5,
@@ -4486,6 +4827,7 @@
             "void SingingWaiter::Show() {": 3,
             "template <class Type> bool Stack<Type>::pop(Type & item) {": 3,
             "string po;": 3,
+            "friend class Remote;": 3,
             "double x, y, z;": 4,
             "try { // start of try block": 5,
             "if (a == -b)": 6,
@@ -4520,8 +4862,10 @@
             "Compare comp);": 6,
             "ABCs (abstract base classes), 670-672": 4
           },
-          "repeated_short_block_total_occurrences": 1289,
-          "duplicate_ngram_ratio": 0.04785182073175252
+          "repeated_short_block_total_occurrences": 1312,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.047447113483590354
         },
         "broken_words": {
           "available": true,
@@ -4531,7 +4875,7 @@
             "num-ber -> number",
             "unex-pected -> unexpected"
           ],
-          "per_1000_words": 0.004942518509731819
+          "per_1000_words": 0.00494257958170949
         },
         "ocr_quality": {
           "available": true,
@@ -4542,11 +4886,12 @@
         },
         "images": {
           "pdf_image_count": 3,
-          "epub_content_image_count": 15,
+          "epub_content_image_count": 16,
+          "epub_unique_image_count": 3,
           "expected_image_count": 3,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 12
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -4559,23 +4904,24 @@
         "chapter_titles": [
           "C++ Primer Plus"
         ],
-        "paragraph_count": 11909
+        "paragraph_count": 16087
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 7.3484553750022314
+      "duration_seconds": 22.019222165981773,
+      "unsupported": false
     },
     {
       "book_id": "technical-with-code_cplus-conherince",
       "category": "technical-with-code",
-      "score": 47.0,
-      "category_label": "Poor",
+      "score": 84.5,
+      "category_label": "Good",
       "metric_scores": {
-        "text_completeness": 0.0,
-        "structure": 0.8795025728987993,
-        "cleanliness": 0.4666666666666667,
+        "text_completeness": 0.75,
+        "structure": 1.0,
+        "cleanliness": 0.7590311645874314,
         "ocr_quality": 0.9004761904761903,
-        "images": 0.8714285714285713,
+        "images": 0.94,
         "reading_order": null
       },
       "metric_details": {
@@ -4584,11 +4930,7 @@
           "phrase_include_misses": [
             "Code is said to be scalable if the performance increases as more processing cores are added to the system."
           ],
-          "phrase_exclude_violations": [
-            "C++ Concurrency in Action",
-            "Anthony Williams",
-            "MANNING"
-          ],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -4596,7 +4938,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 4102,
+          "paragraph_count": 5393,
           "expected_paragraph_range": [
             4664.0,
             6996.0
@@ -4605,7 +4947,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 1466
+          "heading_count": 193
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -4642,14 +4984,20 @@
             "Preconditions The calling thread must hold a lock on *this.": 4
           },
           "repeated_short_block_total_occurrences": 267,
-          "duplicate_ngram_ratio": 0.08987641726970363
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.08980550287150227
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 8,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 22,
+          "confirmed_count": 3,
+          "confirmed_samples": [
+            "effi-cient -> efficient",
+            "Soft-ware -> software",
+            "opera-tion -> operation"
+          ],
+          "per_1000_words": 0.015937440234599122
         },
         "ocr_quality": {
           "available": true,
@@ -4661,10 +5009,11 @@
         "images": {
           "pdf_image_count": 4,
           "epub_content_image_count": 7,
+          "epub_unique_image_count": 5,
           "expected_image_count": 4,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 3
+          "unexpected_vs_expected": 1
         },
         "epub_validity": {
           "available": true,
@@ -4677,32 +5026,32 @@
         "chapter_titles": [
           "C++ Concurrency in Action"
         ],
-        "paragraph_count": 4102
+        "paragraph_count": 5393
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 3.6878661249938887
+      "duration_seconds": 11.304218334029429,
+      "unsupported": false
     },
     {
       "book_id": "technical-with-code_functional-programing",
       "category": "technical-with-code",
-      "score": 39,
-      "category_label": "Failed",
+      "score": 70.8,
+      "category_label": "Fair",
       "metric_scores": {
-        "text_completeness": 0.25,
-        "structure": 0.6209665955934612,
-        "cleanliness": 0.4666666666666667,
+        "text_completeness": 0.5,
+        "structure": 0.7282427149964463,
+        "cleanliness": 0.9118302262867862,
         "ocr_quality": 0.816459656084656,
-        "images": 0.7610169491525424,
+        "images": 0.9769230769230769,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.25,
+          "phrase_include_recall": 0.5,
           "phrase_include_misses": [
             "Lazy evaluation, also known as non-strict evaluation, call-by-need and deffered execution, is an evaluation strategy that waits until the value is needed to compute the result of a function.",
-            "This makes adding a new size or a new coffee type as simple as shown in the following code snippet.",
-            "JavaScript is a general-purpose language, meaning it's fully capable of multiple programming styles."
+            "This makes adding a new size or a new coffee type as simple as shown in the following code snippet."
           ],
           "phrase_exclude_violations": [],
           "word_recall": null,
@@ -4712,7 +5061,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 1216,
+          "paragraph_count": 1561,
           "expected_paragraph_range": [
             1608.0,
             2412.0
@@ -4728,7 +5077,7 @@
             "Functional and Object-oriented Programming in JavaScript"
           ],
           "unmatched_generated_chapters": [],
-          "heading_count": 469
+          "heading_count": 130
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -4742,7 +5091,9 @@
             "about / Introduction": 4
           },
           "repeated_short_block_total_occurrences": 42,
-          "duplicate_ngram_ratio": 0.03271673482653089
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.03306366514245515
         },
         "broken_words": {
           "available": true,
@@ -4761,10 +5112,11 @@
         "images": {
           "pdf_image_count": 12,
           "epub_content_image_count": 59,
+          "epub_unique_image_count": 13,
           "expected_image_count": 12,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
-          "unexpected_vs_expected": 47
+          "unexpected_vs_expected": 1
         },
         "epub_validity": {
           "available": true,
@@ -4777,32 +5129,30 @@
         "chapter_titles": [
           "Mastering Functional Programming (JavaScript)"
         ],
-        "paragraph_count": 1216
+        "paragraph_count": 1561
       },
-      "gates_triggered": [
-        "text_completeness_below_threshold"
-      ],
+      "gates_triggered": [],
       "error": null,
-      "duration_seconds": 20.3909882500011
+      "duration_seconds": 28.705123250023462,
+      "unsupported": false
     },
     {
       "book_id": "technical-with-code_progit",
       "category": "technical-with-code",
-      "score": 39,
-      "category_label": "Failed",
+      "score": 48.0,
+      "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.0,
-        "structure": 0.5225430597771024,
-        "cleanliness": 0.4666666666666667,
+        "structure": 0.604483282674772,
+        "cleanliness": 0.8712651876002955,
         "ocr_quality": 0.8120707070707069,
         "images": 0.9962765957446809,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.25,
+          "phrase_include_recall": 0.5,
           "phrase_include_misses": [
-            "The easiest way to integrate the branches, as we've already covered, is the merge command.",
             "It performs a three-way merge between the two latest branch snapshots and the most recent common ancestor of the two.",
             "Collaborating on the Pull Request, you can now have a conversation with the person who opened the Pull Request."
           ],
@@ -4818,7 +5168,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 4126,
+          "paragraph_count": 4773,
           "expected_paragraph_range": [
             7896.0,
             11844.0
@@ -4827,7 +5177,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 1089
+          "heading_count": 410
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -4841,7 +5191,6 @@
             "modified: index.html": 4,
             "The Pros": 4,
             "The Cons": 4,
-            "Installation": 3,
             "Limit log functionality to the first 20": 3,
             "Merge commit 'phedders/rdocs'": 3,
             "modified: lib/simplegit.rb": 3,
@@ -4852,15 +5201,16 @@
             "Setting Up": 3,
             "Getting Started": 3,
             "Workflow": 3,
-            "Further Reading": 3,
-            "bash, 460": 3
+            "Further Reading": 3
           },
-          "repeated_short_block_total_occurrences": 102,
-          "duplicate_ngram_ratio": 0.04832756411482338
+          "repeated_short_block_total_occurrences": 96,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.048275554649889196
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 8,
+          "candidate_count": 12,
           "confirmed_count": 0,
           "confirmed_samples": [],
           "per_1000_words": 0.0
@@ -4875,6 +5225,7 @@
         "images": {
           "pdf_image_count": 188,
           "epub_content_image_count": 187,
+          "epub_unique_image_count": 187,
           "expected_image_count": 188,
           "missing_vs_pdf": 1,
           "missing_vs_expected": 1,
@@ -4891,39 +5242,31 @@
         "chapter_titles": [
           "Pro Git"
         ],
-        "paragraph_count": 4126
+        "paragraph_count": 4773
       },
-      "gates_triggered": [
-        "text_completeness_below_threshold"
-      ],
+      "gates_triggered": [],
       "error": null,
-      "duration_seconds": 6.683155042002909
+      "duration_seconds": 20.92991633299971,
+      "unsupported": false
     },
     {
       "book_id": "turkish_bilimsel-makale-nasil-yazilir",
       "category": "turkish",
-      "score": 36.6,
-      "category_label": "Failed",
+      "score": 84.1,
+      "category_label": "Good",
       "metric_scores": {
-        "text_completeness": 0.0,
-        "structure": 0.4024512614678899,
-        "cleanliness": 0.49333333333333335,
+        "text_completeness": 1.0,
+        "structure": 0.4146358944954128,
+        "cleanliness": 0.99483396278105,
         "ocr_quality": 0.9246938775510205,
         "images": 0.8263157894736841,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.0,
-          "phrase_include_misses": [
-            "Bilimsel yazım nedir? Bilimsel yazımın anahtarının açıklık olduğuna inanıyorum.",
-            "İdeal olarak, açıklığın her çeşit iletişimin bir karakteristiği olması gerekir.",
-            "Kısa Özet'e, makalenin küçültülmüş bir biçimi olarak bakılmalıdır.",
-            "İyi hazırlanmış bir Kısa Özet, okuyucunun, dokümanın içeriğini kısa zamanda ve hassasiyetle belirlemesine imkân verir."
-          ],
-          "phrase_exclude_violations": [
-            "Robert A. Day"
-          ],
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -4931,7 +5274,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 1123,
+          "paragraph_count": 1157,
           "expected_paragraph_range": [
             1395.2,
             2092.7999999999997
@@ -4945,18 +5288,20 @@
           "unmatched_generated_chapters": [
             "Bilimsel Bir Makale Nasıl Yazılır ve Yayımlanır"
           ],
-          "heading_count": 261
+          "heading_count": 227
         },
         "duplicates": {
           "repeated_short_blocks": {
             "Anonim": 3,
-            "Kelime K›saltma Kelime K›saltma": 4,
-            "Yanl›ﬂ Do¤ru": 4,
-            "Jargon Tercih Edilen Kullan›m": 5,
-            "Terim K›saltma veya Terim K›saltma veya Sembol Sembol": 3
+            "Kelime Kısaltma Kelime Kısaltma": 4,
+            "Yanlış Doğru": 4,
+            "Jargon Tercih Edilen Kullanım": 5,
+            "Terim Kısaltma veya Terim Kısaltma veya Sembol Sembol": 3
           },
           "repeated_short_block_total_occurrences": 19,
-          "duplicate_ngram_ratio": 0.0028348242408970646
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.0019372639571062363
         },
         "broken_words": {
           "available": true,
@@ -4975,6 +5320,7 @@
         "images": {
           "pdf_image_count": 16,
           "epub_content_image_count": 38,
+          "epub_unique_image_count": 38,
           "expected_image_count": 16,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -4991,23 +5337,22 @@
         "chapter_titles": [
           "Bilimsel Bir Makale Nasıl Yazılır ve Yayımlanır"
         ],
-        "paragraph_count": 1123
+        "paragraph_count": 1157
       },
-      "gates_triggered": [
-        "text_completeness_below_threshold"
-      ],
+      "gates_triggered": [],
       "error": null,
-      "duration_seconds": 9.192753333976725
+      "duration_seconds": 14.485492250008974,
+      "unsupported": false
     },
     {
       "book_id": "turkish_carpik-ask",
       "category": "turkish",
-      "score": 34.2,
-      "category_label": "Failed",
+      "score": 43.1,
+      "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.33333333333333337,
         "structure": 0.0,
-        "cleanliness": 0.4479074545535754,
+        "cleanliness": 0.9788465305310443,
         "ocr_quality": 0.9396902763652881,
         "images": 0.3015659955257271,
         "reading_order": null
@@ -5029,7 +5374,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 3981,
+          "paragraph_count": 4015,
           "expected_paragraph_range": [
             400,
             500
@@ -5038,7 +5383,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 571
+          "heading_count": 537
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -5050,6 +5395,8 @@
             "“Neden?”": 3
           },
           "repeated_short_block_total_occurrences": 39,
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
           "duplicate_ngram_ratio": 0.0008978465084491377
         },
         "broken_words": {
@@ -5080,6 +5427,7 @@
         "images": {
           "pdf_image_count": 447,
           "epub_content_image_count": 1,
+          "epub_unique_image_count": 1,
           "expected_image_count": 447,
           "missing_vs_pdf": 446,
           "missing_vs_expected": 446,
@@ -5096,21 +5444,22 @@
         "chapter_titles": [
           "Çarpıklı Aşk"
         ],
-        "paragraph_count": 3981
+        "paragraph_count": 4015
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 506.516703375004
+      "duration_seconds": 700.2146018749918,
+      "unsupported": false
     },
     {
       "book_id": "two-column-academic_arastima-makalesi",
       "category": "two-column-academic",
-      "score": 77.1,
+      "score": 83.2,
       "category_label": "Good",
       "metric_scores": {
         "text_completeness": 0.75,
-        "structure": 0.7248908296943232,
-        "cleanliness": 0.7333333333333333,
+        "structure": 0.8602620087336245,
+        "cleanliness": 0.9154981414007582,
         "ocr_quality": 0.9065853658536586,
         "images": 0.8599999999999999,
         "reading_order": null
@@ -5129,7 +5478,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 166,
+          "paragraph_count": 197,
           "expected_paragraph_range": [
             229,
             344
@@ -5138,7 +5487,7 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 93
+          "heading_count": 61
         },
         "duplicates": {
           "repeated_short_blocks": {
@@ -5146,7 +5495,9 @@
             "(M ± SD)": 5
           },
           "repeated_short_block_total_occurrences": 10,
-          "duplicate_ngram_ratio": 0.03176704169424222
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.03168819697471569
         },
         "broken_words": {
           "available": true,
@@ -5165,6 +5516,7 @@
         "images": {
           "pdf_image_count": 5,
           "epub_content_image_count": 4,
+          "epub_unique_image_count": 4,
           "expected_image_count": 5,
           "missing_vs_pdf": 1,
           "missing_vs_expected": 1,
@@ -5181,21 +5533,22 @@
         "chapter_titles": [
           "The Effectiveness of Interferential Current Therapy on Salivary Gland Function in Individuals with Primary Sjögren's Syndrome: Single-Blind Randomized, Controlled Trial"
         ],
-        "paragraph_count": 166
+        "paragraph_count": 197
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 1.6058206250017975
+      "duration_seconds": 4.284342458995525,
+      "unsupported": false
     },
     {
       "book_id": "two-column-academic_attention-is-all-you-need",
       "category": "two-column-academic",
-      "score": 31.5,
-      "category_label": "Failed",
+      "score": 46.0,
+      "category_label": "Poor",
       "metric_scores": {
         "text_completeness": 0.0,
-        "structure": 0.410377358490566,
-        "cleanliness": 0.4666666666666667,
+        "structure": 1.0,
+        "cleanliness": 0.45229885057471264,
         "ocr_quality": null,
         "images": 1.0,
         "reading_order": null
@@ -5217,7 +5570,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 174,
+          "paragraph_count": 445,
           "expected_paragraph_range": [
             424,
             636
@@ -5226,42 +5579,69 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 298
+          "heading_count": 33
         },
         "duplicates": {
           "repeated_short_blocks": {
-            "this": 10,
-            "in": 10,
-            "is": 10,
             "<EOS>": 10,
             "<pad>": 20,
+            "this": 10,
             "the": 10,
+            "in": 10,
+            "is": 10,
             "application": 8,
+            "missing": 8,
+            "opinion": 8,
             "perfect": 8,
             "should": 8,
             "never": 8,
+            "what": 8,
             "Law": 8,
             "just": 8,
+            "are": 8,
             "but": 8,
             "will": 8,
-            "be": 16,
-            "its": 8,
-            "missing": 8,
-            "opinion": 8,
-            "what": 8,
-            "are": 8,
             "my": 8,
-            "we": 8
+            "we": 8,
+            "be": 16,
+            "its": 8
           },
           "repeated_short_block_total_occurrences": 206,
-          "duplicate_ngram_ratio": 0.01634793337446021
+          "leaked_short_blocks": {
+            "<EOS>": 10,
+            "<pad>": 20,
+            "this": 10,
+            "the": 10,
+            "in": 10,
+            "is": 10,
+            "application": 8,
+            "missing": 8,
+            "opinion": 8,
+            "perfect": 8,
+            "should": 8,
+            "never": 8,
+            "what": 8,
+            "Law": 8,
+            "just": 8,
+            "are": 8,
+            "but": 8,
+            "will": 8,
+            "my": 8,
+            "we": 8,
+            "be": 16,
+            "its": 8
+          },
+          "leaked_short_block_total_occurrences": 206,
+          "duplicate_ngram_ratio": 0.017414085375250424
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 0,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 5,
+          "confirmed_count": 1,
+          "confirmed_samples": [
+            "Convolu-tional -> convolutional"
+          ],
+          "per_1000_words": 0.15394088669950737
         },
         "ocr_quality": {
           "available": true,
@@ -5273,6 +5653,7 @@
         "images": {
           "pdf_image_count": 3,
           "epub_content_image_count": 3,
+          "epub_unique_image_count": 3,
           "expected_image_count": 3,
           "missing_vs_pdf": 0,
           "missing_vs_expected": 0,
@@ -5289,35 +5670,32 @@
         "chapter_titles": [
           "Attention Is All You Need"
         ],
-        "paragraph_count": 174
+        "paragraph_count": 445
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.17974787499406375
+      "duration_seconds": 1.4629207919933833,
+      "unsupported": false
     },
     {
       "book_id": "two-column-academic_elektrofarazi",
       "category": "two-column-academic",
-      "score": 60.2,
-      "category_label": "Fair",
+      "score": 87.7,
+      "category_label": "Good",
       "metric_scores": {
-        "text_completeness": 0.1875,
-        "structure": 0.9111111111111111,
-        "cleanliness": 0.8918058870326173,
+        "text_completeness": 0.75,
+        "structure": 0.9888888888888889,
+        "cleanliness": 0.9429280397022332,
         "ocr_quality": null,
         "images": 1.0,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.75,
-          "phrase_include_misses": [
-            "%10'luk sodyum dodezil sülfattan (SDS-50°C'de ısıtılmış) 1 ml eklenerek iyice karıştırılır"
-          ],
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
           "phrase_exclude_violations": [
-            "Dicle Tıp Derg / Dicle Med J",
-            "Dicle Medical Journal",
-            "Cilt / Vol 40, No 3, 436-440"
+            "Dicle Medical Journal"
           ],
           "word_recall": null,
           "word_precision": null,
@@ -5326,7 +5704,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 82,
+          "paragraph_count": 89,
           "expected_paragraph_range": [
             90,
             135
@@ -5335,12 +5713,14 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 28
+          "heading_count": 15
         },
         "duplicates": {
           "repeated_short_blocks": {},
           "repeated_short_block_total_occurrences": 0,
-          "duplicate_ngram_ratio": 0.0405727923627685
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.021401985111662532
         },
         "broken_words": {
           "available": true,
@@ -5359,6 +5739,7 @@
         "images": {
           "pdf_image_count": 0,
           "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
           "expected_image_count": null,
           "missing_vs_pdf": 0,
           "missing_vs_expected": null,
@@ -5375,35 +5756,31 @@
         "chapter_titles": [
           "Providencia stuartii'nin moleküler tiplemesi için pulsed-field jel elektroforezinin optimizasyonu"
         ],
-        "paragraph_count": 82
+        "paragraph_count": 89
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.032202041998971254
+      "duration_seconds": 0.412394332990516,
+      "unsupported": false
     },
     {
       "book_id": "two-column-academic_farkindalik-gelistirme-programi",
       "category": "two-column-academic",
-      "score": 60.5,
-      "category_label": "Fair",
+      "score": 96.9,
+      "category_label": "Excellent",
       "metric_scores": {
-        "text_completeness": 0.25,
-        "structure": 0.7792207792207793,
-        "cleanliness": 0.9377722464219042,
+        "text_completeness": 1.0,
+        "structure": 0.922077922077922,
+        "cleanliness": 0.937907482148401,
         "ocr_quality": null,
         "images": 1.0,
         "reading_order": null
       },
       "metric_details": {
         "text_completeness": {
-          "phrase_include_recall": 0.75,
-          "phrase_include_misses": [
-            "BUFA temelli farkındalık geliştirme programı sonrasında UG'nin tutum puan ortalamaları, başlangıçta 28,32±8,90 iken, etkinliğe katılım sonrasında 38,01±10,92 olarak bulunmuştur (p<0,05)"
-          ],
-          "phrase_exclude_violations": [
-            "Orijinal Araştırma / Original Article",
-            "The Effect of Awareness Pro"
-          ],
+          "phrase_include_recall": 1.0,
+          "phrase_include_misses": [],
+          "phrase_exclude_violations": [],
           "word_recall": null,
           "word_precision": null,
           "ngram_overlap": null,
@@ -5411,7 +5788,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 60,
+          "paragraph_count": 71,
           "expected_paragraph_range": [
             77,
             116
@@ -5420,12 +5797,14 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 19
+          "heading_count": 15
         },
         "duplicates": {
           "repeated_short_blocks": {},
           "repeated_short_block_total_occurrences": 0,
-          "duplicate_ngram_ratio": 0.023335407591785935
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.02328469419434958
         },
         "broken_words": {
           "available": true,
@@ -5443,9 +5822,10 @@
         },
         "images": {
           "pdf_image_count": 1,
-          "epub_content_image_count": 1,
-          "expected_image_count": 1,
-          "missing_vs_pdf": 0,
+          "epub_content_image_count": 0,
+          "epub_unique_image_count": 0,
+          "expected_image_count": 0,
+          "missing_vs_pdf": 1,
           "missing_vs_expected": 0,
           "unexpected_vs_expected": 0
         },
@@ -5460,23 +5840,24 @@
         "chapter_titles": [
           "Farkındalık Geliştirme Programının Normal Gelişim Gösteren Akranların Özel Gereksinimli Çocuklara Yönelik Tutumlarına Etkisi"
         ],
-        "paragraph_count": 60
+        "paragraph_count": 71
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.026506292022531852
+      "duration_seconds": 0.4369334999937564,
+      "unsupported": false
     },
     {
       "book_id": "two-column-academic_vibe-coding",
       "category": "two-column-academic",
-      "score": 52.8,
-      "category_label": "Poor",
+      "score": 61.1,
+      "category_label": "Fair",
       "metric_scores": {
-        "text_completeness": 0.0,
+        "text_completeness": 0.1875,
         "structure": 1.0,
-        "cleanliness": 0.9588290840415487,
+        "cleanliness": 0.9773540873628025,
         "ocr_quality": null,
-        "images": 0.7818181818181817,
+        "images": 0.7666666666666666,
         "reading_order": null
       },
       "metric_details": {
@@ -5488,7 +5869,6 @@
           "phrase_exclude_violations": [
             "Received 31 October 2025, accepted 6 December 2025",
             "Digital Object Identifier 10.1109/ACCESS.2025.3645466",
-            "C. Meske et al.: Vibe Coding as a Reconfiguration of Intent Mediation in Software Development",
             "Faculty of Mechanical Engineering, Ruhr University Bochum"
           ],
           "word_recall": null,
@@ -5498,7 +5878,7 @@
           "extra_words_sample": []
         },
         "structure": {
-          "paragraph_count": 273,
+          "paragraph_count": 268,
           "expected_paragraph_range": [
             263,
             394
@@ -5507,19 +5887,23 @@
           "chapter_precision": null,
           "unmatched_expected_chapters": [],
           "unmatched_generated_chapters": [],
-          "heading_count": 4
+          "heading_count": 2
         },
         "duplicates": {
           "repeated_short_blocks": {},
           "repeated_short_block_total_occurrences": 0,
-          "duplicate_ngram_ratio": 0.015439093484419263
+          "leaked_short_blocks": {},
+          "leaked_short_block_total_occurrences": 0,
+          "duplicate_ngram_ratio": 0.005974231627438278
         },
         "broken_words": {
           "available": true,
-          "candidate_count": 0,
-          "confirmed_count": 0,
-          "confirmed_samples": [],
-          "per_1000_words": 0.0
+          "candidate_count": 7,
+          "confirmed_count": 1,
+          "confirmed_samples": [
+            "conversa-tion -> conversation"
+          ],
+          "per_1000_words": 0.07194244604316546
         },
         "ocr_quality": {
           "available": true,
@@ -5530,11 +5914,12 @@
         },
         "images": {
           "pdf_image_count": 22,
-          "epub_content_image_count": 22,
+          "epub_content_image_count": 4,
+          "epub_unique_image_count": 4,
           "expected_image_count": 6,
-          "missing_vs_pdf": 0,
-          "missing_vs_expected": 0,
-          "unexpected_vs_expected": 16
+          "missing_vs_pdf": 18,
+          "missing_vs_expected": 2,
+          "unexpected_vs_expected": 0
         },
         "epub_validity": {
           "available": true,
@@ -5547,144 +5932,42 @@
         "chapter_titles": [
           "Vibe Coding as a Reconfiguration of Intent Mediation in Software Development: Definition, Implications, and Research Agenda"
         ],
-        "paragraph_count": 273
+        "paragraph_count": 268
       },
       "gates_triggered": [],
       "error": null,
-      "duration_seconds": 0.1533372919948306
+      "duration_seconds": 1.5858583329827525,
+      "unsupported": false
     }
   ],
   "failed_books": [
     {
-      "book_id": "book-with-images_966108",
-      "category": "book-with-images",
-      "score": 24.3,
-      "gates": [],
-      "error": null
-    },
-    {
       "book_id": "book-with-images_ankaranin-trekking-rotalari",
       "category": "book-with-images",
-      "score": 28.0,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "book-with-images_astronomi-alfa-yayinlari",
-      "category": "book-with-images",
-      "score": 56.1,
+      "score": 35.2,
       "gates": [],
       "error": null
     },
     {
       "book_id": "book-with-images_haritalarla-cografya",
       "category": "book-with-images",
-      "score": 33.5,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
-      "error": null
-    },
-    {
-      "book_id": "complex-headings_tu-rkiye-sigorta-klavuz",
-      "category": "complex-headings",
-      "score": 58.8,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "mathematical_franctional",
-      "category": "mathematical",
       "score": 39,
       "gates": [
         "text_completeness_below_threshold"
       ],
-      "error": null
-    },
-    {
-      "book_id": "mathematical_gumusfenbil",
-      "category": "mathematical",
-      "score": 30.7,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
-      "error": null
-    },
-    {
-      "book_id": "mathematical_integral",
-      "category": "mathematical",
-      "score": 38.1,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
-      "error": null
-    },
-    {
-      "book_id": "mathematical_matematik-ders",
-      "category": "mathematical",
-      "score": 43.7,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "mathematical_singular-integrals",
-      "category": "mathematical",
-      "score": 34.5,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
-      "error": null
-    },
-    {
-      "book_id": "mathematical_test-soruolar",
-      "category": "mathematical",
-      "score": 28.8,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
-      "error": null
-    },
-    {
-      "book_id": "mathematical_ujma",
-      "category": "mathematical",
-      "score": 37.9,
-      "gates": [],
       "error": null
     },
     {
       "book_id": "multilingual_azerice-kitap",
       "category": "multilingual",
-      "score": 26.3,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "multilingual_azerice-kitap-2",
-      "category": "multilingual",
-      "score": 35.7,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "normal-text-novel_son-sans",
-      "category": "normal-text-novel",
-      "score": 39,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
-      "error": null
-    },
-    {
-      "book_id": "poor-quality-scan_dikenler-sehri",
-      "category": "poor-quality-scan",
-      "score": 52.6,
+      "score": 30.3,
       "gates": [],
       "error": null
     },
     {
       "book_id": "scanned-novel_sevgili-tas-kalbim",
       "category": "scanned-novel",
-      "score": 27.1,
+      "score": 38.6,
       "gates": [
         "text_completeness_below_threshold"
       ],
@@ -5693,85 +5976,42 @@
     {
       "book_id": "scanned_001",
       "category": "scanned-novel",
-      "score": 40.9,
+      "score": 49.8,
       "gates": [],
       "error": null
     },
     {
       "book_id": "scanned_004",
       "category": "bad-ocr-layer",
-      "score": 33.1,
+      "score": 53.1,
       "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "scanned_006",
-      "category": "book-with-footnotes",
-      "score": 39,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
       "error": null
     },
     {
       "book_id": "technical-with-code_c-primer-plus",
       "category": "technical-with-code",
-      "score": 47.2,
+      "score": 58.4,
       "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "technical-with-code_cplus-conherince",
-      "category": "technical-with-code",
-      "score": 47.0,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "technical-with-code_functional-programing",
-      "category": "technical-with-code",
-      "score": 39,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
       "error": null
     },
     {
       "book_id": "technical-with-code_progit",
       "category": "technical-with-code",
-      "score": 39,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
-      "error": null
-    },
-    {
-      "book_id": "turkish_bilimsel-makale-nasil-yazilir",
-      "category": "turkish",
-      "score": 36.6,
-      "gates": [
-        "text_completeness_below_threshold"
-      ],
+      "score": 48.0,
+      "gates": [],
       "error": null
     },
     {
       "book_id": "turkish_carpik-ask",
       "category": "turkish",
-      "score": 34.2,
+      "score": 43.1,
       "gates": [],
       "error": null
     },
     {
       "book_id": "two-column-academic_attention-is-all-you-need",
       "category": "two-column-academic",
-      "score": 31.5,
-      "gates": [],
-      "error": null
-    },
-    {
-      "book_id": "two-column-academic_vibe-coding",
-      "category": "two-column-academic",
-      "score": 52.8,
+      "score": 46.0,
       "gates": [],
       "error": null
     }

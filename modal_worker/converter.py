@@ -184,7 +184,17 @@ def build_visual_page_html(page_num: int, image_path: str, caption: str | None =
 
 
 HEADER_FOOTER_DEFAULT_MARGIN_RATIO = 0.08  # kalibrasyon atlanır/başarısız olursa düşülen sabit varsayılan (üst/alt %8)
-HEADER_FOOTER_MAX_CHARS = 60  # bu bölgede yalnızca kısa bloklar (koşu başlığı/sayfa no) filtrelenir
+HEADER_FOOTER_MAX_CHARS = 60  # bu bölgede yalnızca kısa bloklar (koşu başlığı/sayfa no) filtrelenir -- akademik
+# makalelerde yazar-atıf + sayfa no ya da dergi adı + URL + cilt/sayı gibi TEK bloğa birleşmiş
+# koşu başlığı/altbilgiler bu eşiği kolayca aşabiliyor (bkz. NOTES.md,
+# two-column-academic_elektrofarazi bulgusu); bu eşiği yükseltmek denendi ama
+# `book-with-images_966108`'de aşırı geniş (%15) kalibre edilmiş bir üst kenar payında,
+# üstünde eşleşecek blok BULUNMAYAN (sayfanın ilk bloğu) gerçek bir paragraf başlangıcının
+# yanlışlıkla silinmesine yol açtı (-40.6 regresyon) -- `_looks_like_paragraph_continuation`
+# yalnızca ÜSTÜNDE bir blok varsa koruma sağlıyor, sayfanın ilk bloğu için hiçbir güvenlik
+# yok. Bunun yerine uzun/60 karakteri aşan tekrarlayan koşu başlığı/altbilgiler artık
+# `detect_recurring_margin_text` ile (birebir metin tekrarına bakarak, konum/punto/uzunluktan
+# bağımsız) yakalanıp kara listeye ekleniyor -- bkz. `_is_blacklisted`, `build_header_blacklist`.
 NOISE_MAX_CHARS = 20  # bu uzunluğa kadar, hiç harf içermeyen bloklar gürültü sayılır
 
 _HAS_LETTER_RE = re.compile(r"[^\W\d_]", re.UNICODE)
@@ -208,28 +218,39 @@ def _is_in_margin(block: tuple, page_height: float, top_ratio: float, bottom_rat
 _SENTENCE_END_CHARS = ".!?:;…\"'”’)»›」"
 MARGIN_CONTINUATION_X_TOLERANCE = 30.0  # bir bloğun, üstündeki bloğun devamı sayılması için izin verilen x0 farkı (pt)
 MARGIN_CONTINUATION_MIN_GAP = 12.0  # dikey boşluk eşiği için taban (çok kısa bloklarda satır yüksekliği yetersiz kalmasın diye)
+MARGIN_CONTINUATION_FONT_SIZE_TOLERANCE = 0.15  # göreli fark -- gerçek devam satırı üstteki paragrafla AYNI puntoda olmalı
 
 
 def _looks_like_paragraph_continuation(
-    all_blocks: list[tuple[float, float, float, float, str]], x0: float, y0: float, y1: float
+    all_blocks: list[tuple[float, float, float, float, str, float]], x0: float, y0: float, y1: float, size: float
 ) -> bool:
     """Kenar payı şeridindeki KISA bir blok, gerçekten tekrarlayan bir koşu
     başlığı/sayfa no mu, yoksa hemen üstündeki (şerit dışındaki) bir
     paragrafın normal satır sarmasıyla oraya düşmüş devamı mı? Hemen üstünde
-    (küçük dikey boşluk, benzer x0) duran ve NOKTALAMAYLA BİTMEYEN (cümle
-    tamamlanmamış) bir blok varsa bu bir devam satırıdır -- gerçek koşu
-    başlıkları/sayfa no'ları sayfada YALNIZ başına durur, üstlerinde yarım
-    kalan bir cümle olmaz. Bkz. NOTES.md/ROADMAP.md: `book-with-images_966108`
-    sayfa 30'da agresif kalibre edilmiş (%15) bir üst kenar payı yüzünden
-    "dayanımı tayin edilmiştir." gibi bir paragraf kuyruğu sessizce
-    kayboluyordu."""
+    (küçük dikey boşluk, benzer x0, BENZER PUNTO) duran ve NOKTALAMAYLA
+    BİTMEYEN (cümle tamamlanmamış) bir blok varsa bu bir devam satırıdır --
+    gerçek koşu başlıkları/sayfa no'ları sayfada YALNIZ başına durur,
+    üstlerinde yarım kalan bir cümle olmaz. Bkz. NOTES.md/ROADMAP.md:
+    `book-with-images_966108` sayfa 30'da agresif kalibre edilmiş (%15) bir
+    üst kenar payı yüzünden "dayanımı tayin edilmiştir." gibi bir paragraf
+    kuyruğu sessizce kayboluyordu.
+
+    Punto kontrolü sonradan eklendi (`two-column-academic_elektrofarazi`
+    bulgusu): akademik makalelerde koşu başlığı/altbilgi genelde gövdeden
+    küçük bir puntoda basılır ve son satırın hemen altına/üstüne denk
+    gelebilir -- punto farkı yoksa bu sezgisel gerçek bir devam-satırını
+    sahte bir koşu başlığından ayırt edemiyordu."""
     height = max(y1 - y0, 1.0)
     gap_threshold = max(height * 1.5, MARGIN_CONTINUATION_MIN_GAP)
-    for ox0, _oy0, _ox1, oy1, other_text in all_blocks:
+    for ox0, _oy0, _ox1, oy1, other_text, other_size in all_blocks:
         if oy1 > y0 or oy1 < y0 - gap_threshold:
             continue
         if abs(ox0 - x0) > MARGIN_CONTINUATION_X_TOLERANCE:
             continue
+        if size > 0 and other_size > 0:
+            size_diff_ratio = abs(size - other_size) / max(size, other_size)
+            if size_diff_ratio > MARGIN_CONTINUATION_FONT_SIZE_TOLERANCE:
+                continue
         stripped = other_text.rstrip()
         if not stripped or stripped[-1] in _SENTENCE_END_CHARS:
             continue
@@ -254,14 +275,26 @@ def _normalize_for_match(text: str) -> str:
 
 
 def build_header_blacklist(config: dict[str, Any]) -> set[str]:
-    """Plan fazında zaten bilinen kitap başlığı/yazarından, sayfa
-    üstü/altı koşu başlıklarını eleyecek bir kara liste kurar."""
+    """Plan fazında zaten bilinen kitap başlığı/yazarından ve sayfa
+    sayfa aynen tekrar eden altbilgi/koşu başlığı metinlerinden
+    (`detect_recurring_margin_text`) sayfa üstü/altı koşu başlıklarını
+    eleyecek bir kara liste kurar."""
     blacklist: set[str] = set()
     for key in ("title", "author"):
         value = config.get(key)
         if value and str(value).strip():
             blacklist.add(_normalize_for_match(str(value)))
+    blacklist.update(config.get("recurring_margin_text") or [])
     return blacklist
+
+
+BLACKLIST_SUBSTRING_MAX_CHARS = 90  # HEADER_FOOTER_MAX_CHARS'tan (kenar payı KONUM filtresinin
+# eşiği) kasıtlı olarak ayrı: burası kara listedeki bilinen bir başlık/yazar/tekrarlayan
+# metnin bir bloğun İÇİNDE alt dize olarak geçip geçmediğini kontrol ediyor -- bu, konum
+# sezgisinden bağımsız, doğrudan içerik eşleşmesi, o yüzden aynı kısıtlamaya tabi olması
+# gerekmiyor (bkz. NOTES.md, two-column-academic_elektrofarazi -- yazar-atıflı 67 karakterlik
+# koşu başlığı, HEADER_FOOTER_MAX_CHARS 60'a düşürülünce bu ikisi aynı sabite bağlıyken
+# yanlışlıkla tekrar sızmaya başlamıştı).
 
 
 def _is_blacklisted(text: str, blacklist: set[str]) -> bool:
@@ -271,7 +304,7 @@ def _is_blacklisted(text: str, blacklist: set[str]) -> bool:
     if normalized in blacklist:
         return True
     # Kısa bloklarda (ör. "HIRS KRALI | 14"), başlık/yazar bir alt dizi olarak da gecebilir.
-    if len(text) <= HEADER_FOOTER_MAX_CHARS:
+    if len(text) <= BLACKLIST_SUBSTRING_MAX_CHARS:
         return any(entry in normalized for entry in blacklist if len(entry) >= 3)
     return False
 
@@ -626,14 +659,14 @@ def _collect_filtered_text_blocks(
         x0, y0, x1, y1 = block.get("bbox", (0.0, 0.0, 0.0, 0.0))
         positioned.append((x0, y0, x1, y1, text, size, bold))
 
-    all_positions = [(x0, y0, x1, y1, text) for x0, y0, x1, y1, text, _size, _bold in positioned]
+    all_positions = [(x0, y0, x1, y1, text, size) for x0, y0, x1, y1, text, size, _bold in positioned]
 
     kept: list[tuple[float, float, float, float, str, float, bool]] = []
     for x0, y0, x1, y1, text, size, bold in positioned:
         if (
             _is_in_margin((x0, y0, x1, y1), page_height, top_margin_ratio, bottom_margin_ratio)
             and len(text) <= HEADER_FOOTER_MAX_CHARS
-            and not _looks_like_paragraph_continuation(all_positions, x0, y0, y1)
+            and not _looks_like_paragraph_continuation(all_positions, x0, y0, y1, size)
         ):
             continue
         if _is_blacklisted(text, blacklist or set()):
@@ -1634,6 +1667,67 @@ def detect_header_footer_margins(
     return resolved_top, resolved_bottom
 
 
+def detect_recurring_margin_text(
+    doc, start_page: int, end_page: int, top_ratio: float, bottom_ratio: float,
+    sample_count: int = HEADER_FOOTER_SAMPLE_COUNT,
+) -> set[str]:
+    """Kalibre edilmiş kenar payı şeridinde, örneklenen sayfaların en az
+    yarısında BİREBİR AYNI metinle tekrar eden blokları bulur ve kara
+    listeye eklenecek şekilde döner. `_looks_like_paragraph_continuation`
+    (konum + punto sezgisi) bazı durumlarda yetersiz kalıyor: iki sütunlu
+    akademik makalelerde altbilgi (9-10pt) hemen üstündeki gövde metnine
+    (9-11pt) punto bakımından yeterince yakın durabiliyor, tolerans
+    genişletmek de gerçek gövde metnini (ör. noktalama olmadan biten
+    kaynakça satırları) silme riski taşıyor (bkz. NOTES.md,
+    two-column-academic_elektrofarazi footer bulgusu). Bunun yerine
+    doğrudan İÇERİĞİN sayfa sayfa aynen tekrarlanmasını kanıt sayıyoruz --
+    gerçek bir paragrafın birden çok sayfada harfi harfine aynı metinle
+    tekrar etmesi neredeyse imkansız, bu yüzden konum/punto sezgisinden
+    çok daha güvenilir bir sinyal -- `detect_header_footer_margins`'ın
+    aksine burada `HEADER_FOOTER_SAMPLE_MIN_PAGES` kısıtı yok: birebir
+    metin tekrarı, az sayfalı kitaplarda bile (`min_repeats >= 2` zaten
+    en az iki örneklenmiş sayfada aynı metni şart koşuyor) güvenilir bir
+    kanıt (bkz. NOTES.md, 5 sayfalık two-column-academic_elektrofarazi)."""
+    occurrences: dict[str, int] = {}
+    sampled_pages = 0
+
+    for page_num in _sample_page_numbers(start_page, end_page, sample_count):
+        page_index = page_num - 1
+        if not (0 <= page_index < len(doc)):
+            continue
+        page = doc[page_index]
+        page_height = page.rect.height
+        if page_height <= 0:
+            continue
+        try:
+            raw_blocks = page.get_text("blocks", sort=True)
+        except Exception:
+            continue
+
+        sampled_pages += 1
+        seen_this_page: set[str] = set()
+        for block in raw_blocks:
+            if len(block) < 7 or block[6] != 0:
+                continue
+            text = block[4].strip()
+            if not text:
+                continue
+            if not _is_in_margin((block[0], block[1], block[2], block[3]), page_height, top_ratio, bottom_ratio):
+                continue
+            key = _repeat_key(text)
+            if len(key) < 3 or key == "#":
+                continue
+            seen_this_page.add(key)
+        for key in seen_this_page:
+            occurrences[key] = occurrences.get(key, 0) + 1
+
+    if sampled_pages == 0:
+        return set()
+
+    min_repeats = max(2, round(sampled_pages * HEADER_FOOTER_MIN_REPEAT_RATIO))
+    return {key for key, count in occurrences.items() if count >= min_repeats}
+
+
 # ---------------------------------------------------------------------------
 # Gövde punto tespiti — yalnızca plan fazında, madde 1'deki başlık/paragraf
 # sezgiselinin ve font-boyutu tabanlı bölüm tespitinin "normal" kabul edeceği
@@ -1721,9 +1815,13 @@ def plan_conversion(pdf_bytes: bytes, config: dict[str, Any]) -> PlanResult:
         end_page = min(total_pages, resolved_config.get("end_page", total_pages))
 
         top_margin_ratio, bottom_margin_ratio = detect_header_footer_margins(doc, start_page, end_page)
+        recurring_margin_text = detect_recurring_margin_text(
+            doc, start_page, end_page, top_margin_ratio, bottom_margin_ratio
+        )
         resolved_config = dict(resolved_config)
         resolved_config["header_margin_ratio"] = top_margin_ratio
         resolved_config["footer_margin_ratio"] = bottom_margin_ratio
+        resolved_config["recurring_margin_text"] = sorted(recurring_margin_text)
         resolved_config["body_font_size"] = detect_body_font_size(doc, start_page, end_page)
 
         chapters_cfg = resolved_config.get("chapters") or [

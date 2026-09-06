@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -121,22 +121,19 @@ export class AuthService {
 
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
-      throw new NotFoundException('Bu e-posta adresiyle kayıtlı bir hesap bulunamadı.');
+    // Hesabın var olup olmadığını (ve Google ile oluşturulup oluşturulmadığını)
+    // sızdırmamak için her durumda aynı yanıt dönülür (bkz. resendVerificationCode).
+    if (user && user.passwordHash) {
+      const rawToken = generateRawToken();
+      await this.prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: hashToken(rawToken),
+          expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+        },
+      });
+      await this.mailService.sendPasswordResetEmail(user.email, rawToken, resolveMailLocale(user.locale));
     }
-    if (!user.passwordHash) {
-      throw new UnauthorizedException('Bu hesap Google ile oluşturulmuş, şifre sıfırlama yapılamaz.');
-    }
-
-    const rawToken = generateRawToken();
-    await this.prisma.passwordResetToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: hashToken(rawToken),
-        expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
-      },
-    });
-    await this.mailService.sendPasswordResetEmail(user.email, rawToken, resolveMailLocale(user.locale));
     return { success: true };
   }
 

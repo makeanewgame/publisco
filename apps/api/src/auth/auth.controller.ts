@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { CurrentUser, RequestUser } from './decorators/current-user.decorator';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -40,6 +41,9 @@ export class AuthController {
     return this.authService.googleAuth(dto);
   }
 
+  // Auth'suz + e-posta gönderen bir endpoint: global limitten (100/dk) daha
+  // sıkı tutuluyor, hem enumeration deneme hızını hem e-posta spam'ini sınırlar.
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @Post('forgot-password')
   forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -58,6 +62,7 @@ export class AuthController {
     return this.authService.verifyEmail(dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @Post('resend-verification')
   resendVerification(@Body() dto: ResendVerificationDto) {

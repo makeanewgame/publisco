@@ -4,6 +4,8 @@ tüm metrikleri hesapla -> skorla -> `BookResult` döner.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from eval.epub_reader import read_epub
 from eval.golden.types import GoldenBook
 from eval.metrics.broken_words import BrokenWordsResult, evaluate_broken_words
@@ -23,9 +25,13 @@ def _asdict(obj) -> dict:
     return asdict(obj) if is_dataclass(obj) else obj
 
 
-def evaluate_book(book: GoldenBook, force_ocr: bool = False) -> BookResult:
+def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path | None = None) -> BookResult:
     pdf_bytes = book.pdf_loader()
     artifact = run_conversion(pdf_bytes, book.config, book.id, force_ocr=force_ocr)
+
+    if epub_out_dir is not None and artifact.epub_bytes:
+        epub_out_dir.mkdir(parents=True, exist_ok=True)
+        (epub_out_dir / f"{book.id}.epub").write_bytes(artifact.epub_bytes)
 
     if artifact.error:
         return BookResult(

@@ -132,6 +132,7 @@ def _paragraph_text_to_html(
     font_size: float | None = None,
     is_bold: bool = False,
     body_font_size: float | None = None,
+    allow_heading: bool = True,
 ) -> str | None:
     """Tek bir (birden fazla satır içerebilen) paragraf metnini `<h2>` ya da
     `<p>`'ye çevirir -- `text_to_html_blocks`'un asıl sezgiseli, blok-bazlı
@@ -143,12 +144,26 @@ def _paragraph_text_to_html(
     noktalamasız bir satırın gerçekten `<h2>` sayılması için şekil sezgiselinin
     yanına punto/kalınlık kontrolü de eklenir (bkz. ROADMAP.md madde 1: aksi
     halde gövdeyle AYNI boyuttaki kısa satırlar -- ör. bir UI kılavuzundaki
-    "Kaydır", "Detay 1" gibi kısa etiketler -- yanlışlıkla başlık sayılıyordu)."""
+    "Kaydır", "Detay 1" gibi kısa etiketler -- yanlışlıkla başlık sayılıyordu).
+
+    `allow_heading=False` başlık sezgiselini tamamen kapatır -- OCR'dan gelen
+    metinde gerçek bir punto bilgisi olmadığından (`body_font_size=None` iken
+    `_looks_like_heading_font` her zaman True dönüyordu) şekil sezgiseli tek
+    başına, kırık paragraflardan (bkz. `_merge_blocks_into_paragraphs`, bulanık
+    taramada gürültülü satır geometrisi) kalan sıradan cümle parçalarını
+    yanlışlıkla başlık sanıyordu (bkz. NOTES.md, poor-quality-scan_dikenler-sehri
+    bulgusu: "Kafamı kaldırıp baktığımda Jack'in sandalyesine yaslanmış," gibi
+    düz cümleler `<h2>` oluyordu)."""
     lines = [line.strip() for line in paragraph_text.splitlines() if line.strip()]
     if not lines:
         return None
 
-    is_heading_shaped = len(lines) == 1 and len(lines[0].split()) <= 6 and not re.search(r"[.!?]$", lines[0])
+    is_heading_shaped = (
+        allow_heading
+        and len(lines) == 1
+        and len(lines[0].split()) <= 6
+        and not re.search(r"[.!?]$", lines[0])
+    )
     is_heading = (
         is_heading_shaped
         and not _looks_like_math_or_citation(lines[0])
@@ -162,14 +177,19 @@ def _paragraph_text_to_html(
     return f"<p>{html.escape(block_text)}</p>"
 
 
-def text_to_html_blocks(text: str) -> str:
-    """Metni başlık ve paragraf bloklarına dönüştürür."""
+def text_to_html_blocks(text: str, allow_heading: bool = True) -> str:
+    """Metni başlık ve paragraf bloklarına dönüştürür. `allow_heading=False`
+    için bkz. `_paragraph_text_to_html`."""
     cleaned = clean_text(text)
     if not cleaned:
         return ""
 
     paragraphs = re.split(r"\n\s*\n", cleaned)
-    html_blocks = [block for block in (_paragraph_text_to_html(p) for p in paragraphs) if block is not None]
+    html_blocks = [
+        block
+        for block in (_paragraph_text_to_html(p, allow_heading=allow_heading) for p in paragraphs)
+        if block is not None
+    ]
     return "\n".join(html_blocks)
 
 
@@ -773,11 +793,16 @@ def _extract_ocr_text_blocks(
     blacklist: set[str] | None = None,
     top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
     bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
-) -> list[str]:
+) -> tuple[list[str], float | None]:
     """OCR çıktısını (`image_to_data`, satır+koordinat+confidence) okuyup gömülü-metin
     yolundaki (`_extract_text_blocks`) ile aynı kenar payı/kara liste/gürültü
     filtrelerini uygular. `image_to_string` (eski davranış) hiç filtre uygulamadığı
-    için koşu başlığı/yazar OCR sayfalarında sızıyordu (bkz. NOTES.md)."""
+    için koşu başlığı/yazar OCR sayfalarında sızıyordu (bkz. NOTES.md).
+
+    `(paragraflar, ortalama_güven)` döner -- güven, tutulan (conf>=0) her
+    kelimenin Tesseract güven skorunun (0-100) ortalamasıdır; hiç kelime
+    yoksa `None`. `try_ocr_page`'in güven eşiği kontrolü için (bkz. NOTES.md,
+    mathematical_test-soruolar bulgusu)."""
     import pytesseract
     from pytesseract import Output
 
@@ -785,18 +810,23 @@ def _extract_ocr_text_blocks(
     image_height = image.height
 
     lines: dict[tuple[int, int, int], list[tuple[int, int, int, int, str]]] = {}
+    word_confidences: list[float] = []
     for i in range(len(data.get("text", []))):
         text = data["text"][i].strip()
         if not text:
             continue
         try:
-            if float(data["conf"][i]) < 0:
+            conf = float(data["conf"][i])
+            if conf < 0:
                 continue
         except (TypeError, ValueError):
             continue
+        word_confidences.append(conf)
         key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
         left, top, width, height = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
         lines.setdefault(key, []).append((left, top, left + width, top + height, text))
+
+    avg_confidence = sum(word_confidences) / len(word_confidences) if word_confidences else None
 
     kept: list[tuple[float, float, float, float, str, float, bool]] = []
     for key in sorted(lines.keys()):
@@ -821,7 +851,14 @@ def _extract_ocr_text_blocks(
         # eski düz `text_to_html_blocks` akışında tüketiliyor).
         kept.append((x0, y0, x1, y1, text, 0.0, False))
 
-    return [text for text, _size, _bold in _merge_blocks_into_paragraphs(kept)]
+    paragraphs = [text for text, _size, _bold in _merge_blocks_into_paragraphs(kept)]
+    return paragraphs, avg_confidence
+
+
+# eval/metrics/ocr_quality.py'deki LOW_CONFIDENCE_THRESHOLD ile aynı değer (0-100,
+# Tesseract'ın kendi güven skoru) -- ikisi bağımsız ölçüyor ama "düşük güven" aynı
+# eşiği ifade etsin diye senkron tutuluyor.
+OCR_MIN_CONFIDENCE = 60.0
 
 
 def try_ocr_page(
@@ -832,21 +869,42 @@ def try_ocr_page(
     blacklist: set[str] | None = None,
     top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
     bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+    min_confidence: float | None = None,
 ) -> str | None:
     """pytesseract kuruluysa OCR dener (gömülü-metin yolundakiyle aynı kenar payı/kara
-    liste filtreleriyle); kurulu değilse sessizce None döner."""
+    liste filtreleriyle); kurulu değilse sessizce None döner.
+
+    `min_confidence` verilirse (ör. `OCR_MIN_CONFIDENCE`) ve OCR sonucunun ortalama
+    Tesseract güveni bunun altındaysa, metin boş olmasa bile None döner -- çağıran
+    tarafı (bkz. `process_page`) bunu "OCR başarısız" gibi ele alıp sayfayı görsele
+    düşürür. Matematik notasyonu gibi içeriklerde Tesseract nadiren tam boş dönüyor,
+    güvenle YANLIŞ okuyor -- salt "metin boş mu" kontrolü bu durumu yakalamıyordu
+    (bkz. NOTES.md, mathematical_test-soruolar bulgusu: 440 sayfalık taranmış bir
+    kitapta gerçek içerik yerine anlamsız OCR metni EPUB'a giriyordu). Varsayılan
+    `None` ile bu kontrol devre dışıdır -- mevcut çağıranların (dil tespiti,
+    force_ocr) davranışı değişmez."""
     try:
         import pytesseract  # noqa: F401
     except ImportError:
         return None
 
     def _ocr_fn(img):
-        paragraphs = _extract_ocr_text_blocks(
+        paragraphs, avg_confidence = _extract_ocr_text_blocks(
             img, lang, blacklist=blacklist, top_margin_ratio=top_margin_ratio, bottom_margin_ratio=bottom_margin_ratio
         )
-        return "\n\n".join(paragraphs)
+        return "\n\n".join(paragraphs), avg_confidence
 
-    return _ocr_with_retry(doc, page_index, _ocr_fn, dpi=dpi)
+    result = _ocr_with_retry(doc, page_index, _ocr_fn, dpi=dpi)
+    if result is None:
+        return None
+    text, avg_confidence = result
+    if min_confidence is not None and avg_confidence is not None and avg_confidence < min_confidence:
+        logger.info(
+            "Sayfa %s: OCR güveni düşük (%.1f < %.1f), metin güvenilmez sayıldı.",
+            page_index + 1, avg_confidence, min_confidence,
+        )
+        return None
+    return text
 
 
 # ---------------------------------------------------------------------------
@@ -1008,6 +1066,30 @@ def extract_embedded_page_images(
 
         ext = (extracted.get("ext") or "").lower()
         image_bytes = extracted["image"]
+
+        # SMask (soft mask/alfa kanalı) varsa uygula -- yoksa (ör. şeffaf
+        # zeminli beyaz çizgili bir logo) temel görsel opak/siyah dolgulu
+        # çıkar ve EPUB'ın beyaz sayfasında düz siyah kutu olarak görünür.
+        # Bkz. NOTES.md, complex-headings_tu-rkiye-sigorta-klavuz bulgusu.
+        smask_xref = extracted.get("smask") or 0
+        if smask_xref:
+            try:
+                mask_extracted = doc.extract_image(smask_xref)
+                base_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+                mask_image = Image.open(io.BytesIO(mask_extracted["image"])).convert("L")
+                if mask_image.size != base_image.size:
+                    mask_image = mask_image.resize(base_image.size)
+                base_image.putalpha(mask_image)
+                buf = io.BytesIO()
+                base_image.save(buf, format="PNG", optimize=True)
+                image_bytes = buf.getvalue()
+                ext = "png"
+            except Exception as exc:
+                logger.warning(
+                    "Sayfa %s: gömülü görsel (xref=%s) SMask'ı (xref=%s) uygulanamadı, alfasız devam ediliyor: %s",
+                    page_num, xref, smask_xref, exc,
+                )
+
         media_type = _EPUB_CORE_IMAGE_MEDIA_TYPES.get(ext)
         if media_type is None:
             try:
@@ -2028,11 +2110,21 @@ def process_page(
             blacklist=header_blacklist,
             top_margin_ratio=top_margin_ratio,
             bottom_margin_ratio=bottom_margin_ratio,
+            min_confidence=OCR_MIN_CONFIDENCE,
         )
         if not text or not text.strip():
-            # Ne gömülü metin ne de OCR sonucu var (taranmış sayfa, OCR
-            # kurulu değil vb.) — sayfayı atlarsak içerik tamamen kaybolur,
-            # bu yüzden visual_mode ayarından bağımsız olarak görsel ekliyoruz.
+            # Ne gömülü metin ne de OCR sonucu var. Sayfada gömülü görsel/çizim
+            # de yoksa (matbaa baskısında bölüm aralarına konan boş dolgu
+            # sayfaları gibi) sayfa gerçekten boştur -- görsele düşürüp "Sayfa
+            # N" başlığı eklemek yerine sessizce atlanır (içerik kaybı riski
+            # yok, zaten hiçbir şey yok). Bkz. NOTES.md,
+            # technical-with-code_functional-programing bulgusu.
+            if not doc[page_index].get_images() and not doc[page_index].get_drawings():
+                logger.info("Sayfa %s tamamen boş, atlanıyor.", page_num)
+                return PageResult(page_num=page_num, html="", images=[])
+            # Metin yoksa (taranmış sayfa, OCR kurulu değil vb.) sayfayı
+            # atlarsak içerik tamamen kaybolur, bu yüzden visual_mode
+            # ayarından bağımsız olarak görsel ekliyoruz.
             img_name = f"images/page_{page_num}.jpg"
             images.append(
                 (img_name, page_to_image_bytes(doc, page_index, dpi=image_dpi, quality=image_quality), "image/jpeg")
@@ -2078,7 +2170,7 @@ def process_page(
         # aynı sistemde değil, bu yüzden bu durumda (ve diagram_pages'te, zaten
         # tam sayfa görsel eklendiğinden) eski düz (interleave'siz) akış kullanılır.
         cleaned = clean_text(text)
-        block_html = text_to_html_blocks(cleaned)
+        block_html = text_to_html_blocks(cleaned, allow_heading=not text_is_ocr_derived)
         if block_html:
             html_parts.append(block_html)
         if not is_scanned_page and page_num not in diagram_pages:

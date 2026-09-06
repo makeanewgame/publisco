@@ -76,6 +76,13 @@ def main() -> None:
     parser.add_argument("--no-baseline-compare", action="store_true", help="Baseline ile karşılaştırma yapma")
     parser.add_argument("--force-ocr", action="store_true", help="Gömülü metin olsa da OCR'ı zorla")
     parser.add_argument("--compare", nargs=2, metavar=("BASELINE_JSON", "CURRENT_JSON"), help="İki kayıtlı sonucu karşılaştır, çalıştırma yapma")
+    parser.add_argument(
+        "--save-epubs",
+        nargs="?",
+        const=str(EVAL_DIR / "results" / "epubs"),
+        metavar="DIR",
+        help="Üretilen .epub dosyalarını diske yaz (varsayılan: eval/results/epubs/<book-id>.epub) -- ör. Kindle'da elle kontrol için",
+    )
     args = parser.parse_args()
 
     if args.compare:
@@ -95,13 +102,18 @@ def main() -> None:
         print("Değerlendirilecek kitap yok. Golden dataset boş mu? (bkz. eval/golden/manifest.json)")
         sys.exit(1)
 
+    epub_out_dir = Path(args.save_epubs) if args.save_epubs else None
+
     print(f"{len(books)} kitap çalıştırılıyor...")
     results = []
     for book in books:
         print(f"  - {book.id} ({book.category})...", end=" ", flush=True)
-        result = evaluate_book(book, force_ocr=args.force_ocr)
+        result = evaluate_book(book, force_ocr=args.force_ocr, epub_out_dir=epub_out_dir)
         print(f"{result.score}  [{result.category_label}]" if result.score is not None else "FAILED")
         results.append(result)
+
+    if epub_out_dir is not None:
+        print(f"EPUB'lar kaydedildi: {epub_out_dir}/")
 
     if args.book:
         print_book_diagnostics(results[0])

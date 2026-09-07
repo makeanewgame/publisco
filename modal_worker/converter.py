@@ -338,6 +338,50 @@ PARAGRAPH_GAP_MULTIPLIER = 1.8  # tipik satir-ici bosluktan bu kat fazla dikey b
 # `_dominant_alignment_band`'de.
 PARAGRAPH_HANGING_INDENT_DOMINANCE = 2.0
 
+# "Icindekiler/dizin girisi" imzasi: nokta liderleri (`....`) ve ardindan
+# (varsa) yalnizca bir sayfa numarasi. Bkz. `_looks_like_toc_entry`.
+_TOC_DOT_LEADER = re.compile(r"\.{4,}")
+_TOC_TAIL = re.compile(r"\.{4,}\s*(.*)$", re.DOTALL)
+# Romen rakami icin GECERLI FORM sart -- yalnizca "ivxlcdm harflerinden olusuyor
+# mu" demek yetmiyor: Turkce'de bu harflerden olusan gercek kelimeler var
+# ("dili", "mil", "ilim"...) ve bunlar sayfa numarasi sanilip govde metnini
+# icindekiler girisi gibi gostererek yanlis paragraf bolmesine yol aciyordu.
+_TOC_PAGE_NO = re.compile(
+    r"^(?:\d{1,4}|m{0,4}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3}))$",
+    re.IGNORECASE,
+)
+_TOC_HAS_LETTER = re.compile(r"[^\W\d_]")
+
+
+def _looks_like_toc_entry(text: str) -> bool:
+    """Satir bir ICINDEKILER/DIZIN girisi mi ("ETIK ......... i" gibi)?
+
+    Neden gerekli: girintisiz dizilmis bir icindekiler sayfasinda her giris
+    AYRI bir blok olarak gelir ama hepsi ayni x0'da baslar ve satir araliklari
+    duzenlidir -- yani `_merge_blocks_into_paragraphs`'in iki paragraf-siniri
+    sinyali de (hiza sapmasi, anormal dikey bosluk) sessiz kalir ve TUM
+    icindekiler tek bir dev paragrafa yapisir (olculdu: `book-with-images_966108`
+    sayfa 5'te 36 blok -> 1 paragraf, 4369 karakterlik tek `<p>`; bkz. NOTES.md).
+    Bu, 2026-09-07'de duzeltilen ASILI GIRINTILI icindekiler vakasindan farkli
+    bir alt-tur: orada madde basi disarida durdugu icin hiza sinyali calisiyor.
+
+    Kural kasitli olarak DAR: yalnizca 4+ ardisik nokta VE nokta dizisinden
+    sonra ya hicbir sey ya da tek bir sayfa numarasi (arap/romen) kalmasi VE
+    noktalardan once en az bir harf bulunmasi. Golden kulliyatinin tamaminda
+    (568.872 satir) olculdu: ham "4+ nokta" kurali 369 satira degiyordu, bu
+    daraltmayla 177'ye iniyor -- elenenler govde metnindeki uc noktalar (ör.
+    `turkish_bilimsel-makale-nasil-yazilir`: 11 -> 0, "...ihtiva etmemelidir....
+    Dili okuyucuya" gibi cumleler) ve taramalardan gelen OCR gurultusu (ör.
+    `dunya-tarihi`: 56 -> 2, `c-primer-plus`: 16 -> 0). Hedef kitapta ise
+    136 -> 132 ile giris satirlarinin tamamina yakini korunuyor."""
+    if not _TOC_DOT_LEADER.search(text):
+        return False
+    if not _TOC_HAS_LETTER.search(_TOC_DOT_LEADER.split(text)[0]):
+        return False
+    match = _TOC_TAIL.search(text)
+    tail = (match.group(1) if match else "").strip()
+    return not tail or bool(_TOC_PAGE_NO.match(tail))
+
 
 def _looks_like_hanging_indent(
     x0_values: list[float], leftmost: list[float], dominant: list[float]
@@ -492,13 +536,16 @@ def _merge_blocks_into_paragraphs(
 
     paragraphs: list[tuple[str, float, bool]] = []
     current_lines: list[str] = []
-    current_is_multiline = False
+    current_is_standalone = False
     current_font: tuple[float, bool] = (0.0, False)
     prev_y1: float | None = None
 
     for x0, y0, _x1, y1, text, size, bold in blocks:
-        is_multiline = "\n" in text
-        if is_multiline or current_is_multiline:
+        # Cok satirli blok = PyMuPDF'in zaten tamamlanmis saydigi paragraf;
+        # icindekiler/dizin girisi = kendi basina tamamlanmis bir oge. Ikisi de
+        # komsulariyla BIRLESTIRILMEMELI (bkz. `_looks_like_toc_entry`).
+        is_standalone = "\n" in text or _looks_like_toc_entry(text)
+        if is_standalone or current_is_standalone:
             is_new_paragraph = bool(current_lines)
         else:
             is_new_paragraph = not current_lines
@@ -516,7 +563,7 @@ def _merge_blocks_into_paragraphs(
         if not current_lines:
             current_font = (size, bold)
         current_lines.append(text)
-        current_is_multiline = is_multiline
+        current_is_standalone = is_standalone
         prev_y1 = y1
 
     if current_lines:

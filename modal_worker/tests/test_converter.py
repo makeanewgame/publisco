@@ -672,6 +672,45 @@ def test_merge_blocks_tolerates_noisy_ocr_left_edges():
     assert "onun devam satiri" in paragraphs[1]
 
 
+def test_merge_blocks_keeps_flat_toc_entries_separate():
+    """Regresyon testi: GIRINTISIZ dizilmis bir icindekiler sayfasinda her giris
+    ayri paragraf kalmali. Bu sayfalarda tum girisler ayni x0'da baslar ve satir
+    araliklari duzenlidir, yani hem hiza hem dikey-bosluk sinyali sessiz kalir;
+    eski kod bu yuzden TUM icindekileri tek bir dev paragrafa yapistiriyordu
+    (gercek kitap: book-with-images_966108 sayfa 5, 36 blok -> 1 paragraf,
+    4369 karakterlik tek <p>; bkz. NOTES.md). Nokta liderleri + sayfa numarasi
+    imzasiyla yakalaniyor."""
+    blocks = _line_blocks(
+        [
+            (113.4, "ETIK ............................................. i"),
+            (113.4, "OZET ............................................ ii"),
+            (113.4, "ABSTRACT ....................................... iii"),
+            (113.4, "TESEKKUR ........................................ iv"),
+        ]
+    )
+    paragraphs = [text for text, _size, _bold in _merge_blocks_into_paragraphs(blocks)]
+
+    assert len(paragraphs) == 4
+    assert paragraphs[0].startswith("ETIK")
+    assert paragraphs[3].startswith("TESEKKUR")
+
+
+def test_merge_blocks_does_not_split_body_text_containing_dots():
+    """Yukaridaki icindekiler kurali GOVDE metnini bolmemeli: cumle icinde gecen
+    uc/coklu noktalardan sonra metin DEVAM ediyorsa bu bir icindekiler girisi
+    degildir (gercek ornek: turkish_bilimsel-makale-nasil-yazilir'da
+    "...ihtiva etmemelidir.... Dili okuyucuya yakin olmalidir")."""
+    blocks = _line_blocks(
+        [
+            (100.0, "sekil veya tablo kaynagi ihtiva etmemelidir.... Dili"),
+            (100.0, "okuyucuya yakin olmalidir ve anlasilir olmalidir."),
+        ]
+    )
+    paragraphs = [text for text, _size, _bold in _merge_blocks_into_paragraphs(blocks)]
+
+    assert len(paragraphs) == 1
+
+
 def test_merge_blocks_still_splits_classic_first_line_indent():
     """Klasik roman dizgisi (paragraf basi ICERIDE, devam satirlari hizali)
     eskisi gibi calismaya devam etmeli -- yeni hiza mantigi bu yaygin durumu

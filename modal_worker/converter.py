@@ -332,6 +332,109 @@ def _is_blacklisted(text: str, blacklist: set[str]) -> bool:
 PARAGRAPH_INDENT_MIN_PT = 4.0  # indent-sinyali icin taban esik (cok kucuk fontlarda bile anlamli)
 PARAGRAPH_INDENT_LINE_HEIGHT_RATIO = 0.4  # esik, satir yuksekliginin bu oranindan da az olamaz
 PARAGRAPH_GAP_MULTIPLIER = 1.8  # tipik satir-ici bosluktan bu kat fazla dikey bosluk = yeni paragraf
+# "Asili girinti" (icindekiler/kaynakca) yorumuna gecmek icin, iceride duran kumenin
+# EN SOLDAKI kumeyi bu kat kadar ezmesi gerekir. Aksi halde en soldaki kume govde
+# kabul edilir (= klasik paragraf-basi-girintisi yorumu, eski davranis). Gerekcesi
+# `_dominant_alignment_band`'de.
+PARAGRAPH_HANGING_INDENT_DOMINANCE = 2.0
+
+
+def _looks_like_hanging_indent(
+    x0_values: list[float], leftmost: list[float], dominant: list[float]
+) -> bool:
+    """Sol kenar dizisi gercekten "asili girinti" (icindekiler/kaynakca) mi,
+    yoksa sadece kisa paragrafli duz metin mi? `x0_values` OKUMA SIRASINDA
+    olmali (siralanmis degil) -- karar dizinin yapisina bakiyor.
+
+    Yalnizca sayiya bakmak (girintili kume disaridakini k kat eziyor mu)
+    YETMIYOR: replik agirlikli bir romanda paragraflarin cogu 1-2 satir
+    oldugundan girintili paragraf-basi satirlari hizali devam satirlarini
+    dogal olarak 2:1 ezer. Gercek olcumde `normal-text-novel_son-sans`in
+    segmentlerinin %25'i sirf bu yuzden yanlislikla asili girinti sanildi ve
+    paragraflar asiri birlesti (bkz. NOTES.md).
+
+    Gercek asili girintinin iki yapisal zorunlulugu var -- ikisi de olcum
+    verisinde duz metni temiz sekilde eliyor:
+      1. Blok, DISARIDA duran bir madde basiyla BASLAR (icindekiler bir
+         maddenin ortasindan baslayamaz). Duz metinde ise blogun ilk satiri
+         genelde onceki sayfadan/sutundan devam eden bir govde satiridir.
+      2. Disarida duran satirlar ARDISIK OLAMAZ -- her maddenin en az bir
+         devam satiri vardir. Duz metinde ise arka arkaya gelen tek satirlik
+         paragraflar bu deseni sik sik bozar.
+    Olculen ayrim (70 sayfalik ornekler): mitoloji icindekiler 8->4 flip
+    (ihtiyac duyulanlar korundu), son-sans 17->0, arapca 42->3, 966108 5->1."""
+    if len(dominant) < len(leftmost) * PARAGRAPH_HANGING_INDENT_DOMINANCE:
+        return False
+    lo, hi = leftmost[0], leftmost[-1]
+    is_outdented = [lo <= value <= hi for value in x0_values]
+    if not is_outdented[0]:
+        return False
+    return not any(is_outdented[i] and is_outdented[i + 1] for i in range(len(is_outdented) - 1))
+
+
+def _dominant_alignment_band(x0_values: list[float], tolerance: float) -> tuple[float, float]:
+    """Satirlarin sol kenar (x0) degerlerinden GOVDE metninin hiza bandini
+    `(alt, ust)` olarak dondurur -- bu bandin DISINDA kalan satirlar paragraf
+    basi sayilir (bkz. `_merge_blocks_into_paragraphs`).
+
+    Neden `min(x0)` degil: eski kod govde hizasi olarak sayfadaki EN SOL degeri
+    aliyor ve "bundan iceride olan = yeni paragraf" varsayiyordu. Bu iki ayri
+    gercek dunya durumunda catastrofik sekilde yanlis calisiyordu (ikisi de
+    Kindle QA turunda bulundu, bkz. NOTES.md):
+
+    1. ASILI GIRINTI (icindekiler/katkida-bulunanlar/kaynakca dizgisi): madde
+       basi DISARIDA, devam satirlari ICERIDE. Cogunluk "iceride" oldugundan
+       eski kural HER devam satirini yeni paragraf sayiyor, tek bir icindekiler
+       maddesi 3-4 ayri paragrafa bolunuyordu.
+    2. GURULTULU OCR GEOMETRISI (bulanik taramalar): `min()` aykiri-deger'e
+       maksimum duyarli bir istatistik -- govde satirlarinin x0'i +-15px
+       titresirken en soldaki titresim referans kabul edilince esik govde
+       bulutunun ICINE dusuyor, sirf gurultu yuzunden govde satirlari
+       "girintili" sayilip cumleler ortasindan bolunuyordu.
+
+    Cozum: x0 degerleri `tolerance` esigiyle tek-baglantili (single-link)
+    kumelenir; en cok uyeli kume govde hizasi kabul edilir (esitlikte EN SOLDAKI
+    kume secilir -- klasik "her paragraf 2 satir" dizgisinde govde=hizali
+    yorumu korunur, yani mevcut davranis degismez). Kumeler birbirinden
+    `tolerance`'tan fazla ayrik oldugundan uyelik testi basit bir aralik
+    kontrolune indirgenir.
+
+    Zincirleme (chaining) riski bilincli kabul edilmistir: hizadan girintiye
+    kesintisiz bir x0 surekliligi varsa her sey tek kumeye dusup girinti sinyali
+    tamamen kaybolur -- bu durumda paragraf sinirlari yalnizca dikey-bosluk
+    sinyaline kalir, yani EKSIK bolme olur. Bu, eskisinin ASIRI bolmesinden
+    (okunabilirligi tumden bozan mod) belirgin sekilde daha guvenli bir hata
+    yonu.
+
+    "En cok uyeli kume kazanir" kuralinin tek basina birakilmasi, cok kisa
+    paragrafli (or. replik agirlikli roman) sayfalarda yorumu TERS cevirir --
+    bu yuzden govde olarak en soldaki kume disinda bir kume secilmesi ayrica
+    `_looks_like_hanging_indent`'in yapisal kontrolunden gecmek zorunda;
+    gecemezse en soldaki kume govde kabul edilip klasik davranis korunur.
+
+    `x0_values` OKUMA SIRASINDA verilmelidir (siralanmis degil) -- kumeleme
+    kendi icinde siralar, ama yapisal kontrol dizinin sirasina bakar."""
+    clusters: list[list[float]] = []
+    for value in sorted(x0_values):
+        if clusters and value - clusters[-1][-1] <= tolerance:
+            clusters[-1].append(value)
+        else:
+            clusters.append([value])
+
+    leftmost = clusters[0]
+    dominant = max(clusters, key=lambda c: (len(c), -c[0]))
+    if dominant is not leftmost and not _looks_like_hanging_indent(x0_values, leftmost, dominant):
+        dominant = leftmost
+    # Bant, kumenin ham genisligi DEGIL, iki yana da `tolerance` kadar
+    # genisletilmis hali olarak donuyor: govde satirlarinin hepsi TAM AYNI x0'a
+    # sahipse (temiz dizgili PDF'lerde yaygin) ham kume sifir genislikte olurdu
+    # ve bir puntonun altindaki en kucuk sapma bile satiri paragraf basi
+    # yapardi -- eski `min(x0) + tolerance` esiginin sagladigi pay burada da
+    # korunmali. Bu genisletmeyle fonksiyon, klasik paragraf-basi-girintisi
+    # durumunda eski davranisla BIREBIR ayni sonucu uretir; getirdigi tek fark
+    # referansin aykiri-degere dayanikli olmasi ve sapmanin iki yone de
+    # bakilmasidir.
+    return dominant[0] - tolerance, dominant[-1] + tolerance
 
 
 def _merge_blocks_into_paragraphs(
@@ -352,9 +455,11 @@ def _merge_blocks_into_paragraphs(
     onlarca sahte paragrafa bolunur.
 
     Iki bagimsiz sinyalle gercek paragraf sinirlarini yeniden kurar:
-    (1) girinti -- bir satirin sol baslangici, sayfadaki en soldaki (bosluksuz)
-    hizaya gore belirgin sekilde icerideyse, bu yeni bir paragrafin ilk satiridir
-    (klasik roman dizgisinde standart paragraf-basi girintisi);
+    (1) HIZA SAPMASI -- govde metninin baskin sol hizasindan (bkz.
+    `_dominant_alignment_band`) belirgin sekilde SAPAN her satir yeni bir
+    paragrafin ilk satiridir; sapma iki yone de bakar (klasik roman
+    dizgisindeki paragraf-basi girintisi ICERI dogru, icindekiler/kaynakca
+    tarzi "asili girinti"de ise madde basi DISARI dogru sapar);
     (2) anormal dikey bosluk -- girinti kullanmayan (bos-satir ile ayrilan) dizgi
     stillerini de yakalamak icin ikincil bir agdir.
 
@@ -378,10 +483,12 @@ def _merge_blocks_into_paragraphs(
         normal_gaps = [g for g in gaps if g <= line_height * 1.5]
         typical_gap = statistics.median(normal_gaps) if normal_gaps else line_height * 0.6
 
-        flush_x0 = min(x0 for x0, _, _, _, _, _, _ in single_line_blocks)
-        indent_threshold = flush_x0 + max(PARAGRAPH_INDENT_MIN_PT, line_height * PARAGRAPH_INDENT_LINE_HEIGHT_RATIO)
+        alignment_tolerance = max(PARAGRAPH_INDENT_MIN_PT, line_height * PARAGRAPH_INDENT_LINE_HEIGHT_RATIO)
+        body_x0_lo, body_x0_hi = _dominant_alignment_band(
+            [x0 for x0, _, _, _, _, _, _ in single_line_blocks], alignment_tolerance
+        )
     else:
-        typical_gap = indent_threshold = None
+        typical_gap = body_x0_lo = body_x0_hi = None
 
     paragraphs: list[tuple[str, float, bool]] = []
     current_lines: list[str] = []
@@ -396,9 +503,11 @@ def _merge_blocks_into_paragraphs(
         else:
             is_new_paragraph = not current_lines
             if not is_new_paragraph:
-                indented = x0 > indent_threshold
+                # Govde hiza bandinin DISINDA (iceride ya da disarida) kalan her
+                # satir paragraf basidir -- bkz. `_dominant_alignment_band`.
+                off_body_alignment = x0 < body_x0_lo or x0 > body_x0_hi
                 big_gap = (y0 - prev_y1) > typical_gap * PARAGRAPH_GAP_MULTIPLIER
-                is_new_paragraph = indented or big_gap
+                is_new_paragraph = off_body_alignment or big_gap
 
         if is_new_paragraph and current_lines:
             paragraphs.append(("\n".join(current_lines), current_font[0], current_font[1]))
@@ -637,6 +746,78 @@ def _block_text_and_font(block: dict) -> tuple[str, float, bool]:
     return "\n".join(lines_text), size, bold
 
 
+def _line_text_and_font(line: dict) -> tuple[str, float, bool]:
+    """`_block_text_and_font`'un tek bir `line` sözlüğü (dict block'un `lines`
+    listesindeki bir eleman) için karşılığı -- metni ve İLK span'ın punto/
+    kalınlığını döner. `_unmerge_multi_column_block`'ta kullanılır."""
+    text = "".join(span.get("text", "") for span in line.get("spans", []))
+    size = 0.0
+    bold = False
+    for span in line.get("spans", []):
+        size = span.get("size", 0.0)
+        bold = _is_bold_span(span.get("font", ""), span.get("flags", 0))
+        break
+    return text, size, bold
+
+
+def _bands_are_disjoint(bands: list[tuple[float, float]]) -> bool:
+    """`_detect_column_bands`'in döndürdüğü bantlar x-ekseninde birbiriyle
+    ÇAKIŞMIYORSA True. Gerçek sütunlar sayfada yan yana, örtüşmeyen
+    bölgelerdedir; girinti varyansından (ör. asılı girintili bir paragrafın
+    ilk satırı vs devam satırları) kaynaklanan sahte "bant"lar ise neredeyse
+    tamamen üst üste biner -- bkz. `_unmerge_multi_column_block`."""
+    ordered = sorted(bands)
+    return all(ordered[i][1] <= ordered[i + 1][0] for i in range(len(ordered) - 1))
+
+
+def _unmerge_multi_column_block(
+    block: dict, page_width: float
+) -> list[tuple[float, float, float, float, str, float, bool]] | None:
+    """PyMuPDF'in `get_text('dict')`'te tek bir "blok" olarak döndürdüğü,
+    ama aslında birden fazla sütunu (ör. çok-sütunlu İçindekiler/Katkıda-
+    Bulunanlar sayfaları) tek metin akışında birleştirdiği durumları yakalar.
+
+    `_collect_filtered_text_blocks`/`_detect_column_bands` sayfa-geneli sütun
+    ayrımını PyMuPDF'in ürettiği blok sınırları üzerinden yapıyor -- ama
+    PyMuPDF'in kendi blok segmentasyonu, aralarında yeterli boşluk olmayan
+    KISA bloklu çok-sütunlu sayfalarda (uzun paragraflı akademik 2-sütun
+    sayfaların aksine) birden fazla sütunu TEK bir geniş blokta
+    birleştirebiliyor -- bu durumda sayfa-geneli sütun tespitine hiç
+    ayrıştıracak bir şey kalmıyor (bkz. NOTES.md,
+    book-with-images_mitoloji-kitabi-alfa-yayinlari bulgusu).
+
+    Bu fonksiyon, bloğun KENDİ satırlarını `_detect_column_bands`'e vererek
+    (bloğun içinde birden fazla gerçek sütun bandı var mı diye) kontrol eder.
+    Bantlar bulunur VE birbiriyle ÇAKIŞMIYORSA (bkz. `_bands_are_disjoint` --
+    çakışma, girinti varyansından kaynaklanan yanlış-pozitifin işareti, dar/
+    asılı-girintili tek-sütun paragraflarda gözlendi -- geniş bir örneklemde
+    9 adaydan 8'i çakışan/yanlış-pozitif çıktı) blok satır satır
+    ayrıştırılıp döner; aksi halde None (çağıran, bloğu her zamanki gibi tek
+    parça olarak işler)."""
+    lines = block.get("lines", [])
+    if len(lines) <= 1:
+        return None
+
+    line_positions = []
+    for line in lines:
+        lx0, ly0, lx1, ly1 = line.get("bbox", (0.0, 0.0, 0.0, 0.0))
+        text = "".join(span.get("text", "") for span in line.get("spans", []))
+        line_positions.append((lx0, ly0, lx1, ly1, text))
+
+    bands = _detect_column_bands(line_positions, page_width)
+    if bands is None or not _bands_are_disjoint(bands):
+        return None
+
+    unmerged = []
+    for line in lines:
+        text, size, bold = _line_text_and_font(line)
+        if not text.strip():
+            continue
+        x0, y0, x1, y1 = line.get("bbox", (0.0, 0.0, 0.0, 0.0))
+        unmerged.append((x0, y0, x1, y1, text, size, bold))
+    return unmerged
+
+
 def _collect_filtered_text_blocks(
     page,
     blacklist: set[str] | None = None,
@@ -661,6 +842,7 @@ def _collect_filtered_text_blocks(
         return []
 
     page_height = page.rect.height
+    page_width = page.rect.width
     has_macroman_font = _page_has_macroman_font(page)
 
     # İki geçişli: önce TÜM metin bloklarının konumu/metni (filtre uygulanmadan)
@@ -672,6 +854,21 @@ def _collect_filtered_text_blocks(
     for block in raw_blocks:
         if block.get("type") != 0:  # yalnızca metin blokları (1 = görsel)
             continue
+
+        unmerged = _unmerge_multi_column_block(block, page_width)
+        if unmerged is not None:
+            # PyMuPDF bu bloğu yanlışlıkla birden fazla sütunu tek akışta
+            # birleştirmiş (bkz. `_unmerge_multi_column_block`) -- satır satır
+            # ekleniyor ki aşağıdaki sayfa-geneli `_detect_column_bands`
+            # (bkz. `_split_into_reading_order_segments`) doğru sütunlara
+            # ayırabilsin.
+            for x0, y0, x1, y1, raw_text, size, bold in unmerged:
+                text = _fix_mac_turkish_mojibake(raw_text.strip(), has_macroman_font)
+                if not text:
+                    continue
+                positioned.append((x0, y0, x1, y1, text, size, bold))
+            continue
+
         raw_text, size, bold = _block_text_and_font(block)
         text = _fix_mac_turkish_mojibake(raw_text.strip(), has_macroman_font)
         if not text:

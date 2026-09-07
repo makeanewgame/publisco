@@ -27,6 +27,7 @@ from converter import (
     _is_chapter_heading_shaped,
     _is_mostly_uppercase,
     _matches_known_title_or_author,
+    _merge_blocks_into_paragraphs,
     _toc_chapters_look_plausible,
 )
 
@@ -601,6 +602,94 @@ def test_detect_column_bands_ignores_scattered_narrow_labels(pdf_with_scattered_
     doc.close()
 
     assert bands is None
+
+
+def _line_blocks(entries, line_height=8.0, first_y=100.0, line_gap=1.5):
+    """(x0, metin) ciftlerinden `_merge_blocks_into_paragraphs`'in bekledigi
+    tek-satirlik blok listesi uretir -- satirlar esit araliklarla asagi dizilir,
+    yani dikey-bosluk sinyali HIC tetiklenmez ve test yalnizca hiza sinyalini
+    olcer."""
+    blocks = []
+    y = first_y
+    for x0, text in entries:
+        blocks.append((x0, y, x0 + 100.0, y + line_height, text, 10.0, False))
+        y += line_height + line_gap
+    return blocks
+
+
+def test_merge_blocks_keeps_hanging_indent_entries_together():
+    """Regresyon testi: "asili girinti" dizgisinde (icindekiler/kaynakca --
+    madde basi DISARIDA, devam satirlari ICERIDE) bir madde tek bir paragraf
+    olarak kalmali. Eski kod govde hizasi olarak `min(x0)`'i alip "iceride
+    olan = yeni paragraf" varsaydigindan HER devam satirini ayri paragraf
+    yapiyordu (gercek kitap: book-with-images_mitoloji-kitabi-alfa-yayinlari
+    icindekiler sayfasi, bkz. NOTES.md)."""
+    blocks = _line_blocks(
+        [
+            (24.0, "18 Gaia once kendi esiti"),
+            (39.0, "Uranos'u dogurdu"),
+            (39.0, "Evrenin baslangici"),
+            (24.0, "24 Rhea bir tasi kundaga"),
+            (39.0, "sardi ve yutmasi icin"),
+            (39.0, "Kronos'a verdi"),
+            (39.0, "Olympos Tanrilari"),
+        ]
+    )
+    paragraphs = [text for text, _size, _bold in _merge_blocks_into_paragraphs(blocks)]
+
+    assert len(paragraphs) == 2
+    assert paragraphs[0].startswith("18 Gaia")
+    assert "Evrenin baslangici" in paragraphs[0]
+    assert paragraphs[1].startswith("24 Rhea")
+    assert "Olympos Tanrilari" in paragraphs[1]
+
+
+def test_merge_blocks_tolerates_noisy_ocr_left_edges():
+    """Regresyon testi: bulanik taramalarda OCR satir kutularinin sol kenari
+    titresir (burada ~277-310 px). Eski kod referans olarak `min(x0)`'i --
+    yani titresimin EN SOL ucunu -- alip esigi govde bulutunun ICINE
+    dusurdugunden, sirf gurultu yuzunden govde satirlarini "girintili" sayip
+    cumleleri ortasindan boluyordu (gercek kitap: poor-quality-scan_dikenler-
+    sehri, bkz. NOTES.md). Gercek girintiyle (350) baslayan satir ise hala
+    yeni paragraf olmali."""
+    blocks = _line_blocks(
+        [
+            (277.0, "gurultulu ilk govde satiri"),
+            (298.0, "ayni paragrafin devami"),
+            (310.0, "yine ayni paragrafin devami"),
+            (285.0, "hala ayni paragraf"),
+            (350.0, "Gercekten girintili yeni paragraf"),
+            (298.0, "onun devam satiri"),
+        ],
+        line_height=46.0,
+        line_gap=8.0,
+    )
+    paragraphs = [text for text, _size, _bold in _merge_blocks_into_paragraphs(blocks)]
+
+    assert len(paragraphs) == 2
+    assert "hala ayni paragraf" in paragraphs[0]
+    assert paragraphs[1].startswith("Gercekten girintili")
+    assert "onun devam satiri" in paragraphs[1]
+
+
+def test_merge_blocks_still_splits_classic_first_line_indent():
+    """Klasik roman dizgisi (paragraf basi ICERIDE, devam satirlari hizali)
+    eskisi gibi calismaya devam etmeli -- yeni hiza mantigi bu yaygin durumu
+    degistirmemeli."""
+    blocks = _line_blocks(
+        [
+            (115.0, "Ilk paragrafin ilk satiri"),
+            (100.0, "ilk paragrafin devami"),
+            (100.0, "ilk paragrafin son satiri"),
+            (115.0, "Ikinci paragrafin ilk satiri"),
+            (100.0, "ikinci paragrafin devami"),
+        ]
+    )
+    paragraphs = [text for text, _size, _bold in _merge_blocks_into_paragraphs(blocks)]
+
+    assert len(paragraphs) == 2
+    assert paragraphs[0].startswith("Ilk paragrafin ilk satiri")
+    assert paragraphs[1].startswith("Ikinci paragrafin ilk satiri")
 
 
 def test_convert_pdf_to_epub_keeps_paragraphs_as_separate_p_tags(pdf_with_two_paragraphs_bytes):

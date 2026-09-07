@@ -8,7 +8,6 @@ import { HeroVisualCard } from '../components/hero/HeroVisualCard';
 import { PlatformStrip } from '../components/PlatformStrip';
 import { FaqAccordion } from '../components/FaqAccordion';
 import { useLocale } from '../i18n';
-import { useTheme } from '../theme';
 import { selectCurrentUser } from '../app/authSlice';
 
 type FeatureIconType = 'document' | 'bolt' | 'lock';
@@ -43,7 +42,6 @@ function FeatureIcon({ type }: { type: FeatureIconType }) {
 
 export default function HomePage() {
   const { t } = useLocale();
-  const { theme } = useTheme();
   const location = useLocation();
   const user = useSelector(selectCurrentUser);
   const isAuthenticated = !!user;
@@ -108,49 +106,7 @@ export default function HomePage() {
   return (
     <main className="px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
       <div className="mx-auto flex max-w-7xl flex-col">
-        {theme === 'folder' ? (
-          <div className="folder-wrap">
-
-
-            <div className="paper-body">
-              <div className="relative grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-                <div className="flex flex-col justify-center">
-                  {heroBadge}
-                  <h1 className="max-w-3xl text-4xl font-black leading-[0.95] tracking-[-0.03em] text-[#241c15] sm:text-5xl lg:text-6xl">
-                    {heroTitleBefore}
-                    {highlightIndex >= 0 && (
-                      <span className="hl-wrap">
-                        <span className="hl-mark" />
-                        <span className="hl-text">{heroTitleHighlight}</span>
-                      </span>
-                    )}
-                    {heroTitleAfter}{' '}
-                    {heroAccent}
-                  </h1>
-                  <p className="mt-5 max-w-2xl text-lg leading-8 text-[#5f544b]">
-                    {t('hero.description')}
-                  </p>
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Link to="/convert">
-                      <Button className="rounded-full bg-coral px-6 py-3 text-white shadow-[0_12px_32px_rgba(255,138,94,0.28)] hover:bg-coral/90">
-                        {t('hero.ctaPrimary')}
-                      </Button>
-                    </Link>
-                    <Button className="rounded-full border-2 border-mint bg-transparent px-6 py-3 text-mint hover:bg-mint-pale">
-                      {t('hero.ctaSecondary')}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center">
-                  <HeroVisualCard />
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <section className="relative overflow-hidden rounded-[36px] border border-[#e8d9c4] bg-[#fffdf8] p-8 shadow-[0_24px_60px_-30px_rgba(36,30,23,0.18)] sm:p-10 lg:p-14">
+          <section className="relative overflow-hidden rounded-[36px] border border-[#e8d9c4] bg-[#fffdf8] p-8 shadow-[0_24px_60px_-30px_rgba(36,30,23,0.18)] sm:p-10 lg:p-14">
               <motion.div
                 className="absolute left-[-30px] top-[-20px] h-28 w-28 rounded-full bg-coral-soft/70 pointer-events-none"
                 animate={{
@@ -243,8 +199,6 @@ export default function HomePage() {
                 </div>
               </div>
             </section>
-          </>
-        )}
       </div>
 
       <div className="my-16 -mx-4 sm:my-20 sm:-mx-6 lg:my-24 lg:-mx-8">

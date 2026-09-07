@@ -1,33 +1,13 @@
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { useTheme } from '../theme';
 import { useLocale } from '../i18n';
 import { Logo } from './Logo';
 import { selectCurrentUser } from '../app/authSlice';
 
 export function Footer() {
-  const { theme } = useTheme();
   const { t } = useLocale();
   const currentYear = new Date().getFullYear();
   const isAuthenticated = !!useSelector(selectCurrentUser);
-
-  if (theme === 'folder') {
-    return (
-      <footer className="border-t border-[#e8d9c4] bg-[#fffdf8] px-4 py-6 text-sm text-[#5f544b]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <Logo />
-            <span className="text-xs">© {currentYear}</span>
-          </div>
-          <div className="flex flex-wrap justify-center gap-6 text-xs">
-            <a href="#features" className="transition hover:text-[#241c15]">{t('footer.features')}</a>
-            <a href="#how" className="transition hover:text-[#241c15]">{t('footer.flow')}</a>
-            <a href="#faq" className="transition hover:text-[#241c15]">{t('nav.faq')}</a>
-          </div>
-        </div>
-      </footer>
-    );
-  }
 
   return (
     <footer className="border-t border-[#e8d9c4] bg-gradient-to-b from-[#fffdf8] to-[#faf6f0]">

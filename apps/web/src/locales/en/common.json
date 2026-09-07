@@ -8,9 +8,7 @@
     "home": "Home",
     "library": "My Library",
     "pricing": "Pricing",
-    "account": "Account",
-    "themeFolder": "Folder",
-    "themeDefault": "Classic"
+    "account": "Account"
   },
   "hero": {
     "badge": "Crafted for the e-reader experience",

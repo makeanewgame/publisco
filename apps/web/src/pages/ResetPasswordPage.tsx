@@ -4,7 +4,6 @@ import { Button } from '../components/ui/button';
 import { PasswordInput } from '../components/ui/password-input';
 import { Logo } from '../components/Logo';
 import { useLocale } from '../i18n';
-import { useTheme } from '../theme';
 import { navPillClass } from '../lib/themeClasses';
 import { useResetPasswordMutation } from '../app/services/authApi';
 
@@ -13,7 +12,6 @@ export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const { locale, setLocale, t } = useLocale();
-  const { theme } = useTheme();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -73,7 +71,7 @@ export default function ResetPasswordPage() {
             <button
               type="button"
               onClick={() => setLocale(locale === 'tr' ? 'en' : 'tr')}
-              className={navPillClass(theme)}
+              className={navPillClass()}
             >
               {locale === 'tr' ? 'EN' : 'TR'}
             </button>

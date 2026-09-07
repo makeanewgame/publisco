@@ -3,14 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Logo } from '../components/Logo';
 import { useLocale } from '../i18n';
-import { useTheme } from '../theme';
 import { navPillClass } from '../lib/themeClasses';
 import { useForgotPasswordMutation } from '../app/services/authApi';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const { locale, setLocale, t } = useLocale();
-  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -48,7 +46,7 @@ export default function ForgotPasswordPage() {
             <button
               type="button"
               onClick={() => setLocale(locale === 'tr' ? 'en' : 'tr')}
-              className={navPillClass(theme)}
+              className={navPillClass()}
             >
               {locale === 'tr' ? 'EN' : 'TR'}
             </button>

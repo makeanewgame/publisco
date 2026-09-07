@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Logo } from '../components/Logo';
 import { useLocale } from '../i18n';
-import { useTheme } from '../theme';
 import { navPillClass } from '../lib/themeClasses';
 import { useVerifyEmailMutation, useResendVerificationMutation } from '../app/services/authApi';
 import { setCredentials } from '../app/authSlice';
@@ -16,7 +15,6 @@ export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { locale, setLocale, t } = useLocale();
-  const { theme } = useTheme();
   const email = (location.state as { email?: string } | null)?.email ?? '';
 
   const [code, setCode] = useState('');
@@ -82,7 +80,7 @@ export default function VerifyEmailPage() {
             <button
               type="button"
               onClick={() => setLocale(locale === 'tr' ? 'en' : 'tr')}
-              className={navPillClass(theme)}
+              className={navPillClass()}
             >
               {locale === 'tr' ? 'EN' : 'TR'}
             </button>

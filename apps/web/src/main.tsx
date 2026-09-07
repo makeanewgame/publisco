@@ -7,7 +7,6 @@ import { PersistGate } from 'redux-persist/integration/react';
 import App from './App';
 import { store, persistor } from './app/store';
 import { LocaleProvider, useLocale } from './i18n';
-import { ThemeProvider } from './theme';
 import './index.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
@@ -27,13 +26,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter>
-          <ThemeProvider>
-            <LocaleProvider>
-              <LocalizedGoogleOAuthProvider>
-                <App />
-              </LocalizedGoogleOAuthProvider>
-            </LocaleProvider>
-          </ThemeProvider>
+          <LocaleProvider>
+            <LocalizedGoogleOAuthProvider>
+              <App />
+            </LocalizedGoogleOAuthProvider>
+          </LocaleProvider>
         </BrowserRouter>
       </PersistGate>
     </Provider>

@@ -2,15 +2,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Logo } from './Logo';
-import { navPillClass, userChipClass } from '../lib/themeClasses';
+import { userChipClass } from '../lib/themeClasses';
 import { useLocale } from '../i18n';
-import { useTheme } from '../theme';
 import { clearCredentials, selectCurrentUser } from '../app/authSlice';
-import { ThemeToggle } from './ThemeToggle';
 
 export function Navbar() {
   const { locale, setLocale, t } = useLocale();
-  const { theme } = useTheme();
   const { pathname } = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -39,7 +36,7 @@ export function Navbar() {
   );
 
   const userChip = user && (
-    <div className={userChipClass(theme)}>
+    <div className={userChipClass()}>
       <div className="flex items-center gap-2">
         {user.avatarUrl ? (
           <img src={user.avatarUrl} alt={user.name} className="h-6 w-6 rounded-full" />
@@ -56,41 +53,10 @@ export function Navbar() {
     </div>
   );
 
-  if (theme === 'folder') {
-    return (
-      <div className="tabs-row">
-        <ThemeToggle />
-        <Logo />
-        <Link to="/#features" className="tab t1">{t('nav.features')}</Link>
-        <Link to="/#how" className="tab t2">{t('nav.how')}</Link>
-        <Link to="/#faq" className="tab t3">{t('nav.faq')}</Link>
-        <Link to="/convert" className={navPillClass(theme, isConvertActive)}>{t('library.convert')}</Link>
-        <Link to="/premium" className={navPillClass(theme, isPremiumActive)}>{t('nav.pricing')}</Link>
-        {isAuthenticated && (
-          <>
-            <Link to="/library" className={navPillClass(theme, isLibraryActive)}>{t('nav.library')}</Link>
-            <Link to="/account" className={navPillClass(theme, isAccountActive)}>{t('nav.account')}</Link>
-          </>
-        )}
-        <div className="tabs-row-end">
-          {localeToggle}
-          {!isAuthenticated && (
-            <>
-              <Link to="/auth/signin" className="tab tab-ghost">{t('nav.login')}</Link>
-              <Link to="/auth/signup" className="tab-cta">{t('nav.signup')}</Link>
-            </>
-          )}
-          {userChip}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto">
       <nav className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-4 border-b border-[#e8d9c4]/50 bg-[#fffdf8]/95 px-4 py-4 backdrop-blur-md sm:px-6 lg:px-8 shadow-[0_1px_3px_rgba(36,28,21,0.06)]">
         <div className="flex items-center gap-8">
-          <ThemeToggle />
           <Logo />
           <div className="hidden items-center gap-1 text-[#6e6257] lg:flex">
             <Link

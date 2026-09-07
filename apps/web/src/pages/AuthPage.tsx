@@ -6,8 +6,6 @@ import { Button } from '../components/ui/button';
 import { PasswordInput } from '../components/ui/password-input';
 import { Logo } from '../components/Logo';
 import { useLocale } from '../i18n';
-import { useTheme } from '../theme';
-import { navPillClass } from '../lib/themeClasses';
 import { useSignUpMutation, useSignInMutation, useGoogleAuthMutation } from '../app/services/authApi';
 import { setCredentials } from '../app/authSlice';
 
@@ -16,7 +14,6 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { locale, setLocale, t } = useLocale();
-  const { theme } = useTheme();
   const isSignUp = location.pathname.includes('/signup');
   const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/';
 

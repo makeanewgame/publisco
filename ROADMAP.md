@@ -2,8 +2,9 @@
 
 Bu dosya, `modal_worker/eval/` framework'üyle sürdürülen kalite iyileştirme çalışmasının
 güncel durumunu ve sıradaki adımları tutar — sohbet oturumu değişse bile buradan devam
-edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/bulgular
-`NOTES.md`'nin "Sorunlar (Buglar)" bölümünde.
+edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR_v2.md`'de (2026-09-07 öncesi
+maddeler dondurulmuş arşiv `TAMAMLANANLAR.md`'de), açık bug/bulgular `NOTES.md`'nin
+"Sorunlar (Buglar)" bölümünde.
 
 ## Yöntem (her fazda aynı döngü izleniyor)
 
@@ -17,7 +18,7 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR.md`'de, açık bug/
    düzelt + yeni regresyon testi ekle (fix'siz haliyle testin gerçekten kırmızı
    olduğunu doğrula, sonra fix'i geri getir)
 5. `pnpm test:conversion --fast` ile önce/sonra karşılaştır
-6. `NOTES.md`/`TAMAMLANANLAR.md` güncelle
+6. `NOTES.md`/`TAMAMLANANLAR_v2.md` güncelle
 7. Kullanıcı "commitle" derse commit et — otomatik commit YOK
 
 ## Şu ana kadarki skor ilerlemesi (fast eval, 16 kitap)

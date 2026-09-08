@@ -768,6 +768,52 @@ def _fix_mac_turkish_mojibake(text: str, has_macroman_font: bool) -> str:
     return text
 
 
+# Adobe Symbol font kodlaması: bu fontlar Yunan harflerini/matematik
+# işaretlerini ASCII konumlarında taşır ('f' konumu = φ, 's' = σ, 't' = τ...)
+# ve PDF'e gömülürken kod noktaları `0xF000 + ASCII` ile Private Use Area'ya
+# kaydırılır. Biz bunları sadakatle çıkarınca EPUB'a U+F0xx giriyor; Kindle o
+# fontu tanımadığı için her biri kutu (□) olarak görünüyor. Tablo 0x20-0x7E
+# aralığını (Symbol'ün Yunan alfabesi + temel işaretler bölgesi) kapsar,
+# indeks = kod - 0x20.
+#
+# ÜST ARALIK (0xA0-0xFE) BİLİNÇLİ OLARAK KAPSAM DIŞI: orası büyük parantez/
+# köşeli ayraç/integral işaretlerinin MONTAJ PARÇALARIDIR (tek başına anlamlı
+# bir Unicode karşılığı yok, satır satır birleştirilmek üzere tasarlanmış).
+# Külliyat ölçümünde o aralık neredeyse tamamen golden'da `unsupported: true`
+# olan matematik kitaplarında görüldü (`mathematical_franctional`,
+# `mathematical_order-integrations`), hedefimiz olan `book-with-images_966108`
+# ise TAMAMEN alt aralıkta kalıyor.
+_SYMBOL_FONT_PUA_TABLE = (
+    " !∀#∃%&∋()∗+,−./"  # 0x20-0x2F
+    "0123456789:;<=>?"  # 0x30-0x3F
+    "≅ΑΒΧΔΕΦΓΗΙϑΚΛΜΝΟ"  # 0x40-0x4F
+    "ΠΘΡΣΤΥςΩΞΨΖ[∴]⊥_"  # 0x50-0x5F
+    "‾αβχδεφγηιϕκλμνο"  # 0x60-0x6F
+    "πθρστυϖωξψζ{|}∼"  # 0x70-0x7E
+)
+
+
+def _decode_symbol_font_pua(text: str, font_name: str) -> str:
+    """Symbol ailesinden gelen PUA kod noktalarını gerçek Unicode'a çevirir.
+
+    Font adına GATE KONULMASI şart: Wingdings/Webdings/FontAwesome de aynı
+    `0xF000 + kod` düzenini kullanır ama oradaki glyph'ler Yunan harfi değil
+    dingbat'tir -- külliyatta 2384 böyle karakter ölçüldü, gate olmasa hepsi
+    anlamsız Yunan harfine dönerdi (Symbol ailesi ayrıca 3446 karakter)."""
+    if "symbol" not in font_name.lower() or not text:
+        return text
+    out = []
+    for ch in text:
+        offset = ord(ch) - 0xF020
+        out.append(_SYMBOL_FONT_PUA_TABLE[offset] if 0 <= offset < len(_SYMBOL_FONT_PUA_TABLE) else ch)
+    return "".join(out)
+
+
+def _span_text(span: dict) -> str:
+    """Bir span'ın metni, font'a bağlı düzeltmeler uygulanmış halde."""
+    return _decode_symbol_font_pua(span.get("text", ""), span.get("font", ""))
+
+
 def _block_text_and_font(block: dict) -> tuple[str, float, bool]:
     """`page.get_text('dict')`'in bir metin bloğundan, `get_text('blocks')`'un
     ürettiğiyle aynı biçimde (satırlar `\\n` ile birleşik) düz metni, ve
@@ -782,7 +828,7 @@ def _block_text_and_font(block: dict) -> tuple[str, float, bool]:
     bold = False
     first_span_seen = False
     for line in block.get("lines", []):
-        line_text = "".join(span.get("text", "") for span in line.get("spans", []))
+        line_text = "".join(_span_text(span) for span in line.get("spans", []))
         lines_text.append(line_text)
         if not first_span_seen:
             for span in line.get("spans", []):
@@ -797,7 +843,7 @@ def _line_text_and_font(line: dict) -> tuple[str, float, bool]:
     """`_block_text_and_font`'un tek bir `line` sözlüğü (dict block'un `lines`
     listesindeki bir eleman) için karşılığı -- metni ve İLK span'ın punto/
     kalınlığını döner. `_unmerge_multi_column_block`'ta kullanılır."""
-    text = "".join(span.get("text", "") for span in line.get("spans", []))
+    text = "".join(_span_text(span) for span in line.get("spans", []))
     size = 0.0
     bold = False
     for span in line.get("spans", []):
@@ -848,7 +894,7 @@ def _unmerge_multi_column_block(
     line_positions = []
     for line in lines:
         lx0, ly0, lx1, ly1 = line.get("bbox", (0.0, 0.0, 0.0, 0.0))
-        text = "".join(span.get("text", "") for span in line.get("spans", []))
+        text = "".join(_span_text(span) for span in line.get("spans", []))
         line_positions.append((lx0, ly0, lx1, ly1, text))
 
     bands = _detect_column_bands(line_positions, page_width)
@@ -1467,7 +1513,7 @@ def _detect_chapter_candidate_from_dict_page(page, body_font_size: float | None)
             spans = line.get("spans", [])
             if not spans:
                 continue
-            text = "".join(s.get("text", "") for s in spans).strip()
+            text = "".join(_span_text(s) for s in spans).strip()
             if not text or not _is_chapter_heading_shaped(text):
                 continue
             size = spans[0].get("size", 0.0)
@@ -1794,7 +1840,7 @@ def _extract_cover_title_author(doc, page_index: int = 0) -> tuple[str | None, s
         for line in block.get("lines", []):
             spans = line.get("spans", [])
             text = _fix_mac_turkish_mojibake(
-                "".join(span.get("text", "") for span in spans).strip(), has_macroman_font
+                "".join(_span_text(span) for span in spans).strip(), has_macroman_font
             )
             if not text:
                 continue

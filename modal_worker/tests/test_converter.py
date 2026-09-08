@@ -21,6 +21,7 @@ from converter import (
 )
 from converter import (
     _collect_filtered_text_blocks,
+    _decode_symbol_font_pua,
     _detect_chapter_candidate_from_dict_page,
     _detect_column_bands,
     _filter_chapter_candidates,
@@ -28,6 +29,7 @@ from converter import (
     _is_mostly_uppercase,
     _matches_known_title_or_author,
     _merge_blocks_into_paragraphs,
+    _span_text,
     _toc_chapters_look_plausible,
 )
 
@@ -878,3 +880,41 @@ def test_collect_filtered_text_blocks_still_drops_standalone_header_in_margin(pd
 
     texts = [b[4].lower() for b in blocks]
     assert not any("kosu basligi" in t for t in texts)
+
+
+def test_decode_symbol_font_pua_maps_greek_letters():
+    """Symbol ailesi fontlar Yunan harflerini ASCII konumlarında taşır ve PDF'e
+    gömülürken `0xF000 + ASCII`'ye kaydırılır -- EPUB'da Kindle bunları kutu (□)
+    olarak gösteriyordu. Regresyon testi: `book-with-images_966108`'de ölçülen
+    gerçek kod noktaları (kaya mekaniği kitabı: σ gerilme, τ kesme, φ sürtünme
+    açısı) doğru harflere çözülmeli."""
+    assert _decode_symbol_font_pua("\uf073", "SymbolMT") == "σ"
+    assert _decode_symbol_font_pua("\uf074", "SymbolMT") == "τ"
+    assert _decode_symbol_font_pua("\uf066", "SymbolMT") == "φ"
+    assert _decode_symbol_font_pua("\uf061\uf062", "Symbol") == "αβ"
+    # rakam/noktalama Symbol'de de kendisine eşlenir
+    assert _decode_symbol_font_pua("\uf032", "SymbolMT") == "2"
+
+
+def test_decode_symbol_font_pua_is_gated_on_font_family():
+    """Wingdings/Webdings/FontAwesome de aynı `0xF000 + kod` düzenini kullanır
+    ama oradaki glyph DINGBAT'tir, Yunan harfi değil -- külliyatta 2384 böyle
+    karakter ölçüldü (Symbol ailesinde 3446). Gate olmasa hepsi anlamsız Yunan
+    harfine dönerdi."""
+    for font in ("Wingdings", "Wingdings2", "Webdings", "FontAwesome5Free-Solid", "Arial"):
+        assert _decode_symbol_font_pua("\uf066", font) == "\uf066"
+
+
+def test_decode_symbol_font_pua_leaves_upper_range_and_plain_text_alone():
+    """0xA0-0xFE aralığı büyük parantez/integral MONTAJ PARÇALARIDIR (tek başına
+    anlamlı Unicode karşılığı yok) -- bilinçli olarak kapsam dışı. Normal metin
+    de hiç değişmemeli."""
+    assert _decode_symbol_font_pua("\uf0e6", "SymbolMT") == "\uf0e6"
+    assert _decode_symbol_font_pua("normal metin", "SymbolMT") == "normal metin"
+    assert _decode_symbol_font_pua("", "SymbolMT") == ""
+
+
+def test_span_text_applies_symbol_decoding():
+    assert _span_text({"text": "\uf073", "font": "SymbolMT"}) == "σ"
+    assert _span_text({"text": "\uf073", "font": "Wingdings"}) == "\uf073"
+    assert _span_text({}) == ""

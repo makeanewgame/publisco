@@ -4,6 +4,19 @@
 
 ## Sorunlar (tamamlanan)
 
+- [x] (2026-09-08) **NOTES.md'deki bir teşhis ÇÜRÜTÜLDÜ ve asıl sebep bulunup düzeltildi.** Açık madde, `technical-with-code_cplus-conherince` (-3.2), `scanned_002` (-2.7) ve `technical-with-code_functional-programing` (-1.1) skor düşüşlerini boş-sayfa-atlama fix'ine bağlıyor, "golden `expected_paragraph_range` eski dolgu-sayfa davranışına kalibre kalmış, bu üç kitabın metadata'sı düzeltilmeli" diyordu. Değerleri değiştirmeden ÖNCE hipotez ölçüldü (madde zaten "muhtemelen" diye yazılmıştı, hiç doğrulanmamıştı) ve **çürüdü**:
+  - Boş sayfa sayısı: cplus **4/530**, scanned_002 **3/188**, functional-programing 46/261. 530 sayfalık bir kitapta 4 dolgu sayfası -3.2 puanlık bir düşüş yaratamaz.
+  - cplus'ın `Structure` bileşeni zaten **%100** — yani `expected_paragraph_range` hiç sorunlu değildi. Golden'ı "düzeltmek" gerçek bir sorunu örtecekti.
+
+  **Asıl sebep**: golden'daki `must_include_phrases`'in ÜÇÜ birden kitabın gerçek metniyle birebir eşleşmiyordu (yanlış alıntı) — bu yüzden `text_completeness` haksız yere düşük çıkıyordu. Her biri hem ham PDF'te hem üretilen EPUB'da izlenip doğrulandı; **üçünde de bizim çıktımız PDF'le birebir aynıydı, hatalı olan golden'dı**:
+  1. `cplus` s.266 — golden bir parantezli aramotifi atlamış: "...if the performance **(whether in terms of reduced speed of execution or increased throughput)** increases as..."
+  2. `functional-programing` s.79 — golden "...result of a function." diye noktalamış, kitap "...result of a function **and is particularly useful for functional programming.**" diye devam ediyor
+  3. `functional-programing` s.53 — golden "...code snippet**.**" yazmış, kitapta "...code snippet**:**"
+
+  Fix: üç ifade de PDF'ten birebir alınarak `metadata.json`'da düzeltildi, her birine düzeltme notu eklendi. Sonuç: **cplus 81.3→91.0** (text completeness %75→%100), **functional-programing 70.2→89.7** (%50→%100). Kenar payı filtresinin bu blokları silmediği de ayrıca doğrulandı (ikisi de filtre sonrası korunuyor) — yani metin kaybı yoktu, yalnızca ölçüm yanlıştı.
+
+  **Ders**: golden verisini "kalibrasyon artığı" gerekçesiyle çıktımıza yaklaştırmadan önce hipotezi ölçmek şart — bu turda tam da o refleks gerçek bir golden hatasını (ve iki kitapta ~10-20 puanlık gizli kazancı) ortaya çıkardı. `scanned_002`'nin kalan düşüklüğünün sebebi de paragraf aralığı değil (bölüm tespiti %12.5, images %53.3) — NOTES.md'de ayrı takipte.
+
 - [x] (2026-09-08, Kindle QA turu) `book-with-images_966108`'de Yunan harfleri (σ gerilme, τ kesme, φ içsel sürtünme açısı) Kindle'da kutu (□) olarak çıkıyordu — 149 sayfanın 75'inde 281 karakter, hem gövde metninde ("(□b)") hem formül satırlarında. Kök neden: kaynak PDF `SymbolMT` fontu kullanıyor; Symbol ailesi fontlar Yunan harflerini ASCII konumlarında taşır ('f' konumu = φ, 's' = σ, 't' = τ) ve PDF'e gömülürken kod noktaları `0xF000 + ASCII` ile Private Use Area'ya kaydırılır. Biz bunları sadakatle çıkarıyorduk, EPUB'a `U+F0xx` giriyordu, Kindle o fontu tanımadığı için hepsi tofu oluyordu.
 
   **Önceki teşhis YANLIŞTI ve bu turda düzeltildi**: NOTES.md'de bu madde "regex ile çözülemez, font encoding/cmap seviyesinde inceleme gerekir, şimdilik kapsam dışı" diye duruyordu. Ölçüm bunun aşırı karamsar olduğunu gösterdi — kod noktaları tek bir standart fonttan ve sabit, belgelenmiş bir kodlamadan geliyordu, yani statik bir tabloyla çözülüyordu.

@@ -17,8 +17,8 @@
   ],
   "expected_image_count": 12,
   "must_include_phrases": [
-    "Lazy evaluation, also known as non-strict evaluation, call-by-need and deffered execution, is an evaluation strategy that waits until the value is needed to compute the result of a function.",
-    "This makes adding a new size or a new coffee type as simple as shown in the following code snippet.",
+    "Lazy evaluation, also known as non-strict evaluation, call-by-need and deffered execution, is an evaluation strategy that waits until the value is needed to compute the result of a function and is particularly useful for functional programming.",
+    "This makes adding a new size or a new coffee type as simple as shown in the following code snippet:",
     "JavaScript is a general-purpose language, meaning it's fully capable of multiple programming styles.",
     "The two paradigms can complement each other and coexist side by side."
   ],
@@ -28,5 +28,5 @@
     2412.0
   ],
   "unsupported": false,
-  "notes": "Sayfa 1-261 (input.pdf), JavaScript functional programming handbook. text_density 0.8 (some pages lighter, possibly code-heavy). Cover pages empty but Chapter titles visible in samples. Expected_chapters extracted from 'What this book covers' section. Must_include_phrases from explanatory prose. Estimated 2010 paragraphs with ~20% tolerance. 12 images."
+  "notes": "Sayfa 1-261 (input.pdf), JavaScript functional programming handbook. text_density 0.8 (some pages lighter, possibly code-heavy). Cover pages empty but Chapter titles visible in samples. Expected_chapters extracted from 'What this book covers' section. Must_include_phrases from explanatory prose. Estimated 2010 paragraphs with ~20% tolerance. 12 images. [2026-09-08 DUZELTME] must_include_phrases'teki bu ifade YANLIS ALINTIYDI (kitabin gercek metniyle birebir eslesmiyordu, bu yuzden text_completeness yanlislikla dusuk cikiyordu); PDF sayfa 79 ve 53'ten birebir alinarak duzeltildi (bu kitapta IKI ifade birden yanlisti: biri erken noktalanmis, digeri ':' yerine '.' ile bitirilmis). Pipeline ciktisi zaten DOGRUYDU -- uretilen EPUB'da cumle tam ve dogru."
 }

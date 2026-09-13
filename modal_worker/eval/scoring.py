@@ -81,6 +81,16 @@ def _clip(value: float, low: float = 0.0, high: float = 1.0) -> float:
     return max(low, min(high, value))
 
 
+MAX_EXCLUDE_VIOLATION_PENALTY = 0.7  # sizan-ifade cezasinin tavani -- asla tam 1.0 olmamali.
+# Eskiden `base * (1 - violation_ratio)` idi: `must_exclude_count` kucukken (ör. 2) TUM
+# ifadeler sizarsa (violation_ratio=1.0) recall'den bagimsiz olarak DAIMA tam sifirliyordu.
+# Bu, "gerekli icerik hayatta mi" (recall) ile "gereksiz gurultu sizdi mi" (exclude) sinyallerini
+# tek bir carpimda birlestirip ikinciye recall'u tamamen ezme yetkisi veriyordu -- kucuk
+# `must_exclude_count` degerlerinde asiri gurultulu/kirilgan bir davranis (bkz. NOTES.md,
+# two-column-academic_attention-is-all-you-need: recall %75, Structure/Images %100 iken
+# yalnizca 2 exclude-phrase'in ikisi de sizinca text_completeness %0'a dusuyordu). Tavan,
+# sizinti hala agir bir ceza almasini (en fazla %70 dusus) saglarken, yuksek recall'u sifira
+# indirmesini engelliyor.
 def _text_completeness_score(result: TextCompletenessResult, must_exclude_count: int) -> float | None:
     if result.word_recall is not None and result.word_precision is not None:
         base = 0.6 * result.word_recall + 0.4 * result.word_precision
@@ -91,7 +101,7 @@ def _text_completeness_score(result: TextCompletenessResult, must_exclude_count:
 
     if must_exclude_count:
         violation_ratio = len(result.phrase_exclude_violations) / must_exclude_count
-        base = base * (1 - violation_ratio)
+        base = base * (1 - MAX_EXCLUDE_VIOLATION_PENALTY * violation_ratio)
 
     return _clip(base)
 

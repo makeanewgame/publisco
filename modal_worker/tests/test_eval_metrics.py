@@ -20,6 +20,7 @@ from eval.runner import run_conversion
 from eval.scoring import (
     GATE_COMPLETENESS_CAP,
     GATE_VALIDITY_CAP,
+    MAX_EXCLUDE_VIOLATION_PENALTY,
     ScoringInput,
     score_book,
 )
@@ -303,6 +304,45 @@ def test_scoring_high_quality_book_scores_excellent():
     assert output.overall_score >= 90
     assert output.category == "Excellent"
     assert output.gates_triggered == []
+
+
+def test_exclude_violation_penalty_does_not_zero_out_high_recall():
+    """`two-column-academic_attention-is-all-you-need` bulgusu: kucuk bir
+    `must_exclude_count` (2) ile TUMU sizarsa (violation_ratio=1.0), eski
+    `base * (1 - violation_ratio)` formulu recall %75 olsa bile
+    text_completeness'i DAIMA tam sifira indiriyordu -- Structure/Images %100
+    olan bir kitap "Poor" gorunuyordu. Ceza hala agir olmali (bkz.
+    MAX_EXCLUDE_VIOLATION_PENALTY) ama recall'u tamamen ezmemeli."""
+    output = score_book(
+        _base_scoring_input(
+            text_completeness=TextCompletenessResult(
+                phrase_include_recall=0.75,
+                phrase_include_misses=["some missing phrase"],
+                phrase_exclude_violations=["leaked one", "leaked two"],
+            ),
+            must_exclude_phrase_count=2,
+        )
+    )
+    assert output.component_scores["text_completeness"] == pytest.approx(0.75 * (1 - MAX_EXCLUDE_VIOLATION_PENALTY))
+    assert output.component_scores["text_completeness"] > 0.0
+
+
+def test_exclude_violation_penalty_still_scales_with_ratio():
+    output_full = score_book(
+        _base_scoring_input(
+            text_completeness=TextCompletenessResult(
+                phrase_include_recall=0.9, phrase_exclude_violations=["a", "b"]
+            ),
+            must_exclude_phrase_count=2,
+        )
+    )
+    output_half = score_book(
+        _base_scoring_input(
+            text_completeness=TextCompletenessResult(phrase_include_recall=0.9, phrase_exclude_violations=["a"]),
+            must_exclude_phrase_count=2,
+        )
+    )
+    assert output_full.component_scores["text_completeness"] < output_half.component_scores["text_completeness"]
 
 
 # --- integration: runner + epub_reader roundtrip -------------------------------

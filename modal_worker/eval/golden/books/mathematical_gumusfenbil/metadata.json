@@ -15,13 +15,12 @@
     "Riemann integrable on [v1, v2], then ψ is multiplicative integrable"
   ],
   "must_exclude_phrases": [
-    "GUFBED",
-    "Özcan"
+    "GUFBED"
   ],
   "expected_paragraph_range": [
     403,
     605
   ],
   "unsupported": true,
-  "notes": "6-page mathematical journal article (Gümüşhane Üniversitesi Fen Bilimleri Dergisi). text_density=1.0. Language: Turkish (confirmed from cover/title), though English text in body. Formula-heavy (convex functions, Hermite-Hadamard inequalities, multiplicative calculus). 0 embedded images. Paragraph estimate ~504 from avg 84 blocks/page (formulas counted as blocks). Marked unsupported due to heavy mathematical notation."
+  "notes": "6-page mathematical journal article (Gümüşhane Üniversitesi Fen Bilimleri Dergisi). text_density=1.0. Language: Turkish (confirmed from cover/title), though English text in body. Formula-heavy (convex functions, Hermite-Hadamard inequalities, multiplicative calculus). 0 embedded images. Paragraph estimate ~504 from avg 84 blocks/page (formulas counted as blocks). Marked unsupported due to heavy mathematical notation. (2026-10-11 duzeltme: 'Özcan' must_exclude_phrases'ten cikarildi -- gercek kosu basligi 'Özcan / GUFBED 39(1) (2019) ...' 6 sayfanin 5'inde var ve converter onu dogru siliyor, ama yalin soyadi ayni zamanda yazar satirinda ve kaynakcadaki atiflarda mesru olarak geciyor (EPUB'da 5 kez, hepsi icerik). Basligin kendisi zaten 'GUFBED' ile kapsaniyor.)"
 }

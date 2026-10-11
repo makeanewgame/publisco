@@ -53,6 +53,7 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path 
         must_include_phrases=book.must_include_phrases,
         must_exclude_phrases=book.must_exclude_phrases,
         exclude_check_text=content.full_text_excluding_title,
+        total_pages=artifact.plan.total_pages,
     )
 
     structure = evaluate_structure(

@@ -2,6 +2,7 @@
   "category": "book-with-footnotes",
   "language": "en",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "American History Survey",
     "author": "Unknown"

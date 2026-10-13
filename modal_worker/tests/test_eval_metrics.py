@@ -117,6 +117,51 @@ def test_exclude_check_text_ignores_leaked_h1_but_still_catches_body_repeats():
     assert result_with_exclude_text.phrase_exclude_violations == []
 
 
+def test_exclude_phrase_recurring_across_pages_is_a_violation():
+    """Sayfa başına tekrar eden koşu başlığı: gerçek sızıntı, ceza almalı."""
+    text = "\n\n".join(f"Dergi Adi Cilt 3\n\nSayfa {i} govde metni." for i in range(10))
+    result = evaluate_text_completeness(
+        generated_text=text,
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Dergi Adi"],
+        total_pages=10,
+    )
+    assert result.phrase_exclude_violations == ["Dergi Adi"]
+    assert result.phrase_exclude_sparse == []
+    assert result.phrase_exclude_occurrences == {"Dergi Adi": 10}
+
+
+def test_exclude_phrase_sparse_in_long_book_is_reported_but_not_a_violation():
+    """Kitabın kendi içeriğinde seyrek geçen ifade (ör. örnek çıktıdaki yazar
+    adı, künye sayfası) sızıntı sayılmamalı ama raporda görünmeli."""
+    text = "\n\n".join(f"Sayfa {i} govde metni." for i in range(100)) + "\n\nYazar: Ali Veli"
+    result = evaluate_text_completeness(
+        generated_text=text,
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Ali Veli", "hic gecmeyen"],
+        total_pages=100,
+    )
+    assert result.phrase_exclude_violations == []
+    assert result.phrase_exclude_sparse == ["Ali Veli"]
+    assert result.phrase_exclude_occurrences == {"Ali Veli": 1}
+
+
+def test_exclude_phrase_on_alternating_pages_is_still_a_violation():
+    """Tek/çift sayfada dönüşümlü koşu başlığı sayfaların yarısından azında
+    görünür -- eşik bunu kaçırmamalı."""
+    blocks = [("Kitap Adi\n\n" if i % 2 else "") + f"Sayfa {i} govde." for i in range(20)]
+    result = evaluate_text_completeness(
+        generated_text="\n\n".join(blocks),
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Kitap Adi"],
+        total_pages=22,
+    )
+    assert result.phrase_exclude_violations == ["Kitap Adi"]
+
+
 def test_single_chapter_title_not_treated_as_leaked_exclude_phrase(sample_pdf_bytes):
     """TOC'suz kitaplarda pipeline tek bölümü kitabın kendi başlığıyla adlandırıp
     bunu tam olarak bir kez `<h1>` yapar (bkz. converter.py `plan_conversion`
@@ -356,3 +401,54 @@ def test_synthetic_smoke_books_convert_and_score_without_error():
             assert phrase.casefold() in content.full_text.casefold(), f"{book.id}: missing phrase '{phrase}'"
         for phrase in book.must_exclude_phrases:
             assert phrase.casefold() not in content.full_text.casefold(), f"{book.id}: leaked phrase '{phrase}'"
+
+
+def test_flow_defects_counts_dangling_hyphen_and_split_paragraphs():
+    from eval.metrics.flow_defects import evaluate_flow_defects
+
+    paragraphs = [
+        "Bu yüzden şehrin en eski ve en kalabalık semtlerinden birindeki ma-",
+        "hallesine doğru yürümeye başladı.",
+        "Yolun sonunda uzun zamandır görmediği eski bir arkadaşıyla karşılaştı ve",
+        "onunla bir süre konuştu.",
+        "Giriş",
+        "ertesi gün yeniden yola çıktı.",
+        "Akşam olduğunda herkes evine dönmüştü.",
+        "Sabah yeni bir gün başladı.",
+    ]
+    result = evaluate_flow_defects(paragraphs)
+
+    assert result.dangling_hyphen_count == 1
+    assert result.split_paragraph_count == 1  # kısa "Giriş" başlığı aday sayılmaz
+    assert "ma-" in result.dangling_hyphen_samples[0]
+
+
+def test_ocr_cache_reuses_result_for_same_image(tmp_path, monkeypatch):
+    pytesseract = pytest.importorskip("pytesseract")
+    from PIL import Image
+
+    from eval import ocr_cache
+
+    calls = []
+
+    def fake_image_to_data(image, lang=None, config="", nice=0, output_type="string", timeout=0, pandas_config=None):
+        calls.append(lang)
+        return {"text": [lang], "conf": [90]}
+
+    monkeypatch.setattr(pytesseract, "image_to_data", fake_image_to_data)
+    monkeypatch.setattr(pytesseract, "get_tesseract_version", lambda: "5.0.0")
+
+    stats = ocr_cache.install(cache_dir=tmp_path)
+    try:
+        img = Image.new("RGB", (8, 8), "white")
+        first = pytesseract.image_to_data(img, lang="tur")
+        second = pytesseract.image_to_data(img, lang="tur")
+        other_lang = pytesseract.image_to_data(img, lang="eng")
+        other_image = pytesseract.image_to_data(Image.new("RGB", (8, 8), "black"), lang="tur")
+    finally:
+        ocr_cache.uninstall()
+
+    assert first == second == other_image == {"text": ["tur"], "conf": [90]}
+    assert other_lang == {"text": ["eng"], "conf": [90]}
+    assert calls == ["tur", "eng", "tur"]
+    assert (stats.hits, stats.misses) == (1, 3)

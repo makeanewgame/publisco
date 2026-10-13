@@ -6,6 +6,37 @@ edilebilsin diye. Tamamlanan işlerin detayı `TAMAMLANANLAR_v2.md`'de (2026-09-
 maddeler dondurulmuş arşiv `TAMAMLANANLAR.md`'de), açık bug/bulgular `NOTES.md`'nin
 "Sorunlar (Buglar)" bölümünde.
 
+## Yeni yön (2026-10-13): seviyeli döngü + hibrit karar katmanı
+
+Her kod değişikliğinde tüm golden seti koşmak yerine kitaplar zorluk seviyesine ayrıldı
+(`metadata.json` → `tier`; `pnpm test:conversion --tier easy`). Genel kurallar önce kolay
+kitaplarda oturtulur, sonra tek bir tam koşuyla orta/zor seviyeye taşınması ölçülür.
+Aşağıdaki eski madde listesi geçerliliğini koruyor ama öncelik sırası artık bu fazlar:
+
+| Faz | İş | Durum |
+|---|---|---|
+| 0 | Ölçüm döngüsü: `--tier`, OCR önbelleği, akış kusuru sayaçları | **Tamam (2026-10-13)** |
+| 1 | Jev pilotu: `son-sans`'tan ~150 tire/sayfa geçişi adayı, Türkçe doğruluk + eşik ölçümü | **Sıradaki** |
+| 2 | `modal_worker/refine/` altyapısı (map ile reduce arası; bayrakla açılır, yanıt önbelleği, maliyet raporu) | |
+| 3 | Kolay seviyede dört kural: satır/sayfa sonu tiresi, bölünmüş paragraf, tekrarlı başlık yanlış pozitifi, başlık seviyesi | |
+| 4 | Tek tam koşu, seviye başına baseline | |
+| 5 | Orta seviye (iki sütun, tablo, kod, görsel-altyazı) | |
+| 6 | Zor seviye (taranmış) — girilip girilmeyeceği Faz 4'te kararlaştırılır | |
+
+**Hibrit katman:** kod adayı bulur ve bariz olanı çözer → belirsiz adaya `typesafe-ai/jev`
+(Vercel AI Gateway; metin üretmez, soruya 0-1 olasılık döner) karar verir → Jev'in kararsız
+kaldığı azınlık şemaya kilitli ucuz bir LLM'e gider. Metni her zaman kod uygular; model
+hatasında kural tabanlı sonuç kullanılır. Faz 1'de Türkçe doğruluk yetersiz çıkarsa Jev
+katmanı atlanır, yapı aynı kalır.
+
+**Seviyeler (47 kitap):** easy 3 (`son-sans`, `bilimsel-makale-nasil-yazilir`, `molecules`),
+medium 24, hard 10 (taranmış/OCR ağırlıklı), out_of_scope 10 (`unsupported: true` — 9
+matematik + `mitoloji-kitabi`; ayrı alan yazılmaz, `unsupported`'dan türer).
+
+**Faz 0 çıkış ölçümü (kolay seviye, 2026-10-13):** skor 93.8; ama akış sayaçları skorun
+göstermediğini gösteriyor — `son-sans` 95.6 puanla 84 tireli paragraf sonu + 103 bölünmüş
+paragraf, `bilimsel-makale` 112 bölünmüş paragraf taşıyor. Faz 3'ün hedefi bu sayılar.
+
 ## Yöntem (her fazda aynı döngü izleniyor)
 
 1. `pnpm test:conversion --fast` (veya `--book <id>`) ile mevcut durumu ölç, en düşük

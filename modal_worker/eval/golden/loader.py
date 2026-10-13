@@ -51,6 +51,13 @@ FAST_SUBSET_BOOK_IDS = frozenset(
 )
 
 
+# Dönüşüm zorluğu seviyeleri (`metadata.json`'daki `tier` alanı; `--tier` ile
+# filtrelenir). `out_of_scope` ayrıca yazılmaz -- `unsupported: true`'dan türer,
+# iki alanın birbirinden kopmaması için.
+TIERS = ("easy", "medium", "hard", "out_of_scope")
+DEFAULT_TIER = "medium"
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as f:
@@ -86,6 +93,12 @@ def _load_real_book(entry: dict) -> GoldenBook | None:
     if reference_path.exists():
         reference_text = reference_path.read_text(encoding="utf-8")
 
+    unsupported = metadata.get("unsupported", False)
+    tier = "out_of_scope" if unsupported else metadata.get("tier", DEFAULT_TIER)
+    if tier not in TIERS:
+        logger.warning("Golden kitap: bilinmeyen tier %r, %r sayildi: %s", tier, DEFAULT_TIER, entry["id"])
+        tier = DEFAULT_TIER
+
     expected_chapters = metadata.get("expected_chapters")
     paragraph_range = metadata.get("expected_paragraph_range")
 
@@ -102,7 +115,8 @@ def _load_real_book(entry: dict) -> GoldenBook | None:
         must_exclude_phrases=metadata.get("must_exclude_phrases", []),
         expected_paragraph_range=tuple(paragraph_range) if paragraph_range else None,
         reference_text=reference_text,
-        unsupported=metadata.get("unsupported", False),
+        unsupported=unsupported,
+        tier=tier,
         notes=metadata.get("notes", ""),
     )
 
@@ -120,7 +134,13 @@ def load_real_books() -> list[GoldenBook]:
     return books
 
 
-def load_golden_books(smoke_only: bool = False, fast_only: bool = False) -> list[GoldenBook]:
+def load_golden_books(
+    smoke_only: bool = False, fast_only: bool = False, tiers: set[str] | None = None
+) -> list[GoldenBook]:
+    if tiers:
+        # Sentetik smoke kitaplar bilerek dışarıda: seviye skoru yalnızca o
+        # seviyenin gerçek kitaplarını yansıtsın.
+        return [b for b in load_real_books() if b.tier in tiers]
     if smoke_only:
         return load_synthetic_books()
     if fast_only:

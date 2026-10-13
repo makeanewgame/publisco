@@ -19,6 +19,6 @@
     4361,
     6541
   ],
-  "unsupported": false,
-  "notes": "Mitoloji Kitabı, Alfa Yayınları. 345 sayfa, Turkish. text_density=0.7 (hepsi metin katmanına sahip). Profil: 1386 gömülü görsel, ~5451 paragraf tahmini (%20 tolerans). Antik Yunan ve Roman mitolojisini konu alan eğitim kitabı. Örneklerde mitoloji karakterleri ve hikaye özeti belirtildi."
+  "unsupported": true,
+  "notes": "Mitoloji Kitabı, Alfa Yayınları. 345 sayfa, Turkish. text_density=0.7 (hepsi metin katmanına sahip). Profil: 1386 gömülü görsel, ~5451 paragraf tahmini (%20 tolerans). Antik Yunan ve Roman mitolojisini konu alan eğitim kitabı. Örneklerde mitoloji karakterleri ve hikaye özeti belirtildi. (2026-10-13: unsupported=true yapildi -- kullanici karari, kitabin sayfa yapisi (cok sutunlu on-metin + her sayfada tam sayfa arka plan gorseli + bozuk gomulu kapak metni) v1 icin fazla karmasik, Faz 2'de ele alinacak. Kitap yine kosuyor ve raporlaniyor, yalnizca genel skora/gate'e girmiyor. Acik iki is NOTES.md'de.)"
 }

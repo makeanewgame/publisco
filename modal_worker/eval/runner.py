@@ -56,6 +56,7 @@ class BookResult:
     # `eval/README.md`: unsupported=true kitaplar (ör. mathematical) skora/gate'e
     # dahil edilmez, yalnızca raporlanır -- bkz. NOTES.md/ROADMAP.md.
     unsupported: bool = False
+    tier: str = "medium"
 
 
 def run_conversion(pdf_bytes: bytes, config: dict[str, Any], book_id: str, force_ocr: bool = False) -> ConversionArtifact:

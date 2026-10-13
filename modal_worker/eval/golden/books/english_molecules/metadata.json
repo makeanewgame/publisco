@@ -2,6 +2,7 @@
   "category": "english",
   "language": "en",
   "is_scanned": false,
+  "tier": "easy",
   "config": {
     "title": "From Plant Compounds to Botanicals and Back: A Current Snapshot",
     "author": "Alessandra Durazzo, Laura D'Addezio, Emanuela Camilli, et al."

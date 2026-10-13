@@ -2,6 +2,7 @@
   "category": "book-with-tables",
   "language": "en",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "Introductory Statistics",
     "author": "OpenStax"

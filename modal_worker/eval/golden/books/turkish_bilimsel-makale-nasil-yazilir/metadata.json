@@ -2,6 +2,7 @@
   "category": "turkish",
   "language": "tr",
   "is_scanned": false,
+  "tier": "easy",
   "config": {
     "title": "Bilimsel Bir Makale Nasıl Yazılır ve Yayımlanır",
     "author": "Robert A. Day"

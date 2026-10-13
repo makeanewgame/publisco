@@ -54,3 +54,6 @@ apps/api/tsconfig.build.tsbuildinfo
 
 # Claude Code local hook state (not team-shared)
 .claude/state/
+
+# Eval: Tesseract çıktı önbelleği (bkz. modal_worker/eval/ocr_cache.py)
+modal_worker/eval/.cache/

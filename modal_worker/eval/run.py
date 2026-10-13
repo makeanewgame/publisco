@@ -4,6 +4,7 @@ Kullanım:
     python -m eval.run                        # tüm golden set, baseline ile karşılaştır
     python -m eval.run --smoke                 # yalnız sentetik smoke kitaplar
     python -m eval.run --fast                  # her kategoriden hızlı bir temsilci (~1.5dk, regresyon garantisi değil)
+    python -m eval.run --tier easy             # yalnız bir zorluk seviyesi (easy/medium/hard/out_of_scope)
     python -m eval.run --book book-007         # tek kitap + tam diagnostic dökümü
     python -m eval.run --save-baseline         # bu koşuyu yeni baseline yap
     python -m eval.run --variant llm-v1        # sonuçları bir variant etiketiyle kaydet
@@ -22,8 +23,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from eval import ocr_cache  # noqa: E402
 from eval.evaluate import evaluate_book  # noqa: E402
-from eval.golden.loader import load_golden_books  # noqa: E402
+from eval.golden.loader import TIERS, load_golden_books  # noqa: E402
 from eval.report import (  # noqa: E402
     build_run_summary,
     compare_to_baseline,
@@ -69,6 +71,18 @@ def main() -> None:
         action="store_true",
         help="Her kategoriden hızlı bir temsilci + smoke kitaplar (~1.5dk) -- hızlı doğrulama için, regresyon garantisi değil",
     )
+    parser.add_argument(
+        "--tier",
+        nargs="+",
+        choices=TIERS,
+        metavar="TIER",
+        help=f"Yalnız bu zorluk seviye(ler)indeki gerçek kitapları çalıştır ({'/'.join(TIERS)}) -- bkz. metadata.json'daki `tier`",
+    )
+    parser.add_argument(
+        "--no-ocr-cache",
+        action="store_true",
+        help="Tesseract çıktılarını diskten (eval/.cache/ocr) okuma/yazma -- OCR'ı her sayfada yeniden çalıştır",
+    )
     parser.add_argument("--book", metavar="BOOK_ID", help="Yalnız tek bir kitabı çalıştır, tam diagnostic bas")
     parser.add_argument("--variant", default="local", help="Sonucu bu etiketle kaydet (ör. llm-v1)")
     parser.add_argument("--save-baseline", action="store_true", help="Bu koşuyu yeni baseline yap")
@@ -91,7 +105,9 @@ def main() -> None:
 
     _check_optional_tools()
 
-    books = load_golden_books(smoke_only=args.smoke, fast_only=args.fast)
+    ocr_stats = None if args.no_ocr_cache else ocr_cache.install()
+
+    books = load_golden_books(smoke_only=args.smoke, fast_only=args.fast, tiers=set(args.tier) if args.tier else None)
     if args.book:
         books = [b for b in books if b.id == args.book]
         if not books:
@@ -114,6 +130,8 @@ def main() -> None:
 
     if epub_out_dir is not None:
         print(f"EPUB'lar kaydedildi: {epub_out_dir}/")
+    if ocr_stats is not None and (ocr_stats.hits or ocr_stats.misses):
+        print(f"OCR önbelleği: {ocr_stats.hits} isabet, {ocr_stats.misses} yeni sayfa ({ocr_cache.CACHE_DIR})")
 
     if args.book:
         print_book_diagnostics(results[0])

@@ -32,4 +32,8 @@ class GoldenBook:
     reference_text: str | None = None
 
     unsupported: bool = False
+    # Dönüşüm zorluğu (bkz. `loader.TIERS`): geliştirme döngüsü önce `easy`
+    # kitaplarda döner, genel kurallar oturunca `medium`/`hard`'a geçilir.
+    # `unsupported=true` kitaplar her zaman `out_of_scope` sayılır.
+    tier: str = "medium"
     notes: str = ""

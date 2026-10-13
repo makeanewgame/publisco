@@ -49,12 +49,21 @@ def build_run_summary(book_results: list[BookResult], variant: str) -> dict[str,
             "epubcheck çalıştırılamadı (yerel kurulum sorunu olabilir) -- EPUB validity metriği/gate bu koşuda devre dışı kaldı."
         )
 
+    tier_scores: dict[str, dict[str, Any]] = {}
+    for r in scored:
+        tier_scores.setdefault(r.tier, {"book_count": 0, "_sum": 0.0})
+        tier_scores[r.tier]["book_count"] += 1
+        tier_scores[r.tier]["_sum"] += r.score
+    for entry in tier_scores.values():
+        entry["score"] = round(entry.pop("_sum") / entry["book_count"], 1)
+
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "variant": variant,
         "book_count": len(book_results),
         "overall_score": overall_score,
         "metric_averages": metric_averages,
+        "tier_scores": tier_scores,
         "books": books_payload,
         "failed_books": failed_books,
         "tool_warnings": tool_warnings,
@@ -123,6 +132,16 @@ def print_terminal_summary(summary: dict[str, Any], comparison: dict[str, Any] |
         print(f"  {label:<20} {_fmt_pct(summary['metric_averages'].get(name))}")
     print()
 
+    tier_scores = summary.get("tier_scores") or {}
+    if tier_scores:
+        print("Seviye bazında skor:")
+        for tier in ("easy", "medium", "hard"):
+            if tier in tier_scores:
+                print(f"  {tier:<8} {tier_scores[tier]['score']:>5.1f}  ({tier_scores[tier]['book_count']} kitap)")
+        print()
+
+    _print_flow_defects(summary["books"])
+
     if comparison is not None:
         sign = "+" if comparison["overall_delta"] >= 0 else ""
         print(f"Regression vs baseline ({comparison['baseline_timestamp']}):")
@@ -142,6 +161,36 @@ def print_terminal_summary(summary: dict[str, Any], comparison: dict[str, Any] |
             score_str = "N/A" if entry["score"] is None else entry["score"]
             print(f"  {entry['book_id']:<28} score={score_str}  ({reason})")
         print()
+
+
+def _flow_defect_counts(metric_details: dict[str, Any]) -> dict[str, int]:
+    """Soruna özel dört sayaç -- skora girmez, tek tek kuralların etkisini izlemek için."""
+    flow = metric_details.get("flow_defects", {})
+    return {
+        "broken_words": metric_details.get("broken_words", {}).get("confirmed_count", 0) or 0,
+        "dangling_hyphens": flow.get("dangling_hyphen_count", 0) or 0,
+        "split_paragraphs": flow.get("split_paragraph_count", 0) or 0,
+        "leaked_headers": metric_details.get("duplicates", {}).get("leaked_short_block_total_occurrences", 0) or 0,
+    }
+
+
+def _print_flow_defects(books: list[dict[str, Any]]) -> None:
+    rows = [
+        (b["book_id"], _flow_defect_counts(b.get("metric_details") or {}))
+        for b in books
+        if not b.get("unsupported") and not b.get("error")
+    ]
+    rows = [(book_id, counts) for book_id, counts in rows if any(counts.values())]
+    if not rows:
+        return
+    print("Akış kusurları (skora girmez):")
+    print(f"  {'kitap':<44} {'kırık kelime':>12} {'tireli son':>10} {'bölünmüş ¶':>10} {'sızan başlık':>12}")
+    for book_id, c in rows:
+        print(
+            f"  {book_id[:44]:<44} {c['broken_words']:>12} {c['dangling_hyphens']:>10} "
+            f"{c['split_paragraphs']:>10} {c['leaked_headers']:>12}"
+        )
+    print()
 
 
 def print_book_diagnostics(book: BookResult) -> None:
@@ -175,6 +224,15 @@ def print_book_diagnostics(book: BookResult) -> None:
         bw = details.get("broken_words", {})
         if bw.get("confirmed_count"):
             print(f"  Broken words: {bw.get('confirmed_count', 0)}")
+        flow = details.get("flow_defects", {})
+        if flow.get("dangling_hyphen_count"):
+            print(f"  Paragraphs ending in a hyphenated fragment: {flow['dangling_hyphen_count']}")
+            for sample in flow.get("dangling_hyphen_samples", []):
+                print(f"      {sample}")
+        if flow.get("split_paragraph_count"):
+            print(f"  Split paragraphs: {flow['split_paragraph_count']}")
+            for sample in flow.get("split_paragraph_samples", []):
+                print(f"      {sample}")
         img = details.get("images", {})
         missing = img.get("missing_vs_expected") if img.get("missing_vs_expected") is not None else img.get("missing_vs_pdf")
         if missing:
@@ -187,4 +245,8 @@ def print_book_diagnostics(book: BookResult) -> None:
             print(f"  Missing phrases: {tc['phrase_include_misses']}")
         if tc.get("phrase_exclude_violations"):
             print(f"  Leaked excluded phrases: {tc['phrase_exclude_violations']}")
+        if tc.get("phrase_exclude_sparse"):
+            occurrences = tc.get("phrase_exclude_occurrences", {})
+            sparse = {p: occurrences.get(p) for p in tc["phrase_exclude_sparse"]}
+            print(f"  Sparse excluded phrases (not penalized, phrase -> count): {sparse}")
     print()

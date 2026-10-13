@@ -10,6 +10,7 @@ from eval.epub_reader import read_epub
 from eval.golden.types import GoldenBook
 from eval.metrics.broken_words import BrokenWordsResult, evaluate_broken_words
 from eval.metrics.duplicates import DuplicatesResult, evaluate_duplicates
+from eval.metrics.flow_defects import evaluate_flow_defects
 from eval.metrics.epub_validity import EpubValidityResult, evaluate_epub_validity
 from eval.metrics.images import ImagesResult, evaluate_images
 from eval.metrics.ocr_quality import OcrQualityResult, evaluate_ocr_quality
@@ -43,6 +44,7 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path 
             gates_triggered=["conversion_error"],
             duration_seconds=artifact.duration_seconds,
             unsupported=book.unsupported,
+            tier=book.tier,
         )
 
     content = read_epub(artifact.epub_bytes)
@@ -53,6 +55,7 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path 
         must_include_phrases=book.must_include_phrases,
         must_exclude_phrases=book.must_exclude_phrases,
         exclude_check_text=content.full_text_excluding_title,
+        total_pages=artifact.plan.total_pages,
     )
 
     structure = evaluate_structure(
@@ -67,6 +70,8 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path 
 
     language = artifact.plan.resolved_config.get("language", book.language)
     broken_words = evaluate_broken_words(content.full_text, language)
+
+    flow_defects = evaluate_flow_defects(content.paragraphs)
 
     start_page = artifact.plan.chunks[0][0] if artifact.plan.chunks else 1
     end_page = artifact.plan.chunks[-1][1] if artifact.plan.chunks else artifact.plan.total_pages
@@ -106,6 +111,7 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path 
             "structure": _asdict(structure),
             "duplicates": _asdict(duplicates),
             "broken_words": _asdict(broken_words),
+            "flow_defects": _asdict(flow_defects),
             "ocr_quality": _asdict(ocr_quality),
             "images": _asdict(images),
             "epub_validity": _asdict(epub_validity),
@@ -115,4 +121,5 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path 
         gates_triggered=scoring_output.gates_triggered,
         duration_seconds=artifact.duration_seconds,
         unsupported=book.unsupported,
+        tier=book.tier,
     )

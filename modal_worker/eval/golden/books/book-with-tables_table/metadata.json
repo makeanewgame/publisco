@@ -2,6 +2,7 @@
   "category": "book-with-tables",
   "language": "en",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "CodelessML: A Beginner's Web Application for Getting Started with Machine Learning",
     "author": "Hanif Noer Rofiq, Galuh Mafela Mutiara Sujak"

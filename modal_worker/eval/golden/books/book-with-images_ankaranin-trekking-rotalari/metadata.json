@@ -2,6 +2,7 @@
   "category": "book-with-images",
   "language": "tr",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "Ankara'nın Trekking Rotaları",
     "author": "Ankara İl Kültür ve Turizm Müdürlüğü / Ankara Kalkınma Ajansı"
@@ -23,13 +24,12 @@
     "Alakoç Köyü- Çamkoru Tabiat Parkı"
   ],
   "must_exclude_phrases": [
-    "Trekking Rotaları",
-    "Yürüyüş"
+    "Trekking Rotaları"
   ],
   "expected_paragraph_range": [
     865,
     1298
   ],
   "unsupported": false,
-  "notes": "Ankara turizm/doğa rehberi, Ankara Kalkınma Ajansı projesi. Türkçe, 88 sayfa, 228 görsel. İçindekiler sayfası bulunuyor. Text_density=1.0, tahmini paragraphs=1082 (%20 tolerans ile 865-1298)."
+  "notes": "Ankara turizm/doğa rehberi, Ankara Kalkınma Ajansı projesi. Türkçe, 88 sayfa, 228 görsel. İçindekiler sayfası bulunuyor. Text_density=1.0, tahmini paragraphs=1082 (%20 tolerans ile 865-1298). (2026-10-11 duzeltme: 'Yürüyüş' must_exclude_phrases'ten cikarildi -- kitabin konusu olan siradan bir kelime, ham PDF'te 88 sayfanin 46'sinda govde metninde geciyor (rota adlari, aciklamalar); kitapta onu iceren bir kosu basligi/altbilgi YOK. Hicbir sizinti kurali onu mesru icerikten ayiramaz. 'Trekking Rotaları' birakildi: yalnizca kapak/kunye sayfalarinda 2 kez geciyor, sayfa dosemesi gibi tekrar etmeye baslarsa yine yakalanir.)"
 }

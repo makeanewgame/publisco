@@ -243,13 +243,30 @@ pnpm --filter web test
 4. Make API changes → test in Prisma Studio: `pnpm --filter api prisma studio`
 5. Update Redux hooks if endpoints change
 
+## 📋 Trello İş Akışı
+
+Yapılacaklar, buglar, fikirler ve tamamlananlar [publisco board'unda](https://trello.com/b/yt7AU8Yu/publisco) tutuluyor (2026-10-13'e kadar `NOTES.md`/`ROADMAP.md`/`TAMAMLANANLAR*.md`'deydi; o dosyalar artık yalnızca board'a yönlendiriyor, onlara yazma). Board'a `python3 scripts/trello.py` ile erişilir (`lists`, `find`, `show`, `add`, `move`, `comment`; kimlik bilgileri gitignore'lu `.env.trello`'da).
+
+**Listeler:** `Fikirler` → `To Do` → `Doing` → `Done`; hatalar ve açık teşhisler `Bugs`'ta; kalıcı bilgi (eval yöntemi, skor geçmişi, board kuralları) `Referans`'ta.
+**Etiketler:** `converter`, `eval`, `api`, `web`, `altyapı`, `güvenlik`, `fable` (anlamları `Referans` › "📌 Bu board nasıl kullanılıyor" kartında).
+
+| Ne zaman | Ne yapılır |
+|---|---|
+| **İşe başlarken** | Görev board'daki bir karta karşılık geliyorsa (kullanıcı kartı söyledi ya da `find` ile bulundu) kartı `Doing`'e taşı ve açıklamasını oku — özellikle `fable` kartlarında ELENEN yaklaşımlar yazılı, onları tekrar deneme. |
+| **Tur biterken** (kod değişikliği olmasa da: araştırma/teşhis turları dahil) | 1) Yeni bir bulgu, bug, TODO ya da takip işi çıktıysa ve board'da yoksa (`find` ile kontrol et) kart aç: bug/açık teşhis → `Bugs`, yapılacak iş → `To Do`, karar verilmemiş fikir → `Fikirler`. 2) Kartın işi **tamamen** bittiyse (doğrulama dahil) kartı `Done`'a taşı ve sonucu `comment` olarak yaz; kartı olmayan bitmiş bir iş için doğrudan `Done`'da kart aç. 3) İş yarım kaldıysa ya da kullanıcı adımı bekliyorsa (deploy, dashboard/secret ayarı, teyit) kart `Doing`'de kalır; nerede kalındığını ve sıradaki adımı `comment` olarak yaz. 4) Biten işten ileride yapılacak yeni bir iş doğduysa onu ayrı kart olarak aç, biten kartın içinde bırakma. |
+| **Kullanıcı "commitle" dediğinde** | Commit'ten sonra commit hash'ini ilgili kart(lar)a `comment` olarak ekle. |
+| **Fast eval skoru değiştiğinde** | `Referans` › "📌 Eval skor geçmişi" kartına eski dosyadaki formatta yeni satırı `comment` olarak ekle. |
+
+**Yazım:** kart başlığı kısa ve aranabilir (kitap id'si, fonksiyon adı); ayrıntı açıklamada ya da yorumda, eski `NOTES.md` maddeleri gibi: tarih, kök neden, kanıt, önce→sonra ölçüm, denenip ELENEN yaklaşımlar. Uzun metni `--desc-file` ile ver.
+**Sınırlar:** kart silme ya da arşivleme; liste/etiket ekleyip kaldırma; kullanıcının yazdığı başlık ve açıklamaları değiştirme (yorum ekle). Bunlar gerekiyorsa kullanıcıya sor.
+
 ## 🔁 After Every Task
 
-Before ending a turn that made code changes, do both of these:
+Before ending a turn, do these (1 her turda, 2 yalnızca kod değişikliği varsa, 3 eval işine dokunulduysa):
 
-1. **NOTES.md** — if the work surfaced a new finding, TODO, bug, or follow-up that isn't already tracked there, add it under the right section (`Yapılacaklar` / `Sorunlar (Buglar)` / `Fikirler`). Skip this if nothing new came up — don't pad the file.
+1. **Trello** — yukarıdaki "📋 Trello İş Akışı" tablosunun **Tur biterken** satırı. Yeni bir şey çıkmadıysa kart açma, board'u şişirme.
 2. **CLAUDE.md → "Sunucu Paketleri" (Modal Worker section)** — if the change added a new *system-level* dependency to `modal_worker/` (an `apt` package in `modal.Image.apt_install(...)`, a new OS binary a Python package shells out to — not a plain `pip_install` package), update that section. A Stop hook (`.claude/hooks/check-worker-deps.sh`) catches the common case (`modal_worker/main.py`/`requirements.txt` changed without `CLAUDE.md`) and will block with a reminder, but it can't tell *why* a package was added — use judgment for the OS-package/system dependency part specifically.
-3. **PDF→EPUB dönüşüm kalitesi işi (`modal_worker/eval/` odaklı fazlar)** — bu iş koluna dokunan bir görev bittiğinde `ROADMAP.md`'yi (öncelik sırası/sıradaki adım değiştiyse) ve tamamlanan bir bulgu varsa `TAMAMLANANLAR_v2.md`'yi de güncelle (`TAMAMLANANLAR.md` 2026-09-07'de dondurulan bir arşiv, yeni girdi almıyor) — `NOTES.md`'yle birlikte üçü senkron kalmalı (bkz. `ROADMAP.md`'nin başındaki yöntem notu).
+3. **PDF→EPUB dönüşüm kalitesi işi (`modal_worker/eval/` odaklı fazlar)** — iş döngüsü `Referans` › "📌 PDF→EPUB kalite çalışması: yöntem" kartında; fast eval skoru değiştiyse "📌 Eval skor geçmişi" kartına yorum ekle (bkz. tablo).
 
 ## 📞 Team Notes
 

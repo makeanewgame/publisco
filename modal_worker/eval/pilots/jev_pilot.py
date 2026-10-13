@@ -10,6 +10,12 @@ Kullanım (modal_worker/ içinden):
     python -m eval.pilots.jev_pilot extract normal-text-novel_son-sans
     # -> eval/.cache/pilot/<kitap>.candidates.json ; `label` alanları elle doldurulur
     python -m eval.pilots.jev_pilot run normal-text-novel_son-sans
+    python -m eval.pilots.jev_pilot run normal-text-novel_son-sans --model microsoft/microsoft-decision-1 --labeled-only
+    python -m eval.pilots.jev_pilot compare normal-text-novel_son-sans
+
+`--model` gateway'deki herhangi bir "evaluation" modeli (TypeSafe uyumlu uç noktadan
+servis ediliyor) ya da bir reranker olabilir (`*/rerank-*`; soru sorulamaz, yalnızca
+"önceki metin -> sonraki metin" alaka skoru döner, olasılık değildir).
 
 Aday dosyaları kitap metni içerdiği için `eval/.cache/` altında kalır (git'e girmez).
 `AI_GATEWAY_API_KEY` ortamdan ya da `modal_worker/.env`'den okunur.
@@ -43,7 +49,8 @@ from eval.runner import run_conversion  # noqa: E402
 
 PILOT_DIR = Path(__file__).resolve().parents[1] / ".cache" / "pilot"
 GATEWAY_URL = "https://ai-gateway.vercel.sh/typesafe/v1/systemone"
-MODEL = "typesafe-ai/jev"
+RERANK_URL = "https://ai-gateway.vercel.sh/v1/rerank"
+DEFAULT_MODEL = "typesafe-ai/jev"
 CONTEXT_CHARS = 200
 CONTROL_SAMPLE_SIZE = 60
 MAX_WORKERS = 4  # uç nokta hız sınırı uyguluyor; küçük tut
@@ -129,18 +136,45 @@ def extract(book_id: str) -> Path:
     return path
 
 
-def _ask(key: str, candidate: dict) -> dict:
+def _results_path(book_id: str, model: str) -> Path:
+    return PILOT_DIR / f"{book_id}.results.{model.replace('/', '_')}.json"
+
+
+def _ask_rerank(key: str, model: str, candidate: dict) -> dict:
+    started = time.monotonic()
+    response = requests.post(
+        RERANK_URL,
+        headers={"Authorization": f"Bearer {key}"},
+        json={
+            "model": model,
+            "query": f"Find the text that directly continues this unfinished passage: {candidate['prev_end']}",
+            "documents": [candidate["next_start"]],
+        },
+        timeout=60,
+    )
+    if response.status_code != 200:
+        return {"id": candidate["id"], "error": f"{response.status_code}: {response.text[:200]}"}
+    score = response.json()["results"][0]["relevance_score"]
+    nouls = {"same_paragraph": score}
+    if candidate["kind"] == "hyphen":
+        nouls["same_word"] = score
+    return {"id": candidate["id"], "nouls": nouls, "input_tokens": 0, "seconds": round(time.monotonic() - started, 2)}
+
+
+def _ask(key: str, model: str, candidate: dict) -> dict:
+    if "/rerank" in model:
+        return _ask_rerank(key, model, candidate)
     questions = QUESTIONS if candidate["kind"] == "hyphen" else {"same_paragraph": QUESTIONS["same_paragraph"]}
     started = time.monotonic()
     response = requests.post(
         GATEWAY_URL,
         headers={"Authorization": f"Bearer {key}"},
         json={
-            "model": MODEL,
+            "model": model,
             "state": {"prev_end": candidate["prev_end"], "next_start": candidate["next_start"]},
             "questions": questions,
         },
-        timeout=30,
+        timeout=60,
     )
     if response.status_code != 200:
         return {"id": candidate["id"], "error": f"{response.status_code}: {response.text[:200]}"}
@@ -153,39 +187,82 @@ def _ask(key: str, candidate: dict) -> dict:
     }
 
 
-def run(book_id: str) -> None:
+def _load_candidates(book_id: str) -> list[dict]:
     path = PILOT_DIR / f"{book_id}.candidates.json"
     if not path.exists():
         sys.exit(f"Önce: python -m eval.pilots.jev_pilot extract {book_id}")
-    candidates = json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _is_labeled(candidate: dict) -> bool:
+    return any(value is not None for value in candidate["label"].values())
+
+
+def run(book_id: str, model: str = DEFAULT_MODEL, labeled_only: bool = False) -> None:
+    candidates = _load_candidates(book_id)
+    if labeled_only:
+        candidates = [c for c in candidates if _is_labeled(c)]
     key = _api_key()
 
-    first = _ask(key, candidates[0])  # yetki/bakiye hatasında yüzlerce istek atma
+    first = _ask(key, model, candidates[0])  # yetki/bakiye hatasında yüzlerce istek atma
     if "error" in first:
-        sys.exit(f"Jev çağrısı başarısız: {first['error']}")
+        sys.exit(f"{model} çağrısı başarısız: {first['error']}")
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        results = [first] + list(pool.map(lambda c: _ask(key, c), candidates[1:]))
-    (PILOT_DIR / f"{book_id}.results.json").write_text(json.dumps(results, indent=1), encoding="utf-8")
+        results = [first] + list(pool.map(lambda c: _ask(key, model, c), candidates[1:]))
+    _results_path(book_id, model).write_text(json.dumps(results, indent=1), encoding="utf-8")
+    failed = [r for r in results if "error" in r]
+    print(f"{model}: {len(results) - len(failed)}/{len(results)} yanıt" + (f" | ilk hata: {failed[0]['error']}" if failed else ""))
 
-    ok = [r for r in results if "nouls" in r]
-    by_id = {c["id"]: c for c in candidates}
-    print(f"{len(ok)}/{len(results)} yanıt, {sum(r['input_tokens'] for r in ok)} giriş token, "
-          f"ortalama {sum(r['seconds'] for r in ok) / max(len(ok), 1):.2f} sn/istek")
+
+def _auc(rows: list[tuple[float, bool]]) -> float | None:
+    """Rastgele bir pozitifin rastgele bir negatiften yüksek skor alma olasılığı."""
+    pos = [p for p, y in rows if y]
+    neg = [p for p, y in rows if not y]
+    if not pos or not neg:
+        return None
+    wins = sum((p > n) + 0.5 * (p == n) for p in pos for n in neg)
+    return wins / (len(pos) * len(neg))
+
+
+def compare(book_id: str) -> None:
+    """Kayıtlı tüm model sonuçlarını etiketli adaylar üzerinde yan yana basar."""
+    by_id = {c["id"]: c for c in _load_candidates(book_id)}
     for question in QUESTIONS:
-        rows = [(r["nouls"][question], by_id[r["id"]]["label"].get(question)) for r in ok if question in r["nouls"]]
-        labeled = [(p, y) for p, y in rows if y is not None]
-        sure = [(p, y) for p, y in labeled if p >= ACT_ABOVE or p <= ACT_BELOW]
-        correct = sum(1 for p, y in sure if (p >= ACT_ABOVE) == y)
-        print(f"  {question}: {len(rows)} aday, {len(labeled)} etiketli | emin bölgede {len(sure)} "
-              f"(doğru {correct}), kararsız {len(labeled) - len(sure)}")
+        print(f"\n{question}")
+        print(f"  {'model':<34}{'n':>4}{'poz/neg':>9}{'AUC':>7}{'min poz':>9}{'max neg':>9}{'0.5 doğru':>11}{'emin+doğru':>12}{'sn/istek':>10}{'token':>8}")
+        for path in sorted(PILOT_DIR.glob(f"{book_id}.results.*.json")):
+            results = [r for r in json.loads(path.read_text(encoding="utf-8")) if "nouls" in r]
+            rows = [
+                (r["nouls"][question], by_id[r["id"]]["label"][question])
+                for r in results
+                if question in r["nouls"] and r["id"] in by_id and by_id[r["id"]]["label"].get(question) is not None
+            ]
+            if not rows:
+                continue
+            pos = [p for p, y in rows if y]
+            neg = [p for p, y in rows if not y]
+            auc = _auc(rows)
+            sure_ok = sum(1 for p, y in rows if (p >= ACT_ABOVE and y) or (p <= ACT_BELOW and not y))
+            model = path.name[len(book_id) + len(".results.") : -len(".json")]
+            print(
+                f"  {model:<34}{len(rows):>4}{f'{len(pos)}/{len(neg)}':>9}"
+                f"{'  n/a' if auc is None else f'{auc:7.3f}'}{min(pos, default=0):>9.2f}{max(neg, default=0):>9.2f}"
+                f"{sum(1 for p, y in rows if (p >= 0.5) == y):>8}/{len(rows):<3}{sure_ok:>9}/{len(rows):<3}"
+                f"{sum(r['seconds'] for r in results) / len(results):>9.2f}{sum(r['input_tokens'] for r in results) // len(results):>8}"
+            )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("command", choices=["extract", "run"])
+    parser.add_argument("command", choices=["extract", "run", "compare"])
     parser.add_argument("book_id")
+    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--labeled-only", action="store_true", help="Yalnız etiketli adayları gönder")
     args = parser.parse_args()
-    {"extract": extract, "run": run}[args.command](args.book_id)
+    if args.command == "run":
+        run(args.book_id, args.model, args.labeled_only)
+    else:
+        {"extract": extract, "compare": compare}[args.command](args.book_id)
 
 
 if __name__ == "__main__":

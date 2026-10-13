@@ -16,8 +16,8 @@ Aşağıdaki eski madde listesi geçerliliğini koruyor ama öncelik sırası ar
 | Faz | İş | Durum |
 |---|---|---|
 | 0 | Ölçüm döngüsü: `--tier`, OCR önbelleği, akış kusuru sayaçları | **Tamam (2026-10-13)** |
-| 1 | Jev pilotu: `son-sans`'tan ~150 tire/sayfa geçişi adayı, Türkçe doğruluk + eşik ölçümü | **Sıradaki** |
-| 2 | `modal_worker/refine/` altyapısı (map ile reduce arası; bayrakla açılır, yanıt önbelleği, maliyet raporu) | |
+| 1 | Jev pilotu: `son-sans`'tan 247 aday, 110'u elle etiketli | **Tamam (2026-10-13) — geçti, aşağıya bkz.** |
+| 2 | `modal_worker/refine/` altyapısı (map ile reduce arası; bayrakla açılır, yanıt önbelleği, maliyet raporu) | **Sıradaki** |
 | 3 | Kolay seviyede dört kural: satır/sayfa sonu tiresi, bölünmüş paragraf, tekrarlı başlık yanlış pozitifi, başlık seviyesi | |
 | 4 | Tek tam koşu, seviye başına baseline | |
 | 5 | Orta seviye (iki sütun, tablo, kod, görsel-altyazı) | |
@@ -36,6 +36,49 @@ matematik + `mitoloji-kitabi`; ayrı alan yazılmaz, `unsupported`'dan türer).
 **Faz 0 çıkış ölçümü (kolay seviye, 2026-10-13):** skor 93.8; ama akış sayaçları skorun
 göstermediğini gösteriyor — `son-sans` 95.6 puanla 84 tireli paragraf sonu + 103 bölünmüş
 paragraf, `bilimsel-makale` 112 bölünmüş paragraf taşıyor. Faz 3'ün hedefi bu sayılar.
+
+**Faz 1 sonucu (Jev, `son-sans`, 2026-10-13; `eval/pilots/jev_pilot.py`):**
+- Yön doğru: 0.5 eşiğiyle tire sorusunda 36/36, paragraf devamı sorusunda 80/80 (tire + bölünmüş adaylar).
+- Ama Türkçede çekingen: doğru "evet"lerin çoğu 0.65-0.84 arasında, 0.85 eşiğinin altında kalıyor.
+  0.85/0.15 eşikleri kullanılmayacak; bu iki soruda pozitifler >= 0.53, negatifler <= 0.33 çıktı,
+  başlangıç eşiği ~0.45. Negatif örnek yalnızca 2 (dipnota bağlanan tire, yarıda kesilen konuşma) —
+  ikisini de yakaladı ama örneklem küçük; `bilimsel-makale` ile genişletilmeli.
+- Kod kuralı bu kitapta zaten isabetli: tireli sonların 34/36'sı, bölünmüş paragraf adaylarının
+  40/40'ı gerçekten birleştirilmeli. Yani Jev'in rolü karar vermek değil, kuralın nadir yanlışını
+  **veto etmek**.
+- Cümle sonu noktalamasıyla biten sınırlarda (yeni diyalog satırı) yalnızca metinle zayıf: 12 açık
+  "yeni paragraf" örneğine 0.21-0.57 verdi. Bu sınıf için state'e yerleşim sinyali (sayfa sonu mu,
+  girinti var mı) eklenmeden Jev'e sorulmamalı.
+- Maliyet: 247 istek, 107K token, $0.004; ortalama 0.61 sn/istek.
+
+**Model karşılaştırması (aynı 92 etiketli aday, 2026-10-13; `jev_pilot.py compare`):** gateway'deki
+üç "evaluation" modeli aynı TypeSafe uyumlu uç noktadan çağrılıyor, yalnızca model adı değişiyor.
+
+| Model | Tire (34 poz / 2 neg) | Paragraf devamı (78 poz / 14 neg), AUC | Not |
+|---|---|---|---|
+| `microsoft/microsoft-decision-1` | 36/36, poz >= 0.85, neg <= 0.12 | 0.981 | Kodun önerdiği adaylarda (tire + bölünmüş) hatasız ve keskin; ama 12 diyalog kontrolünün 8'ine yanlışlıkla yüksek "devam" skoru verdi. İstek başına 175 token (en ucuz). |
+| `typesafe-ai/jev` | 36/36 (0.5 eşiği), skorlar 0.68-0.9 arası sıkışık | 0.996 | En iyi sıralama, eşik ayarı gerektiriyor. 433 token/istek. |
+| `openai/gpt-6-luna-decisions` | 34/36 (2 doğru birleşimi reddetti) | 0.993 | Diyalog kontrollerinde en iyisi (12'de 10), ama 3 yanlış ret; $0.10/M, ZDR yok. |
+| `voyage/rerank-3` | AUC 0.971, eşik ayrılmıyor | 0.852 | Reranker, soru sorulamıyor; bu iş için uygun değil. |
+
+**İkinci kitap (`bilimsel-makale-nasil-yazilir`, 62 etiketli aday: 47 devam / 15 değil; aynı gün):**
+ilk kitaptaki sıralama korunmadı.
+- Tire sorusu (4 aday, hepsi kısaltma listesinden, hepsi "birleştirme"): Decision-1 4/4 yanlış ve
+  emin (0.75-0.92), Jev 3/4 yanlış, Luna 3/4 doğru. İlk kitaptaki "Decision-1 hatasız" sonucu
+  genellenmedi.
+- Paragraf devamı (0.5 eşiği): Decision-1 58/62, Luna 58/62, Jev 55/62. Hata türleri farklı:
+  Decision-1 hiçbir doğru birleşimi reddetmedi ama 4 yanlış birleşimi kaçırdı; Luna 1 kaçırdı ama 3
+  düz Türkçe devam cümlesini emin şekilde reddetti (0.01-0.05); Jev'in skorları bu kitapta aşağı
+  kaydı (5 doğru devam 0.33-0.47), yani 0.45 eşiği kitaplar arasında sabit değil.
+- İçindekiler satırı, kaynakça maddesi, tablo dipnotu gibi yapısal sınırları üç model de emin
+  şekilde doğru bildi (6/6).
+- İki kitap birlikte, kodun önerdiği adaylarda (124 doğru / 11 yanlış birleşim): Decision-1
+  0 yanlış ret, 7/11 yakalama; Luna 4 yanlış ret, 10/11; Jev (0.5) 5 yanlış ret, 9/11.
+- Yanlış birleşimlerin çoğu ek bölümlerindeki bozuk tablo/kısaltma listelerinden geliyor — bu,
+  modele sormadan önce kodun tablo bölgesini ayırmasıyla çözülmesi gereken bir sınıf.
+
+Karar: model sabitlenmedi. Üçü de aynı uç noktadan çağrıldığı için `refine` katmanında model adı
+config'de kalacak; veto rolü için başlangıç varsayılanı Decision-1 (doğru birleşimi hiç bozmadı).
 
 ## Yöntem (her fazda aynı döngü izleniyor)
 

@@ -26,9 +26,11 @@ def _asdict(obj) -> dict:
     return asdict(obj) if is_dataclass(obj) else obj
 
 
-def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path | None = None) -> BookResult:
+def evaluate_book(
+    book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path | None = None, refine_mode: str = "off"
+) -> BookResult:
     pdf_bytes = book.pdf_loader()
-    artifact = run_conversion(pdf_bytes, book.config, book.id, force_ocr=force_ocr)
+    artifact = run_conversion(pdf_bytes, book.config, book.id, force_ocr=force_ocr, refine_mode=refine_mode)
 
     if epub_out_dir is not None and artifact.epub_bytes:
         epub_out_dir.mkdir(parents=True, exist_ok=True)
@@ -112,6 +114,7 @@ def evaluate_book(book: GoldenBook, force_ocr: bool = False, epub_out_dir: Path 
             "duplicates": _asdict(duplicates),
             "broken_words": _asdict(broken_words),
             "flow_defects": _asdict(flow_defects),
+            "refine": _asdict(artifact.refine) if artifact.refine else None,
             "ocr_quality": _asdict(ocr_quality),
             "images": _asdict(images),
             "epub_validity": _asdict(epub_validity),

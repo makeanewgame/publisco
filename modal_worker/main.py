@@ -41,6 +41,7 @@ from converter import (
     process_page_range,
     slice_pdf_pages,
 )
+from refine import refine_page_results
 from schemas import AnalyzeRequest, ConvertRequest
 
 logger = logging.getLogger("modal_worker.main")
@@ -95,7 +96,7 @@ image = (
     # `from converter import (...)` runtime'da `ModuleNotFoundError` ile patlıyor.
     # En son eklenmeli (Modal'ın önerisi): pip/apt katmanlarının cache'ini bozmadan
     # sadece bu dosyalar değiştiğinde yeniden mount edilir.
-    .add_local_python_source("converter", "schemas")
+    .add_local_python_source("converter", "schemas", "refine")
 )
 
 app = modal.App("publisco-modal-worker", image=image)
@@ -260,6 +261,8 @@ def reduce_and_build_epub(plan_result: PlanResult, page_results_per_chunk: list[
     paketliyor, Modal'ın varsayılan limiti çok sayfalı/görsel ağırlıklı
     kitaplarda yetersiz kalabiliyor."""
     all_page_results = [pr for chunk_results in page_results_per_chunk for pr in chunk_results]
+    # `config["refine_mode"]` verilmediyse (varsayılan "off") hiçbir şey yapmaz.
+    refine_page_results(plan_result, all_page_results)
     return assemble_epub(plan_result, all_page_results)
 
 

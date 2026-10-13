@@ -59,6 +59,15 @@ regresyon referansımız).
   başlayan çift). Özet tablosunda `broken_words` ve sızan başlık sayılarıyla yan yana
   basılır; `--book` örnekleri de gösterir.
 
+## Düzeltme katmanı (`--refine`)
+
+`modal_worker/refine/` map ile reduce arasında çalışır; eval'de `--refine off|rules|model` ile
+seçilir (varsayılan `off`). `rules` paragraf birleştirme kurallarını uygular, `model` ayrıca her
+adayı bir karar modeline sorar ve modelin "hayır" dediklerini birleştirmez. Model yanıtları
+`eval/.cache/decisions/` altında saklanır (aynı soru ikinci kez ücretlendirilmez). Anahtar
+`AI_GATEWAY_API_KEY` (ortam ya da `modal_worker/.env`), model `REFINE_MODEL` (varsayılan
+`microsoft/microsoft-decision-1`). Özet çıktısı kitap başına aday / birleşen / veto / token basar.
+
 ## Mimari
 
 ```

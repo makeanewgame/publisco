@@ -141,6 +141,7 @@ def print_terminal_summary(summary: dict[str, Any], comparison: dict[str, Any] |
         print()
 
     _print_flow_defects(summary["books"])
+    _print_refine(summary["books"])
 
     if comparison is not None:
         sign = "+" if comparison["overall_delta"] >= 0 else ""
@@ -189,6 +190,22 @@ def _print_flow_defects(books: list[dict[str, Any]]) -> None:
         print(
             f"  {book_id[:44]:<44} {c['broken_words']:>12} {c['dangling_hyphens']:>10} "
             f"{c['split_paragraphs']:>10} {c['leaked_headers']:>12}"
+        )
+    print()
+
+
+def _print_refine(books: list[dict[str, Any]]) -> None:
+    rows = [(b["book_id"], (b.get("metric_details") or {}).get("refine")) for b in books]
+    rows = [(book_id, r) for book_id, r in rows if r and r.get("mode") != "off"]
+    if not rows:
+        return
+    mode, model = rows[0][1]["mode"], rows[0][1].get("model")
+    print(f"Refine ({mode}{', ' + model if model else ''}):")
+    print(f"  {'kitap':<44} {'aday':>6} {'birleşti':>9} {'veto':>6} {'hata':>6} {'token':>8}")
+    for book_id, r in rows:
+        print(
+            f"  {book_id[:44]:<44} {r['candidate_count']:>6} {r['joined_count']:>9} {r['vetoed_count']:>6} "
+            f"{r['model_error_count']:>6} {r['input_tokens']:>8}"
         )
     print()
 

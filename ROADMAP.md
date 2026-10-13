@@ -17,8 +17,8 @@ Aşağıdaki eski madde listesi geçerliliğini koruyor ama öncelik sırası ar
 |---|---|---|
 | 0 | Ölçüm döngüsü: `--tier`, OCR önbelleği, akış kusuru sayaçları | **Tamam (2026-10-13)** |
 | 1 | Jev pilotu: `son-sans`'tan 247 aday, 110'u elle etiketli | **Tamam (2026-10-13) — geçti, aşağıya bkz.** |
-| 2 | `modal_worker/refine/` altyapısı (map ile reduce arası; bayrakla açılır, yanıt önbelleği, maliyet raporu) | **Sıradaki** |
-| 3 | Kolay seviyede dört kural: satır/sayfa sonu tiresi, bölünmüş paragraf, tekrarlı başlık yanlış pozitifi, başlık seviyesi | |
+| 2 | `modal_worker/refine/` altyapısı (map ile reduce arası; bayrakla açılır, yanıt önbelleği, maliyet raporu) | **Tamam (2026-10-13)** |
+| 3 | Kolay seviyede dört kural: satır/sayfa sonu tiresi, bölünmüş paragraf, tekrarlı başlık yanlış pozitifi, başlık seviyesi | **Sürüyor** — ilk ikisi tamam, aşağıya bkz. |
 | 4 | Tek tam koşu, seviye başına baseline | |
 | 5 | Orta seviye (iki sütun, tablo, kod, görsel-altyazı) | |
 | 6 | Zor seviye (taranmış) — girilip girilmeyeceği Faz 4'te kararlaştırılır | |
@@ -79,6 +79,29 @@ ilk kitaptaki sıralama korunmadı.
 
 Karar: model sabitlenmedi. Üçü de aynı uç noktadan çağrıldığı için `refine` katmanında model adı
 config'de kalacak; veto rolü için başlangıç varsayılanı Decision-1 (doğru birleşimi hiç bozmadı).
+
+**Faz 2-3, paragraf birleştirme (2026-10-13; `refine/`, `--refine off|rules|model`):** kural, tireli
+parçayla ya da noktalamasız biten ve ardından küçük harfle başlayan paragraf çiftlerini birleştirir
+(sayfa içi + sayfa sınırı; başlık, sayfa içi görsel ve bölüm başı engeldir). `model` modunda
+Decision-1 kuralın önerdiklerini veto edebilir. Kolay seviye, akış sayaçları (tireli son + bölünmüş ¶):
+
+| Kitap | off | rules | model | Model vetosu |
+|---|---|---|---|---|
+| `son-sans` | 84 + 103 | 3 + 0 | 4 + 3 | 4 / 184 aday |
+| `bilimsel-makale` | 4 + 112 | 0 + 12 | 1 + 20 | 11 / 111 |
+| `molecules` | 0 + 6 | 0 + 0 | 0 + 1 | 1 / 6 |
+
+- `bilimsel-makale` ve `molecules`'taki 12 vetonun hepsi elle doğrulandı, hepsi doğru (tablo
+  dipnotu, kısaltma listesi, sayfa altbilgisine yapışacak gövde metni). `son-sans`'taki 4 veto
+  henüz incelenmedi.
+- `model` modunda sayaçların `rules`'tan yüksek olması beklenen: sayaç deseni sayar, veto edilen
+  çiftler desene uyar ama gerçek kusur değildir. Bu yüzden sayaç artık "kalan kusur"un üst sınırı.
+- Genel skor 93.8 → 93.1 (rules) / 93.2 (model) göründü; tamamı `molecules`'ın
+  `expected_paragraph_range` alt sınırından ([73, 111]; 73 = eski, fazla bölünmüş çıktının
+  sayısı). Birleştirmeler doğru, golden aralığı düzeltilmeli (kullanıcı onayı bekliyor, bkz. NOTES.md).
+- Maliyet (`model`, üç kitap, 301 aday): 52K token, ~0.2 sent. Yanıtlar `eval/.cache/decisions`'ta.
+- Prod'da kapalı: `refine_mode` API şemasında (`ConversionOptions`) yok, `reduce_and_build_epub`
+  varsayılan "off" ile çağırıyor. Açmak ayrı bir karar (şema alanı + Modal secret'a anahtar).
 
 ## Yöntem (her fazda aynı döngü izleniyor)
 

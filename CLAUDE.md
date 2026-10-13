@@ -106,7 +106,7 @@ GET /api/auth/me
 - **Purpose**: PDF → EPUB dönüştürme, plan/map/reduce fazlarına bölünmüş:
   - **Plan** (tek container): PDF indirilir, bölüm haritası + `(start_page, end_page)` chunk listesi (25 sayfalık, `CHUNK_PAGE_SIZE`) hesaplanır.
   - **Map** (`.map()` ile paralel): her container kendi sayfa aralığını Blob'dan kendisi indirip metin/OCR/görsel çıkarır.
-  - **Reduce** (tek container, `memory=2048`): sayfa sonuçları bölüm haritasına göre birleştirilip EPUB üretilir, Blob'a yüklenir.
+  - **Reduce** (tek container, `memory=2048`): sayfa sonuçları bölüm haritasına göre birleştirilip EPUB üretilir, Blob'a yüklenir. Birleştirmeden hemen önce `modal_worker/refine/` (bölünmüş paragrafları birleştiren kural + isteğe bağlı karar modeli vetosu) çalışır; `config["refine_mode"]` varsayılanı `off` olduğu için prod'da şu an devre dışı, yalnızca eval'de `--refine rules|model` ile açılıyor.
 - **Deploy**: `modal deploy modal_worker/main.py` (bkz. yukarıdaki Quick Start)
 - **Auth**: Vercel ↔ Modal arası tek paylaşılan sır (`MODAL_WEBHOOK_SECRET`) — Vercel'den gelen isteklerde bearer, Modal'dan Vercel'in webhook'una giden istekte HMAC imzası olarak kullanılır.
 
@@ -156,7 +156,11 @@ MODAL_ENDPOINT_URL=https://your-modal-deploy-url
 BLOB_READ_WRITE_TOKEN=token            # aynı token, PDF indirme/EPUB yükleme/silme için
 MODAL_WEBHOOK_SECRET=shared-secret-with-modal
 VERCEL_WEBHOOK_URL=https://your-api-domain/api/webhooks/modal-result
+AI_GATEWAY_API_KEY=vercel-ai-gateway-key   # opsiyonel: yalnızca refine_mode=model için (karar modeli vetosu); yoksa kurallar tek başına uygulanır
+REFINE_MODEL=microsoft/microsoft-decision-1   # opsiyonel, varsayılan bu
 ```
+
+Lokal eval için aynı `AI_GATEWAY_API_KEY`, `modal_worker/.env`'den okunur (`pnpm test:conversion --refine model`).
 
 ### Frontend (apps/web)
 - No .env file needed for dev

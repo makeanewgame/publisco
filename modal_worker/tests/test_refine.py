@@ -134,3 +134,26 @@ def test_strip_duplicate_chapter_titles():
     assert pages[1].html == '<img src="a.png" alt="x" />\n<p>Gövde.</p>'
     assert pages[2].html == "<p>Bambaşka bir cümleyle başlıyor.</p>"
     assert pages[3].html == "<p>Ekler listesi aşağıdadır.</p>"  # "Ek" kelimenin öneki, başlık tekrarı değil
+
+
+def test_demote_false_headings_only_below_threshold():
+    from refine.headings import demote_false_headings
+
+    class Client:
+        model = "fake"
+
+        def ask(self, state, questions):
+            p = {"Plato": 0.02, "AÇIKLIK GEREKSİNİMİ": 0.9, "HAYDEN": 0.3}[state["line"]]
+            if state["line"] == "Plato":
+                assert state["previous_text"].endswith("güzelliği.") and state["next_text"] == "AÇIKLIK GEREKSİNİMİ"
+            return DecisionResponse.model_validate({"answers": {"is_heading": {"type": "noul", "noul": p}}}), False
+
+    pages = [
+        PageResult(page_num=1, html="<p>Basitliğin güzelliği.</p>\n<h2>Plato</h2>\n<h2>AÇIKLIK GEREKSİNİMİ</h2>"),
+        PageResult(page_num=2, html="<h2>HAYDEN</h2>\n<p>Gövde.</p>\n<h2>Sayfa 2</h2>"),
+    ]
+    usage = demote_false_headings(pages, Client())
+
+    assert (usage.candidate_count, usage.demoted_count) == (3, 1)  # "Sayfa 2" sorulmaz
+    assert pages[0].html == "<p>Basitliğin güzelliği.</p>\n<p>Plato</p>\n<h2>AÇIKLIK GEREKSİNİMİ</h2>"
+    assert pages[1].html == "<h2>HAYDEN</h2>\n<p>Gövde.</p>\n<h2>Sayfa 2</h2>"

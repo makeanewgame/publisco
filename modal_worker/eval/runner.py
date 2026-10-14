@@ -31,6 +31,7 @@ from converter import (  # noqa: E402
 )
 from refine import refine_page_results  # noqa: E402
 from refine.decision_client import DecisionClient  # noqa: E402
+from refine.headings import DEFAULT_HEADING_MODEL  # noqa: E402
 from refine.paragraph_flow import RefineReport  # noqa: E402
 
 DECISION_CACHE_DIR = Path(__file__).resolve().parent / ".cache" / "decisions"
@@ -92,7 +93,12 @@ def run_conversion(
         # main.py'deki `reduce_and_build_epub` ile aynı sıra: refine -> assemble.
         # Karar modeli yanıtları diske yazılır: aynı soru ikinci kez ücretlendirilmez.
         refine_report = refine_page_results(
-            plan, page_results, decision_client=DecisionClient.from_env(cache_dir=DECISION_CACHE_DIR)
+            plan,
+            page_results,
+            decision_client=DecisionClient.from_env(cache_dir=DECISION_CACHE_DIR),
+            heading_client=DecisionClient.from_env(
+                cache_dir=DECISION_CACHE_DIR, model_env="REFINE_HEADING_MODEL", default_model=DEFAULT_HEADING_MODEL
+            ),
         )
         epub_bytes = assemble_epub(plan, page_results)
         return ConversionArtifact(

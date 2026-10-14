@@ -58,6 +58,9 @@ class RefineReport:
     input_tokens: int = 0
     cache_hits: int = 0
     duplicate_title_count: int = 0
+    heading_model: str | None = None
+    heading_candidate_count: int = 0
+    demoted_heading_count: int = 0
 
 
 def _starts_lowercase(text: str) -> bool:

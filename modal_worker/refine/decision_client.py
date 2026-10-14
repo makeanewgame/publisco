@@ -90,11 +90,13 @@ class DecisionClient:
         self.cache_dir = cache_dir  # yalnızca eval: aynı soru ikinci kez ücretlendirilmez, koşular tekrarlanabilir olur
 
     @classmethod
-    def from_env(cls, cache_dir: Path | None = None) -> "DecisionClient | None":
+    def from_env(
+        cls, cache_dir: Path | None = None, model_env: str = "REFINE_MODEL", default_model: str = DEFAULT_MODEL
+    ) -> "DecisionClient | None":
         api_key = os.environ.get("AI_GATEWAY_API_KEY")
         if not api_key:
             return None
-        return cls(api_key, os.environ.get("REFINE_MODEL", DEFAULT_MODEL), cache_dir)
+        return cls(api_key, os.environ.get(model_env, default_model), cache_dir)
 
     def _cache_path(self, request: DecisionRequest) -> Path | None:
         if self.cache_dir is None:

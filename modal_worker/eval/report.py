@@ -201,11 +201,12 @@ def _print_refine(books: list[dict[str, Any]]) -> None:
         return
     mode, model = rows[0][1]["mode"], rows[0][1].get("model")
     print(f"Refine ({mode}{', ' + model if model else ''}):")
-    print(f"  {'kitap':<44} {'aday':>6} {'birleşti':>9} {'veto':>6} {'hata':>6} {'token':>8}")
+    print(f"  {'kitap':<44} {'aday':>6} {'birleşti':>9} {'veto':>6} {'tekrar başlık':>14} {'h2 indirildi':>13} {'hata':>6} {'token':>8}")
     for book_id, r in rows:
+        demoted = f"{r.get('demoted_heading_count', 0)}/{r.get('heading_candidate_count', 0)}"
         print(
             f"  {book_id[:44]:<44} {r['candidate_count']:>6} {r['joined_count']:>9} {r['vetoed_count']:>6} "
-            f"{r['model_error_count']:>6} {r['input_tokens']:>8}"
+            f"{r.get('duplicate_title_count', 0):>14} {demoted:>13} {r['model_error_count']:>6} {r['input_tokens']:>8}"
         )
     print()
 

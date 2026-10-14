@@ -59,6 +59,13 @@ regresyon referansımız).
   başlayan çift). Özet tablosunda `broken_words` ve sızan başlık sayılarıyla yan yana
   basılır; `--book` örnekleri de gösterir.
 
+## Bölüm tespiti eval'de de çalışır
+
+`runner.run_conversion`, golden config'de `chapters` yoksa canlı akışın yaptığı gibi önce
+`analyze_pdf` çağırıp bulunan bölümleri dönüşüme geçirir (canlıda `/analyze` → `/convert`).
+Bu adım 2026-10-13'te eklendi; öncesindeki sonuç dosyalarında her kitap tek bölümdür, `structure`
+skorları sonrasıyla kıyaslanamaz.
+
 ## Düzeltme katmanı (`--refine`)
 
 `modal_worker/refine/` map ile reduce arasında çalışır; eval'de `--refine off|rules|model` ile

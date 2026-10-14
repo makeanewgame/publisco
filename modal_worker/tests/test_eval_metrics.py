@@ -437,6 +437,7 @@ def test_ocr_cache_reuses_result_for_same_image(tmp_path, monkeypatch):
 
     monkeypatch.setattr(pytesseract, "image_to_data", fake_image_to_data)
     monkeypatch.setattr(pytesseract, "get_tesseract_version", lambda: "5.0.0")
+    monkeypatch.setattr(pytesseract, "get_languages", lambda config="": ["eng"])
 
     stats = ocr_cache.install(cache_dir=tmp_path)
     try:

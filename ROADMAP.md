@@ -93,7 +93,9 @@ Decision-1 kuralın önerdiklerini veto edebilir. Kolay seviye, akış sayaçlar
 
 - `bilimsel-makale` ve `molecules`'taki 12 vetonun hepsi elle doğrulandı, hepsi doğru (tablo
   dipnotu, kısaltma listesi, sayfa altbilgisine yapışacak gövde metni). `son-sans`'taki 4 veto
-  henüz incelenmedi.
+  sonradan incelendi: **dördü de yanlış** (düz devam cümleleri, ör. "ama ¶ beyaz atlı"). Yani
+  Decision-1 üç kitapta 16 vetonun 12'sinde haklı; düz metinli romanda yalnızca zarar verdi
+  (184 doğru birleşimin 4'ünü engelledi). Pilottaki "0/124 yanlış ret" örneklemden kaynaklıydı.
 - `model` modunda sayaçların `rules`'tan yüksek olması beklenen: sayaç deseni sayar, veto edilen
   çiftler desene uyar ama gerçek kusur değildir. Bu yüzden sayaç artık "kalan kusur"un üst sınırı.
 - Genel skor 93.8 → 93.1 (rules) / 93.2 (model) göründü; tamamı `molecules`'ın
@@ -102,6 +104,44 @@ Decision-1 kuralın önerdiklerini veto edebilir. Kolay seviye, akış sayaçlar
 - Maliyet (`model`, üç kitap, 301 aday): 52K token, ~0.2 sent. Yanıtlar `eval/.cache/decisions`'ta.
 - Prod'da kapalı: `refine_mode` API şemasında (`ConversionOptions`) yok, `reduce_and_build_epub`
   varsayılan "off" ile çağırıyor. Açmak ayrı bir karar (şema alanı + Modal secret'a anahtar).
+
+**Faz 3, bölüm tespiti (2026-10-13):** iki ayrı bulgu.
+
+1. *Ölçüm açığı:* eval bölüm tespitini hiç çalıştırmıyordu. Canlıda `/analyze` bölümleri bulur, web
+   arayüzü `/convert`'e `options.chapters` olarak geçirir; `plan_conversion` tespiti kendisi yapmaz.
+   Golden config'lerde `chapters` olmadığı için her kitap tek bölüm dönüşüyor, `TOC recall` yalnızca
+   bu varsayılanı ölçüyordu. `eval/runner.py` artık canlı akış gibi önce `analyze_pdf` çağırıyor.
+   **Bu, tüm kitapların `structure` skorunu değiştirir; 2026-10-13 öncesi sonuçlarla kıyaslanamaz.**
+2. *Tespit hataları* (`converter.py`, canlıyı da etkiler):
+   - İç kapaktaki tek bir büyük satır punto tavanını belirleyip biraz daha küçük gerçek bölüm
+     başlıklarının hepsini eliyordu → tavanı artık en az 2 adaylı en büyük katman belirliyor.
+   - İki satırlık başlığın yalnızca ilk satırı alınıyordu ("Bölüm 1") → aynı puntodaki devam
+     satırları başlığa ekleniyor ("Bölüm 1 Bilimsel Yazım Nedir?").
+   - Başlık adaylarında Mac-Türkçe karakter düzeltmesi uygulanmıyordu ("Yaz›m" → "Yazım").
+   - Numaralandırma deseni ad baş harfleriyle ("A. M. Celâl ...") eşleşiyordu.
+   - Harf aralığı açık başlıklar ("c h r is t o p h e r") tek kelimeye indiriliyor.
+
+   Etki (analiz adımı her iki tarafta açık): `bilimsel-makale` 85.9 → 92.8 (2 → 41 bölüm, TOC recall
+   0 → %100), `functional-programing` 89.6 → 94.2, `scanned_002` 84.9 → 87.6. Denenen diğer 6 kitabın
+   skoru değişmedi; 37 kitabın 24'ünde bölüm listesi birebir aynı, gerileyen yok. Bölüm sayısı
+   değişip golden'da beklenen bölüm listesi olmadığı için skorla doğrulanamayanlar: `son-sans`
+   2 → 19, `arapca-kitap` 2 → 25, `sigorta-klavuz` 1 → 7, `farkindalik` 1 → 2.
+
+**Faz 3, devam (2026-10-13, aynı gün):**
+- Açık bölüm ifadeleri ("3. BÖLÜM", "Bölüm 3", "Chapter 3", "Part II", "EK 1") sayfadaki daha büyük
+  süs başlığına tercih ediliyor; kitapta en az 3 tane varsa bölüm katmanını onlar belirliyor ve uç
+  değer süzgecinden muaflar. `son-sans`: 19 anlatıcı adı yerine 33 "N. BÖLÜM".
+  Muafiyeti her tekrar eden büyük adaya tanımak denendi ve geri alındı: Alfa serisinde iri puntolu
+  alıntı kutuları bölüm katmanını ele geçirdi (`bilim-kitabi` 20 → 5, `sinema-kitabi` 34 → 6).
+- `refine`: bölümün ilk sayfasında `<h1>`'in hemen altında tekrar eden başlık metni siliniyor
+  (`bilimsel-makale`: 41 bölümün 35'inde).
+- Kolay seviye (2026-10-13 akşamı, analiz adımı açık): refine kapalı 96.7; `rules` 96.3
+  (`molecules` golden aralığı yüzünden). Günün başında aynı üç kitap 93.8'di; farkın bir kısmı
+  bölüm tespitinin artık ölçülmesinden, bir kısmı düzeltmelerden.
+
+Faz 3'te kalan: tekrarlı başlık yanlış pozitifleri (kolay seviyede sızan başlık sayacı zaten 0;
+orta seviyede ölçülecek) ve `<h2>` alt başlık kalitesi (`bilimsel-makale`'de 229 `<h2>`, bir kısmı
+epigraf yazarı gibi başlık olmayan kısa satırlar — karar modeline uygun bir soru).
 
 ## Yöntem (her fazda aynı döngü izleniyor)
 

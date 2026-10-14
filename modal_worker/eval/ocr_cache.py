@@ -10,7 +10,7 @@ sarar: aynı piksel + aynı parametrelerle yapılan çağrı ikinci kez Tesserac
 Yalnızca eval içindir -- `converter.py`'ye dokunmaz, prod pipeline'ı etkilemez.
 Anahtar görselin piksellerinden türediği için render'ı etkileyen bir değişiklik
 (DPI, ön işleme) kendiliğinden yeni bir anahtar üretir; elle geçersiz kılmak
-gerekmez. Tesseract sürümü de anahtara dahildir.
+gerekmez. Tesseract sürümü ve kurulu dil paketleri de anahtara dahildir.
 """
 
 from __future__ import annotations
@@ -56,7 +56,10 @@ def install(cache_dir: Path = CACHE_DIR) -> OcrCacheStats | None:
         return None
 
     try:
-        engine_version = str(pytesseract.get_tesseract_version())
+        # Kurulu dil paketleri de anahtarda: Tesseract eksik bir dili (ör. "tur+eng"
+        # istenip yalnızca "eng" kuruluysa) HATA VERMEDEN atlıyor, yani aynı `lang`
+        # parametresi dil paketi kurulunca farklı çıktı verir.
+        engine_version = f"{pytesseract.get_tesseract_version()}|{','.join(sorted(pytesseract.get_languages(config='')))}"
     except Exception:  # tesseract binary yok -- önbelleğe alınacak bir şey de yok
         return None
 

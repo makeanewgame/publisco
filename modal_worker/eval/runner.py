@@ -24,6 +24,7 @@ from converter import (  # noqa: E402
     ConversionError,
     PageResult,
     PlanResult,
+    analyze_pdf,
     assemble_epub,
     plan_conversion,
     process_page_range,
@@ -73,7 +74,16 @@ def run_conversion(
     `epub_bytes` boş kalır — çağıran taraf bunu skor gate'ine çevirir."""
     start = time.monotonic()
     try:
-        plan = plan_conversion(pdf_bytes, {**config, "refine_mode": refine_mode})
+        config = {**config, "refine_mode": refine_mode}
+        if not config.get("chapters"):
+            # Canlı akışın aynısı: önce /analyze bölümleri tespit eder, web arayüzü
+            # bunları /convert'e `options.chapters` olarak geçirir. `plan_conversion`
+            # bölüm tespitini KENDİSİ çalıştırmaz; bu adım olmadan eval her kitabı
+            # tek bölüm olarak dönüştürür ve bölüm tespiti hiç ölçülmez.
+            detected_chapters = analyze_pdf(pdf_bytes).get("chapters")
+            if detected_chapters:
+                config["chapters"] = detected_chapters
+        plan = plan_conversion(pdf_bytes, config)
         page_results: list[PageResult] = []
         for start_page, end_page in plan.chunks:
             page_results.extend(

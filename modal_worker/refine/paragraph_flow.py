@@ -9,9 +9,9 @@
 Sayfa HTML'i `converter.py`'nin ürettiği biçimdedir: her satır bir üst düzey
 blok (`<p>...</p>`, `<h2>...</h2>`, `<img ... />`, `visual-page` div'i). Yalnızca
 sınıfsız düz `<p>` blokları paragraf sayılır; başlık, altyazı ve görsel-sayfa
-blokları birleştirmeye engeldir. Sayfa sınırında araya giren `<img>` satırları
-(ör. her sayfası arka plan görseliyle başlayan kitaplar) engel sayılmaz --
-devam metni önceki paragrafa taşınır, görsel yerinde kalır.
+blokları birleştirmeye engeldir. `<img>` satırları aynı sayfanın içinde engeldir,
+sayfa sınırında değildir (sayfa sonundaki şekil, sonraki sayfanın başındaki arka
+plan görseli) -- devam metni önceki paragrafa taşınır, görsel yerinde kalır.
 """
 
 from __future__ import annotations
@@ -57,6 +57,7 @@ class RefineReport:
     model_error_count: int = 0
     input_tokens: int = 0
     cache_hits: int = 0
+    duplicate_title_count: int = 0
 
 
 def _starts_lowercase(text: str) -> bool:
@@ -99,24 +100,29 @@ def find_join_candidates(page_results: list[Any], chapter_start_pages: set[int] 
 
     candidates: list[JoinCandidate] = []
     prev: tuple[int, int, str] | None = None  # (sayfa indeksi, satır indeksi, metin)
+    image_since_prev = False
 
     for page_index in order:
         page = page_results[page_index]
         lines = page.html.split("\n") if page.html else []
         if page.page_num in chapter_start_pages:
             prev = None
-        at_page_start = True  # henüz bu sayfada `<img>` dışında blok görülmedi
 
         for line_index, line in enumerate(lines):
             text = _paragraph_text(line)
             if text is None:
-                # Sayfa başındaki görseller sayfa sınırını aşan paragrafı kesmez;
-                # diğer her blok (başlık, sayfa içi görsel, görsel-sayfa) keser.
-                if not (at_page_start and _IMG_RE.match(line)):
-                    prev = None
-                    at_page_start = False
+                if _IMG_RE.match(line):
+                    image_since_prev = True
+                else:
+                    prev = None  # başlık, altyazı, görsel-sayfa: her zaman engel
                 continue
-            at_page_start = False
+
+            # Aynı sayfada iki paragrafın arasına giren görsel engeldir (şekil +
+            # altındaki metin). Sayfa sınırında ise görseller engel değildir:
+            # sayfa sonundaki şekil ya da sonraki sayfanın başındaki arka plan
+            # görseli, sayfayı aşan paragrafı kesmez.
+            if prev is not None and image_since_prev and prev[0] == page_index:
+                prev = None
 
             if prev is not None:
                 kind = classify_boundary(prev[2], text)
@@ -134,6 +140,7 @@ def find_join_candidates(page_results: list[Any], chapter_start_pages: set[int] 
                         )
                     )
             prev = (page_index, line_index, text)
+            image_since_prev = False
 
     return candidates
 
@@ -172,3 +179,47 @@ def apply_joins(page_results: list[Any], candidates: list[JoinCandidate], vetoed
     for page_index, lines in lines_by_page.items():
         page_results[page_index].html = "\n".join(line for line in lines if line is not None)
     return joined
+
+
+_TEXT_BLOCK_RE = re.compile(r"^<(p|h2)>(.*)</\1>$", re.DOTALL)
+_WHITESPACE_RE = re.compile(r"\s+")
+
+
+def _normalize_title(text: str) -> str:
+    return _WHITESPACE_RE.sub(" ", text).strip().casefold()
+
+
+def strip_duplicate_chapter_titles(page_results: list[Any], chapters: list[Any]) -> int:
+    """`assemble_epub` her bölümün başına `<h1>başlık</h1>` koyar; başlık PDF sayfasında
+    da basılı olduğu için aynı metin hemen altında bir kez daha (çoğu zaman epigrafla
+    aynı paragrafa yapışmış halde) görünür. Bölümün ilk sayfasındaki ilk metin bloğu
+    başlıkla başlıyorsa o kısım atılır. Kaç bölümde temizlik yapıldığı döner."""
+    by_page = {page.page_num: page for page in page_results}
+    removed = 0
+    for chapter in chapters:
+        page = by_page.get(chapter.start_page)
+        title = _normalize_title(chapter.title)
+        if page is None or not page.html or len(title) < 3:
+            continue
+        lines = page.html.split("\n")
+        for index, line in enumerate(lines):
+            if _IMG_RE.match(line):
+                continue
+            match = _TEXT_BLOCK_RE.match(line)
+            if match is None:
+                break
+            text = html.unescape(match.group(2))
+            collapsed = _WHITESPACE_RE.sub(" ", text).strip()
+            if not collapsed.casefold().startswith(title):
+                break
+            remainder = collapsed[len(title) :].strip()
+            if remainder and remainder[0].isalnum() and collapsed[len(title) - 1].isalnum() and not collapsed[len(title)].isspace():
+                break  # başlık bir kelimenin ortasında bitiyor: tesadüfi önek, tekrar değil
+            if remainder:
+                lines[index] = f"<p>{html.escape(remainder)}</p>"
+            else:
+                del lines[index]
+            page.html = "\n".join(lines)
+            removed += 1
+            break
+    return removed

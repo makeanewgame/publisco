@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .paragraph_flow import RefineReport, apply_joins, find_join_candidates
+from .paragraph_flow import RefineReport, apply_joins, find_join_candidates, strip_duplicate_chapter_titles
 
 logger = logging.getLogger("modal_worker.refine")
 
@@ -36,6 +36,9 @@ def refine_page_results(plan: Any, page_results: list[Any], decision_client: Any
     report = RefineReport(mode=mode)
     if mode == "off":
         return report
+
+    # Birleştirmeden ÖNCE: başlıktan arta kalan metin (ör. epigraf) da aday olabilsin.
+    report.duplicate_title_count = strip_duplicate_chapter_titles(page_results, plan.chapters)
 
     chapter_start_pages = {chapter.start_page for chapter in plan.chapters}
     candidates = find_join_candidates(page_results, chapter_start_pages)

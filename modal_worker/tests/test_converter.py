@@ -918,3 +918,85 @@ def test_span_text_applies_symbol_decoding():
     assert _span_text({"text": "\uf073", "font": "SymbolMT"}) == "σ"
     assert _span_text({"text": "\uf073", "font": "Wingdings"}) == "\uf073"
     assert _span_text({}) == ""
+
+
+def test_filter_chapter_candidates_singleton_top_size_does_not_set_tier():
+    """İç kapaktaki tek bir büyük satır (kitabın adı), biraz daha küçük puntodaki
+    tekrar eden gerçek bölüm başlıklarını elememeli; kendisi de bölüm sayılmamalı."""
+    from converter import CHAPTER_TIER_RATIO, _filter_chapter_candidates
+
+    candidates = [(2, "Kitabın Adı ve Alt Başlığı", 18.0)]
+    candidates += [(page, f"Bölüm {i} Başlık", 16.0) for i, page in enumerate(range(10, 100, 10), start=1)]
+    candidates += [(page, "kalın gövde satırı", 12.0) for page in range(11, 100, 10)]
+
+    chapters = _filter_chapter_candidates(candidates, CHAPTER_TIER_RATIO)
+
+    assert [c["start_page"] for c in chapters] == list(range(10, 100, 10))
+
+
+def test_chapter_numbering_pattern_ignores_name_initials():
+    from converter import CHAPTER_NUMBERING_PATTERN
+
+    assert CHAPTER_NUMBERING_PATTERN.match("3. BULGULAR")
+    assert CHAPTER_NUMBERING_PATTERN.match("Appendix A. Tables")
+    assert CHAPTER_NUMBERING_PATTERN.match("A. Giriş")
+    assert not CHAPTER_NUMBERING_PATTERN.match("A. M. Celâl Şengör'ün Önsözü")
+
+
+def test_chapter_candidate_joins_same_size_title_lines():
+    """"Bölüm 1" / "Bilimsel Yazım Nedir?" iki satırlık tek bir başlıktır."""
+    import pymupdf
+
+    from converter import _detect_chapter_candidate_from_dict_page
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 80), "Chapter 1", fontsize=16, fontname="hebo")
+    page.insert_text((72, 100), "What Is Scientific Writing?", fontsize=16, fontname="hebo")
+    page.insert_text((72, 140), "Body text follows here in the normal size.", fontsize=12)
+
+    assert _detect_chapter_candidate_from_dict_page(page, 12.0) == ("Chapter 1 What Is Scientific Writing?", 16.0)
+    doc.close()
+
+
+def test_collapse_letterspaced_only_touches_mostly_single_char_text():
+    from converter import _collapse_letterspaced
+
+    assert _collapse_letterspaced("c h r is t o p h e r") == "christopher"
+    assert _collapse_letterspaced("Bölüm 1 Bilimsel Yazım Nedir?") == "Bölüm 1 Bilimsel Yazım Nedir?"
+    assert _collapse_letterspaced("A B C") == "A B C"  # çok kısa: gerçek kısaltma olabilir
+
+
+def test_chapter_keyword_candidates_define_the_tier():
+    """Kitap bölümlerini açıkça adlandırıyorsa ("3. BÖLÜM") daha büyük puntolu diğer
+    adaylar (iç kapak, süs başlığı) bölüm sayılmaz."""
+    from converter import CHAPTER_KEYWORD_PATTERN, CHAPTER_TIER_RATIO, _filter_chapter_candidates
+
+    for text in ("3. BÖLÜM", "Bölüm 3 Başlık", "Chapter 12", "Part II", "EK 1"):
+        assert CHAPTER_KEYWORD_PATTERN.match(text), text
+    for text in ("Ekler listesi", "Partial results", "Bölümler arası geçiş"):
+        assert not CHAPTER_KEYWORD_PATTERN.match(text), text
+
+    candidates = [(page, f"{i}. BÖLÜM", 12.0) for i, page in enumerate(range(10, 60, 10), start=1)]
+    candidates += [(page, "süs başlığı büyük", 20.0) for page in (15, 25, 35)]
+
+    chapters = _filter_chapter_candidates(candidates, CHAPTER_TIER_RATIO)
+
+    assert [c["title"] for c in chapters] == [f"{i}. BÖLÜM" for i in range(1, 6)]
+
+
+def test_filter_chapter_candidates_keeps_recurring_oversized_headings():
+    """Medyanın çok üstünde ama tekrar eden başlıklar uç değer değil, bölüm stilidir."""
+    from converter import CHAPTER_TIER_RATIO, _filter_chapter_candidates
+
+    candidates = [(page, f"{i}. BÖLÜM", 41.0) for i, page in enumerate(range(10, 100, 10), start=1)]
+    candidates += [(page, "küçük ara başlık", 15.0) for page in range(1, 100, 2)]
+
+    chapters = _filter_chapter_candidates(candidates, CHAPTER_TIER_RATIO)
+
+    assert [c["title"] for c in chapters] == [f"{i}. BÖLÜM" for i in range(1, 10)]
+
+    # Açık bölüm ifadesi taşımayan iri puntolu tekrarlar (alıntı kutuları) muaf değildir.
+    quotes = [(page, "iri puntolu alıntı", 41.0) for page in range(10, 100, 10)]
+    quotes += [(page, "gerçek bölüm başlığı", 15.0) for page in range(1, 100, 4)]
+    assert all(c["title"] == "gerçek bölüm başlığı" for c in _filter_chapter_candidates(quotes, CHAPTER_TIER_RATIO))

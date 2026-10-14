@@ -99,3 +99,38 @@ def test_model_vetoes_low_probability_and_keeps_rule_on_error():
         "<p>ikinci devam.</p>",
         f"<p>{LONG} ve üçüncü devam.</p>",
     ]
+
+
+def test_figure_at_page_end_does_not_block_cross_page_join():
+    pages = [
+        PageResult(page_num=1, html=f'<p>{LONG} ve</p>\n<img src="fig.png" alt="x" />'),
+        PageResult(page_num=2, html="<p>onunla konuştu.</p>"),
+    ]
+    candidates = find_join_candidates(pages)
+    assert len(candidates) == 1
+    apply_joins(pages, candidates)
+    assert pages[0].html == f'<p>{LONG} ve onunla konuştu.</p>\n<img src="fig.png" alt="x" />'
+    assert pages[1].html == ""
+
+
+def test_strip_duplicate_chapter_titles():
+    from refine.paragraph_flow import strip_duplicate_chapter_titles
+
+    pages = [
+        PageResult(page_num=1, html="<p>Bölüm 1  Bilimsel Yazım Nedir? Epigraf cümlesi.</p>\n<p>Gövde.</p>"),
+        PageResult(page_num=2, html='<img src="a.png" alt="x" />\n<h2>2. BÖLÜM</h2>\n<p>Gövde.</p>'),
+        PageResult(page_num=3, html="<p>Bambaşka bir cümleyle başlıyor.</p>"),
+        PageResult(page_num=4, html="<p>Ekler listesi aşağıdadır.</p>"),
+    ]
+    chapters = [
+        ChapterPlan(start_page=1, end_page=1, title="Bölüm 1 Bilimsel Yazım Nedir?"),
+        ChapterPlan(start_page=2, end_page=2, title="2. BÖLÜM"),
+        ChapterPlan(start_page=3, end_page=3, title="Üçüncü Bölüm"),
+        ChapterPlan(start_page=4, end_page=4, title="Ek"),
+    ]
+
+    assert strip_duplicate_chapter_titles(pages, chapters) == 2
+    assert pages[0].html == "<p>Epigraf cümlesi.</p>\n<p>Gövde.</p>"
+    assert pages[1].html == '<img src="a.png" alt="x" />\n<p>Gövde.</p>'
+    assert pages[2].html == "<p>Bambaşka bir cümleyle başlıyor.</p>"
+    assert pages[3].html == "<p>Ekler listesi aşağıdadır.</p>"  # "Ek" kelimenin öneki, başlık tekrarı değil

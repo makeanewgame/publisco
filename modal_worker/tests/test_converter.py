@@ -1011,3 +1011,23 @@ def test_filter_chapter_candidates_keyword_wins_page_gap_conflict():
     titles = [c["title"] for c in _filter_chapter_candidates(candidates, CHAPTER_TIER_RATIO)]
 
     assert titles[:3] == ["Yazarın Önsözü", "Bölüm 1 Giriş", "Bölüm 2 Başlık"]
+
+
+def test_detect_recurring_watermark_text_requires_same_position():
+    """Sayfa ortasında hep AYNI noktada duran kısa metin filigrandır; aynı metnin farklı
+    yerlerde tekrar etmesi (ör. test şıkları) meşru içeriktir."""
+    import pymupdf
+
+    from converter import detect_recurring_watermark_text
+
+    doc = pymupdf.open()
+    for i in range(10):
+        page = doc.new_page()
+        page.insert_text((250, 400), "ornekfiligran.az", fontsize=10)
+        page.insert_text((72, 120 + i * 40), "A) B) C)", fontsize=10)
+        page.insert_text((72, 600), f"Gövde metni sayfa {i}.", fontsize=11)
+
+    found = detect_recurring_watermark_text(doc, 1, len(doc))
+
+    assert found == {"ornekfiligran.az"}
+    doc.close()

@@ -2203,6 +2203,58 @@ def detect_recurring_margin_text(
     return {key for key, count in occurrences.items() if count >= min_repeats}
 
 
+WATERMARK_MAX_CHARS = 40  # filigran adayı yalnızca kısa bloklar (site adresi, yayınevi adı)
+WATERMARK_POSITION_BUCKET_PT = 20.0  # "aynı konum" toleransı: blok sol-üst köşesi bu ızgarada aynı hücrede
+
+
+def detect_recurring_watermark_text(
+    doc, start_page: int, end_page: int, sample_count: int = HEADER_FOOTER_SAMPLE_COUNT,
+) -> set[str]:
+    """Kenar payının DIŞINDA, örneklenen sayfaların en az yarısında BİREBİR AYNI kısa
+    metinle VE aynı konumda tekrar eden blokları (filigran) bulur.
+
+    `detect_recurring_margin_text` yalnızca üst/alt şeride bakıyor; sayfanın ortasına
+    basılmış bir filigran (gerçek örnek: `multilingual_azerice-kitap-2`, her sayfanın
+    tam ortasında "bilikliol.az") gövde metnine 232 kez karışıyordu. Konum şartı
+    bilerek katı: aynı kısa metnin (ör. test kitaplarındaki "A) B) C)" şıkları) farklı
+    yerlerde tekrar etmesi meşru içeriktir; sayfaların yarısında AYNI noktada durması
+    değildir."""
+    occurrences: dict[tuple[str, int, int], int] = {}
+    sampled_pages = 0
+
+    for page_num in _sample_page_numbers(start_page, end_page, sample_count):
+        page_index = page_num - 1
+        if not (0 <= page_index < len(doc)):
+            continue
+        try:
+            raw_blocks = doc[page_index].get_text("blocks", sort=True)
+        except Exception:
+            continue
+
+        sampled_pages += 1
+        seen_this_page: set[tuple[str, int, int]] = set()
+        for block in raw_blocks:
+            if len(block) < 7 or block[6] != 0:
+                continue
+            text = block[4].strip()
+            if not text or len(text) > WATERMARK_MAX_CHARS:
+                continue
+            key = _repeat_key(text)
+            if len(key) < 3 or key == "#" or not _HAS_LETTER_RE.search(key):
+                continue
+            seen_this_page.add(
+                (key, round(block[0] / WATERMARK_POSITION_BUCKET_PT), round(block[1] / WATERMARK_POSITION_BUCKET_PT))
+            )
+        for entry in seen_this_page:
+            occurrences[entry] = occurrences.get(entry, 0) + 1
+
+    if sampled_pages == 0:
+        return set()
+
+    min_repeats = max(2, round(sampled_pages * HEADER_FOOTER_MIN_REPEAT_RATIO))
+    return {key for (key, _x, _y), count in occurrences.items() if count >= min_repeats}
+
+
 # ---------------------------------------------------------------------------
 # Gövde punto tespiti — yalnızca plan fazında, madde 1'deki başlık/paragraf
 # sezgiselinin ve font-boyutu tabanlı bölüm tespitinin "normal" kabul edeceği
@@ -2296,6 +2348,7 @@ def plan_conversion(pdf_bytes: bytes, config: dict[str, Any]) -> PlanResult:
         resolved_config = dict(resolved_config)
         resolved_config["header_margin_ratio"] = top_margin_ratio
         resolved_config["footer_margin_ratio"] = bottom_margin_ratio
+        recurring_margin_text |= detect_recurring_watermark_text(doc, start_page, end_page)
         resolved_config["recurring_margin_text"] = sorted(recurring_margin_text)
         resolved_config["body_font_size"] = detect_body_font_size(doc, start_page, end_page)
 

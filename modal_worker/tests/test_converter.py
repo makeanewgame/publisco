@@ -1000,3 +1000,14 @@ def test_filter_chapter_candidates_keeps_recurring_oversized_headings():
     quotes = [(page, "iri puntolu alıntı", 41.0) for page in range(10, 100, 10)]
     quotes += [(page, "gerçek bölüm başlığı", 15.0) for page in range(1, 100, 4)]
     assert all(c["title"] == "gerçek bölüm başlığı" for c in _filter_chapter_candidates(quotes, CHAPTER_TIER_RATIO))
+
+
+def test_filter_chapter_candidates_keyword_wins_page_gap_conflict():
+    from converter import CHAPTER_TIER_RATIO, _filter_chapter_candidates
+
+    candidates = [(15, "Yazarın Önsözü", 16.0), (19, "Yazarın Teşekkürü", 16.0), (20, "Bölüm 1 Giriş", 16.0)]
+    candidates += [(page, f"Bölüm {i} Başlık", 16.0) for i, page in enumerate(range(30, 60, 10), start=2)]
+
+    titles = [c["title"] for c in _filter_chapter_candidates(candidates, CHAPTER_TIER_RATIO)]
+
+    assert titles[:3] == ["Yazarın Önsözü", "Bölüm 1 Giriş", "Bölüm 2 Başlık"]

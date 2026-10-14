@@ -4,6 +4,8 @@
 
 ## Sorunlar (tamamlanan)
 
+- [x] (2026-10-14, Faz 3 — alt başlıklar) `refine/headings.py`: `model` modunda her `<h2>` Jev'e soruluyor, < 0.1 ise `<p>`'ye indiriliyor. 119 etiketli örnekle üç model karşılaştırıldı (`eval/pilots/heading_pilot.py`); yalnızca bu eşik iki kitapta hiç gerçek başlık indirmedi. Bölüm tespitinde sayfa aralığı çakışmasında açık bölüm ifadesi kazanıyor. Suite 107 → 109.
+
 - [x] (2026-10-13, Faz 3 devam; `converter.py` + `refine/`) Açık bölüm ifadeleri ("N. BÖLÜM", "Chapter N" ...) bölüm tespitinde öncelikli ve uç değer süzgecinden muaf: `son-sans` 2 → 33 bölüm. `refine` bölüm başında tekrar eden başlık metnini siliyor (`bilimsel-makale` 35/41). Önce/sonra bölüm listesi karşılaştırmasında yalnızca `son-sans` değişti. Suite 104 → 107. Kolay seviye 96.7 (refine kapalı).
 
 - [x] (2026-10-13, Faz 3 — bölüm tespiti; **`converter.py` değişti, canlıyı etkiler**) Bölüm tespitinde beş düzeltme: tekil en büyük aday punto tavanını belirlemiyor, iki satırlık başlıklar birleştiriliyor, başlık adaylarına Mac-Türkçe karakter düzeltmesi, numaralandırma deseni ad baş harflerini saymıyor, harf aralığı açık başlıklar toplanıyor. Ayrıca eval artık canlı akış gibi önce `analyze_pdf` çalıştırıyor (öncesinde bölüm tespiti hiç ölçülmüyordu — tüm `structure` skorları 2026-10-13 öncesiyle kıyaslanamaz). `bilimsel-makale` 85.9 → 92.8, `functional-programing` 89.6 → 94.2, `scanned_002` 84.9 → 87.6; 37 kitabın bölüm listeleri önce/sonra karşılaştırıldı, gerileyen yok. Refine: sayfa sonundaki şekil artık sayfayı aşan paragrafın birleşmesini engellemiyor. Suite 99 → 104.

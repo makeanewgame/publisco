@@ -139,6 +139,17 @@ Decision-1 kuralın önerdiklerini veto edebilir. Kolay seviye, akış sayaçlar
   (`molecules` golden aralığı yüzünden). Günün başında aynı üç kitap 93.8'di; farkın bir kısmı
   bölüm tespitinin artık ölçülmesinden, bir kısmı düzeltmelerden.
 
+**Faz 3, alt başlıklar (2026-10-14):** 119 etiketli `<h2>` (bilimsel-makale 70, son-sans 49) üç modele
+"bu satır başlık mı?" diye soruldu. Bilimsel kitapta üçü de ~%94 doğru; romanda üçü de anlatıcı
+adlarını ve zaman atlamalarını başlık saymıyor (Decision-1 bunların 10'unu < 0.05 verdi). Tek güvenli
+ayar: Jev < 0.1 ise indir — iki kitapta 82 gerçek başlığın hiçbiri, 37 sahte başlığın 13'ü.
+`refine` `model` modunda bu kuralı uyguluyor (`refine/headings.py`, model `REFINE_HEADING_MODEL`,
+varsayılan Jev; birleştirme vetosu Decision-1'de kaldı). Kolay seviyede: `son-sans` 27/111 indirildi
+(hepsi elle doğrulandı: mesaj/mektup satırları, imzalar, hikâye içi yazılar), `bilimsel-makale`
+10/200 (incelenmedi). Skor değişmiyor: hiçbir metrik alt başlık ölçmüyor.
+Ayrıca bölüm tespitinde sayfa aralığı çakışmasında açık bölüm ifadesi kazanıyor ("Bölüm 1" artık
+tek sayfalık "Yazarın Teşekkürü"ne yenilmiyor).
+
 Faz 3'te kalan: tekrarlı başlık yanlış pozitifleri (kolay seviyede sızan başlık sayacı zaten 0;
 orta seviyede ölçülecek) ve `<h2>` alt başlık kalitesi (`bilimsel-makale`'de 229 `<h2>`, bir kısmı
 epigraf yazarı gibi başlık olmayan kısa satırlar — karar modeline uygun bir soru).

@@ -1726,6 +1726,15 @@ def _filter_chapter_candidates(
     last_page = -CHAPTER_MIN_PAGE_GAP
     for page_num, title in selected:
         if page_num - last_page < CHAPTER_MIN_PAGE_GAP:
+            # Çakışmada açık bölüm ifadesi ("Bölüm 1") kazanır: tek sayfalık bir ön
+            # bölüm ("Yazarın Teşekkürü") hemen ardındaki ilk bölümü düşürmesin.
+            if (
+                chapters
+                and CHAPTER_KEYWORD_PATTERN.match(title)
+                and not CHAPTER_KEYWORD_PATTERN.match(chapters[-1]["title"])
+            ):
+                chapters[-1] = {"start_page": page_num, "title": title}
+                last_page = page_num
             continue
         chapters.append({"start_page": page_num, "title": title})
         last_page = page_num

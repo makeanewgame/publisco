@@ -128,8 +128,7 @@ def test_exclude_phrase_recurring_across_pages_is_a_violation():
         total_pages=10,
     )
     assert result.phrase_exclude_violations == ["Dergi Adi"]
-    assert result.phrase_exclude_sparse == []
-    assert result.phrase_exclude_occurrences == {"Dergi Adi": 10}
+    assert result.phrase_exclude_incidental == {}
 
 
 def test_exclude_phrase_sparse_in_long_book_is_reported_but_not_a_violation():
@@ -144,8 +143,7 @@ def test_exclude_phrase_sparse_in_long_book_is_reported_but_not_a_violation():
         total_pages=100,
     )
     assert result.phrase_exclude_violations == []
-    assert result.phrase_exclude_sparse == ["Ali Veli"]
-    assert result.phrase_exclude_occurrences == {"Ali Veli": 1}
+    assert result.phrase_exclude_incidental == {"Ali Veli": 1}
 
 
 def test_exclude_phrase_on_alternating_pages_is_still_a_violation():

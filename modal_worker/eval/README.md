@@ -107,10 +107,11 @@ Bunun yerine:
    / `must_exclude_phrases` (birkaç ayırt edici cümle -- tam metin yazmadan
    recall + header-sızıntısı kontrolü), `expected_chapters`, `expected_image_count`,
    `expected_paragraph_range`.
-   `must_exclude_phrases` sıklığa duyarlıdır: bir ifade yalnızca sayfa sayısına
-   oranla sık geçiyorsa (`EXCLUDE_LEAK_PAGE_RATIO_THRESHOLD`, koşu başlığı gibi)
-   skoru düşürür; seyrek geçenler `--book` çıktısında "Sparse excluded phrases"
-   olarak raporlanır ama cezalandırılmaz. Yani bu liste TEKRARLAYAN sayfa
+   `must_exclude_phrases` sıklığa duyarlıdır: bir ifade yalnızca sayfa döşemesi
+   gibi tekrar ediyorsa (en az `EXCLUDE_LEAK_MIN_OCCURRENCES` geçiş VE sayfaların
+   en az `EXCLUDE_LEAK_PAGE_RATIO` oranında, koşu başlığı gibi) skoru düşürür;
+   geri kalanlar `--book` çıktısında "Excluded phrases seen (not page-leak-like,
+   no score penalty)" olarak raporlanır ama cezalandırılmaz. Yani bu liste TEKRARLAYAN sayfa
    döşemesi için; kitabın konusu olan sık bir kelimeyi buraya koymayın.
 3. **Tier-2 referans** (`reference.txt`, yalnız birkaç kitap): bağımsız
    kaynaklı tam referans metin (Project Gutenberg / Wikisource gibi

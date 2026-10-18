@@ -1289,6 +1289,28 @@ def page_to_image_bytes(doc, page_index: int, dpi: int = 200, quality: int = 90)
 
 
 MIN_EMBEDDED_IMAGE_DISPLAY_PT = 30.0  # bu boyuttan (nokta, sayfadaki GÖRÜNEN/render boyutu) küçük gömülü görseller ikon/madde imi/süsleme sayılıp atlanır
+# SMask'lı görsellerde alfa kanalının en yüksek değeri bunun altındaysa görsel
+# sayfada fiilen görünmüyor demektir -- Word/PowerPoint'in vektör şekillerin
+# altına koyduğu gölge/parlama efekt katmanları böyle çıkıyor (bkz. NOTES.md,
+# book-with-tables_table sayfa 4: diyagramın 6 "parçası" alfa=0 siyah PNG'lerdi,
+# asıl diyagram vektördü).
+INVISIBLE_IMAGE_MAX_ALPHA = 8
+# Tek renkli (tüm pikseller aynı RGB) ve en fazla yarı opak bir SMask'lı görsel
+# içerik değil, bir şeklin düşen gölgesi -- ör. aynı kitabın her sayfasındaki
+# sayfa numarası rozetinin gölgesi (alfa en fazla 89).
+SHADOW_IMAGE_MAX_ALPHA = 128
+
+
+def _is_invisible_effect_layer(base_image: Image.Image, mask_image: Image.Image) -> bool:
+    """SMask'ı uygulanmış bir görsel EPUB'da görünmez bir `<img>` (ya da tek
+    renkli bir gölge lekesi) mi üretecek? Boyut filtresi
+    (`MIN_EMBEDDED_IMAGE_DISPLAY_PT`) bunları yakalayamıyor -- efekt katmanları
+    altındaki şekil kadar büyük olabiliyor."""
+    max_alpha = mask_image.getextrema()[1]
+    if max_alpha <= INVISIBLE_IMAGE_MAX_ALPHA:
+        return True
+    is_single_color = all(low == high for low, high in base_image.getextrema())
+    return is_single_color and max_alpha < SHADOW_IMAGE_MAX_ALPHA
 
 _EPUB_CORE_IMAGE_MEDIA_TYPES = {
     "png": "image/png",
@@ -1369,6 +1391,8 @@ def extract_embedded_page_images(
                 mask_image = Image.open(io.BytesIO(mask_extracted["image"])).convert("L")
                 if mask_image.size != base_image.size:
                     mask_image = mask_image.resize(base_image.size)
+                if _is_invisible_effect_layer(base_image, mask_image):
+                    continue
                 base_image.putalpha(mask_image)
                 buf = io.BytesIO()
                 base_image.save(buf, format="PNG", optimize=True)

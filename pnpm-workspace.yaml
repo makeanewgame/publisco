@@ -2,20 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
 
-overrides:
-  tar: "^7.5.22"
-  glob@10: "^10.5.0"
-  picomatch@4: "^4.0.5"
-  webpack: "^5.109.2"
-  tmp: "^0.2.7"
-  qs: "^6.15.3"
-  body-parser: "^1.20.6"
-  ajv@8: "^8.20.0"
-  file-type: "^21.3.4"
-  "@xmldom/xmldom": "^0.9.10"
-  fast-xml-parser: "^5.10.1"
-  uuid: "^11.1.1"
-  send: "^0.19.2"
-  postcss: "^8.5.26"
-  multer: "^2.2.0"
-  deepmerge-ts: "^8.0.0"
+# Overrides live in the root package.json ("pnpm.overrides"), NOT here: the
+# pinned pnpm@9 (packageManager) silently ignores an `overrides:` key in this
+# file (pnpm 10+ only), which left every override unapplied after 8f446c1.
+# A global pnpm 11 prints `The "pnpm" field in package.json is no longer read`
+# before handing off to pnpm@9 — that warning is harmless while the pin is 9;
+# move overrides here only together with bumping packageManager to pnpm 10+.

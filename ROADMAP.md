@@ -18,8 +18,8 @@ Aşağıdaki eski madde listesi geçerliliğini koruyor ama öncelik sırası ar
 | 0 | Ölçüm döngüsü: `--tier`, OCR önbelleği, akış kusuru sayaçları | **Tamam (2026-10-13)** |
 | 1 | Jev pilotu: `son-sans`'tan 247 aday, 110'u elle etiketli | **Tamam (2026-10-13) — geçti, aşağıya bkz.** |
 | 2 | `modal_worker/refine/` altyapısı (map ile reduce arası; bayrakla açılır, yanıt önbelleği, maliyet raporu) | **Tamam (2026-10-13)** |
-| 3 | Kolay seviyede dört kural: satır/sayfa sonu tiresi, bölünmüş paragraf, tekrarlı başlık yanlış pozitifi, başlık seviyesi | **Sürüyor** — ilk ikisi tamam, aşağıya bkz. |
-| 4 | Tek tam koşu, seviye başına baseline | |
+| 3 | Kolay seviyede dört kural: satır/sayfa sonu tiresi, bölünmüş paragraf, tekrarlı başlık yanlış pozitifi, başlık seviyesi | **Tamam (2026-10-14)** — aşağıya bkz. |
+| 4 | Tek tam koşu, seviye başına baseline | **Sıradaki** (kullanıcı onayıyla) |
 | 5 | Orta seviye (iki sütun, tablo, kod, görsel-altyazı) | |
 | 6 | Zor seviye (taranmış) — girilip girilmeyeceği Faz 4'te kararlaştırılır | |
 
@@ -150,7 +150,17 @@ varsayılan Jev; birleştirme vetosu Decision-1'de kaldı). Kolay seviyede: `son
 Ayrıca bölüm tespitinde sayfa aralığı çakışmasında açık bölüm ifadesi kazanıyor ("Bölüm 1" artık
 tek sayfalık "Yazarın Teşekkürü"ne yenilmiyor).
 
-Faz 3'te kalan: tekrarlı başlık yanlış pozitifleri (kolay seviyede sızan başlık sayacı zaten 0;
+**Faz 3, tekrarlı başlıklar (2026-10-14, orta seviye 24 kitap, skor 84.4):** başlık filtresinin
+gerçek metni sildiğine dair kanıt bulunmadı — kenar payındaki 6 kayıp zorunlu cümlenin 2'si
+golden hatası (zorunlu sayılmış sayfa başlığı: `tarih-kitabi` "ANTİK UYGARLIKLAR 37",
+`azerice-kitap-2` her sayfanın üstündeki reklam satırı), 2'si EPUB'da var ama eşleşmiyor
+(`scanned_005`, `scanned_006`), `astronomi` filtreden geçip sonraki adımda kayboluyor, `progit`
+doğrulanamadı. "Metinde geçmemeli" ihlali hiç yok. Bulunan tek genellenebilir sorun sayfa
+ortasındaki filigranlar: `detect_recurring_watermark_text` (kenar payı dışında, örneklenen
+sayfaların yarısında aynı konumda aynı kısa metin). 37 kitabın 7'sinde tetikleniyor;
+`azerice-kitap-2`'de sızan blok 663 → 428, diğer 6 kitapta skor ve paragraf sayısı birebir aynı.
+
+Eski satır (kayıt için): Faz 3'te kalan: tekrarlı başlık yanlış pozitifleri (kolay seviyede sızan başlık sayacı zaten 0;
 orta seviyede ölçülecek) ve `<h2>` alt başlık kalitesi (`bilimsel-makale`'de 229 `<h2>`, bir kısmı
 epigraf yazarı gibi başlık olmayan kısa satırlar — karar modeline uygun bir soru).
 

@@ -5,6 +5,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -46,12 +47,15 @@ type PendingJob = {
   status: ConvertJobStatus;
   epubUrl: string | null;
   errorMessage: string | null;
+  modalCallId: string | null;
 };
 
 const PENDING_JOB_TTL_MS = 2 * 60 * 60 * 1000; // 2 saat: kullanıcı hiç poll etmeden vazgeçerse kota bu sürede serbest bırakılır
 
 @Injectable()
 export class ConvertService {
+  private readonly logger = new Logger(ConvertService.name);
+
   constructor(
     private readonly quotaService: QuotaService,
     private readonly config: ConfigService,
@@ -185,8 +189,9 @@ export class ConvertService {
   // Modal kotayı rezerve ettikten sonra çağrılır; asıl ağır işi `.spawn()` ile
   // arka plana devredip anında 202 döner (bkz. modal_worker/main.py — convert
   // web_endpoint'i). Job daha sonra webhook ile (bkz. handleModalWebhook)
-  // COMPLETED/FAILED'e geçer.
-  private async startModalPipeline(jobId: string, pdfUrl: string, dto: ConvertPdfDto): Promise<void> {
+  // COMPLETED/FAILED'e geçer. Modal'ın döndürdüğü `call_id`'yi (run_pipeline'ın
+  // FunctionCall kimliği) döner — iptalde Modal'a geri gönderilir (bkz. cancel).
+  private async startModalPipeline(jobId: string, pdfUrl: string, dto: ConvertPdfDto): Promise<string | null> {
     let options: unknown;
     if (dto.options) {
       try {
@@ -222,6 +227,31 @@ export class ConvertService {
       const errorBody = await response.json().catch(() => null);
       throw new BadRequestException(errorBody?.detail || 'Dönüştürme başlatılamadı.');
     }
+
+    const body: { call_id?: string } = await response.json().catch(() => ({}));
+    return body.call_id ?? null;
+  }
+
+  // Modal'daki run_pipeline'ı durdurur (bkz. modal_worker/main.py — cancel_endpoint).
+  // En iyi çaba: job DB'de zaten CANCELLED'a çekilip kota serbest bırakıldı;
+  // Modal'a ulaşılamazsa pipeline sonuna kadar koşar ve geç gelen webhook
+  // handleModalWebhook'ta temizlenir.
+  private async cancelModalPipeline(callId: string): Promise<void> {
+    try {
+      const response = await fetch(`${this.modalEndpointUrl}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.modalWebhookSecret}`,
+        },
+        body: JSON.stringify({ call_id: callId }),
+      });
+      if (!response.ok) {
+        this.logger.warn(`Modal iptali ${response.status} döndü (call ${callId})`);
+      }
+    } catch (error) {
+      this.logger.warn(`Modal iptaline ulaşılamadı (call ${callId}): ${error}`);
+    }
   }
 
   async convert(userId: string, dto: ConvertPdfDto): Promise<{ jobId: string }> {
@@ -237,7 +267,7 @@ export class ConvertService {
 
     const jobId = randomUUID();
     try {
-      await this.startModalPipeline(jobId, uploaded.url, dto);
+      const modalCallId = await this.startModalPipeline(jobId, uploaded.url, dto);
       // Bu satıra gelindiğinde Modal `/convert`'e 202 dönüp `.spawn()` ile
       // pipeline'ı zaten arka planda başlatmış demektir (startModalPipeline
       // yukarıda bunu bekledi) — job hiçbir zaman gerçekten "PENDING" (henüz
@@ -245,7 +275,14 @@ export class ConvertService {
       // PROCESSING ile oluşturuluyor (bkz. NOTES.md: PROCESSING hiç set
       // edilmiyordu).
       await this.prisma.convertJob.create({
-        data: { id: jobId, userId, fileSizeBytes: uploaded.size, pageCount, status: ConvertJobStatus.PROCESSING },
+        data: {
+          id: jobId,
+          userId,
+          fileSizeBytes: uploaded.size,
+          pageCount,
+          status: ConvertJobStatus.PROCESSING,
+          modalCallId,
+        },
       });
       return { jobId };
     } catch (error) {
@@ -257,6 +294,29 @@ export class ConvertService {
   async getStatus(userId: string, jobId: string): Promise<ConvertStatus> {
     const job = await this.requireOwnedJob(userId, jobId);
     return { status: job.status, error: job.errorMessage };
+  }
+
+  // Kullanıcı "İptal"e bastığında çağrılır. Durum geçişi webhook'takiyle aynı
+  // updateMany-count deseniyle yapılıyor: yalnızca hâlâ PENDING/PROCESSING
+  // olan job CANCELLED'a çekilir — iptal ile Modal'ın COMPLETED/FAILED
+  // webhook'u yarışırsa ikisinden yalnızca biri kazanır. Job zaten bitmişse
+  // no-op (sonuç TTL cleanup'ında temizlenir).
+  async cancel(userId: string, jobId: string): Promise<ConvertStatus> {
+    const job = await this.requireOwnedJob(userId, jobId);
+
+    const { count } = await this.prisma.convertJob.updateMany({
+      where: { id: jobId, status: { in: ['PENDING', 'PROCESSING'] } },
+      data: { status: ConvertJobStatus.CANCELLED },
+    });
+    if (count === 0) {
+      return { status: job.status, error: job.errorMessage };
+    }
+
+    await this.releaseIfNeeded(jobId, job.userId, job.pageCount);
+    if (job.modalCallId) {
+      await this.cancelModalPipeline(job.modalCallId);
+    }
+    return { status: ConvertJobStatus.CANCELLED, error: null };
   }
 
   async getResult(userId: string, jobId: string): Promise<ConvertResult> {
@@ -356,6 +416,15 @@ export class ConvertService {
 
     if (count > 0 && payload.status === 'FAILED') {
       await this.releaseIfNeeded(payload.job_id, job.userId, job.pageCount);
+    }
+
+    // İptal, pipeline EPUB'ı yükledikten hemen sonra geldiyse (ya da Modal'a
+    // ulaşılamadıysa) COMPLETED webhook'u CANCELLED bir job'a düşer — EPUB'ı
+    // kimse indirmeyecek, Blob'da kalmasın.
+    if (count === 0 && job.status === ConvertJobStatus.CANCELLED && payload.epub_url) {
+      await del(payload.epub_url, { token: this.blobToken }).catch(() => {
+        // best-effort
+      });
     }
   }
 

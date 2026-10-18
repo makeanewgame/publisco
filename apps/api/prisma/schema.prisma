@@ -156,6 +156,9 @@ enum ConvertJobStatus {
   PROCESSING
   COMPLETED
   FAILED
+  // Kullanıcı "İptal"e bastı (bkz. ConvertService.cancel) — Modal'daki
+  // run_pipeline FunctionCall.cancel ile durduruldu, kota serbest bırakıldı.
+  CANCELLED
 }
 
 // Modal'a devredilmiş bir dönüştürme job'ının hangi kullanıcıya ait olduğunu,
@@ -180,6 +183,10 @@ model ConvertJob {
   status        ConvertJobStatus @default(PENDING)
   epubUrl       String?
   errorMessage  String?
+  // Modal'ın `/convert`'te döndürdüğü `run_pipeline` FunctionCall kimliği —
+  // iptalde Modal'ın `/cancel`'ına geri gönderilir. Bu alan eklenmeden önce
+  // oluşturulmuş job'larda null (onlar sunucu tarafında iptal edilemez).
+  modalCallId   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

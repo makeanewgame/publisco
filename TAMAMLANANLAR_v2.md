@@ -4,6 +4,8 @@
 
 ## Sorunlar (tamamlanan)
 
+- [x] (2026-10-14, Faz 3 kapandı; `converter.py`) Sayfa ortasındaki filigranlar: `detect_recurring_watermark_text` kara listeye ekleniyor. `azerice-kitap-2`'de "bilikliol.az" 232 kez metne karışıyordu; tetiklendiği diğer 6 kitapta çıktı değişmedi. Orta seviyede başlık filtresinin gerçek metni sildiğine dair kanıt bulunmadı (kayıp cümlelerin incelenenleri golden hatası ya da başka adım). Suite 109 → 110.
+
 - [x] (2026-10-14, Faz 3 — alt başlıklar) `refine/headings.py`: `model` modunda her `<h2>` Jev'e soruluyor, < 0.1 ise `<p>`'ye indiriliyor. 119 etiketli örnekle üç model karşılaştırıldı (`eval/pilots/heading_pilot.py`); yalnızca bu eşik iki kitapta hiç gerçek başlık indirmedi. Bölüm tespitinde sayfa aralığı çakışmasında açık bölüm ifadesi kazanıyor. Suite 107 → 109.
 
 - [x] (2026-10-13, Faz 3 devam; `converter.py` + `refine/`) Açık bölüm ifadeleri ("N. BÖLÜM", "Chapter N" ...) bölüm tespitinde öncelikli ve uç değer süzgecinden muaf: `son-sans` 2 → 33 bölüm. `refine` bölüm başında tekrar eden başlık metnini siliyor (`bilimsel-makale` 35/41). Önce/sonra bölüm listesi karşılaştırmasında yalnızca `son-sans` değişti. Suite 104 → 107. Kolay seviye 96.7 (refine kapalı).

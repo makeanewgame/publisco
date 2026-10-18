@@ -114,6 +114,7 @@ GET /api/auth/me
 ```
 POST /convert - kotayı zaten rezerve etmiş Vercel API'sinden gelir, .spawn() ile arka planda işler, 202 döner
 POST /analyze - dönüşümden önce başlık/yazar/bölüm tahmini (senkron, multipart PDF)
+POST /cancel - kullanıcı İptal'e bastığında run_pipeline'ı modal.FunctionCall.cancel ile durdurur (call_id, /convert'in yanıtından; ConvertJob.modalCallId)
 ```
 
 **Sonuç bildirimi**: `run_pipeline`, tamamlandığında/başarısız olduğunda Vercel'in `POST /api/webhooks/modal-result`'ına HMAC imzalı bir webhook atar (bkz. `apps/api/src/convert/modal-webhook.controller.ts`) — worker artık kendi durumunu tutmuyor, `ConvertJob.status` (Prisma) tek doğruluk kaynağı.

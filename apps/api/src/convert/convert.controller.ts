@@ -70,6 +70,14 @@ export class ConvertController {
     return this.convertService.getStatus(user.userId, jobId);
   }
 
+  // Convert sayfasındaki "İptal" butonu — Modal'daki pipeline'ı da durdurur
+  // ve rezerve edilen kotayı serbest bırakır (bkz. ConvertService.cancel).
+  @UseGuards(JwtAuthGuard)
+  @Post(':jobId/cancel')
+  async cancel(@Param('jobId') jobId: string, @CurrentUser() user: RequestUser) {
+    return this.convertService.cancel(user.userId, jobId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get(':jobId/result')
   async result(

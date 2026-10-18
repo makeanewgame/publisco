@@ -50,7 +50,7 @@ export interface ConvertPdfParams {
   forceOcr?: boolean;
 }
 
-export type ConvertJobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+export type ConvertJobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export interface ConvertProgress {
   status: ConvertJobStatus;
@@ -147,6 +147,16 @@ async function getConvertJobResult(jobId: string, signal?: AbortSignal): Promise
   return response.blob();
 }
 
+// Modal'daki pipeline'ı sunucu tarafında durdurur ve kotayı serbest bırakır
+// (bkz. ConvertService.cancel). Bilinçli olarak `signal` almıyor — iptal
+// isteğinin kendisi zaten abort edilmiş signal'la gönderilemez. En iyi çaba:
+// başarısız olursa job TTL cleanup'ında temizlenir.
+async function cancelConvertJob(jobId: string): Promise<void> {
+  await authFetch(`/convert/${jobId}/cancel`, { method: 'POST' }).catch((error) =>
+    console.error('Dönüştürme iptal edilemedi:', error),
+  );
+}
+
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
@@ -170,8 +180,8 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 // PROCESSING/COMPLETED/FAILED durumu; bkz. ConvertPage.tsx — belirsiz
 // (indeterminate) bir "dönüştürülüyor" göstergesi olarak render edilir),
 // bitince EPUB'ı indirir. `signal` verilirse (Cancel butonu) polling'i hemen
-// kesip AbortError fırlatır — bu yalnızca istemciyi sonucu beklemekten
-// vazgeçirir, Modal'daki pipeline'ı durdurmaz (iptal endpoint'i henüz yok).
+// kesip AbortError fırlatır; job başlamışsa API'ye iptal isteği de atılır, o
+// da Modal'daki pipeline'ı durdurup kotayı serbest bırakır (bkz. cancelConvertJob).
 export async function convertPdf(
   params: ConvertPdfParams,
   onProgress?: (progress: ConvertProgress) => void,
@@ -179,18 +189,28 @@ export async function convertPdf(
 ): Promise<Blob> {
   const jobId = await startConvertJob(params, signal);
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const progress = await getConvertJobStatus(jobId, signal);
-    onProgress?.(progress);
+  try {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const progress = await getConvertJobStatus(jobId, signal);
+      onProgress?.(progress);
 
-    if (progress.status === 'COMPLETED') {
-      return getConvertJobResult(jobId, signal);
+      if (progress.status === 'COMPLETED') {
+        return await getConvertJobResult(jobId, signal);
+      }
+      if (progress.status === 'FAILED') {
+        throw new Error(progress.error || 'conversion_failed');
+      }
+      if (progress.status === 'CANCELLED') {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      await wait(CONVERT_POLL_INTERVAL_MS, signal);
     }
-    if (progress.status === 'FAILED') {
-      throw new Error(progress.error || 'conversion_failed');
+  } catch (error) {
+    if (signal?.aborted) {
+      void cancelConvertJob(jobId);
     }
-    await wait(CONVERT_POLL_INTERVAL_MS, signal);
+    throw error;
   }
 }
 

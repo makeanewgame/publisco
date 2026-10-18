@@ -223,6 +223,36 @@ def test_convert_pdf_to_epub_skips_large_raw_but_tiny_display_image(pdf_with_lar
         assert not image_entries, "Sayfada ikon boyutunda gösterilen görsel, ham piksel boyutu büyük olsa da atlanmalı"
 
 
+def _epub_image_entries(pdf_bytes: bytes) -> list[str]:
+    result = convert_pdf_to_epub(pdf_bytes, {"title": "Alfa Kanalli Gorsel"})
+    with zipfile.ZipFile(io.BytesIO(result)) as archive:
+        return [name for name in archive.namelist() if "_img_" in name]
+
+
+def test_convert_pdf_to_epub_skips_fully_transparent_image(pdf_with_fully_transparent_image_bytes):
+    """Alfa kanalı tamamen 0 olan bir görsel EPUB'a görünmez bir `<img>`
+    olarak girmemeli.
+
+    Regresyon testi: `book-with-tables_table` sayfa 4'teki vektör diyagramın
+    altındaki 6 Office efekt katmanı (alfa=0 siyah PNG) boyut filtresini
+    geçiyor ve EPUB'a 3 benzersiz görünmez görsel olarak giriyordu."""
+    assert not _epub_image_entries(pdf_with_fully_transparent_image_bytes)
+
+
+def test_convert_pdf_to_epub_skips_faint_single_color_shadow(pdf_with_faint_shadow_image_bytes):
+    """Tek renkli, yarıdan az opak bir görsel (düşen gölge) atlanmalı.
+
+    Regresyon testi: `book-with-tables_table`'ın her sayfasındaki sayfa
+    numarası rozetinin gölgesi (xref 213, alfa ≤89) EPUB'a giriyordu."""
+    assert not _epub_image_entries(pdf_with_faint_shadow_image_bytes)
+
+
+def test_convert_pdf_to_epub_keeps_opaque_single_color_image(pdf_with_opaque_single_color_image_bytes):
+    """Tek renkli ama tam opak bir görsel (düz renkli siluet/logo) tutulmalı --
+    gölge filtresi yalnızca SOLUK tek renkli katmanları atmalı."""
+    assert _epub_image_entries(pdf_with_opaque_single_color_image_bytes)
+
+
 def test_convert_pdf_to_epub_ocr_recovers_text_from_scanned_page(ocr_scanned_page_bytes):
     """Metin katmanı olmayan ama görselde okunabilir metin bulunan bir sayfada,
     OCR kuruluysa gerçek metin çıkarılmalı — sayfa sessizce görsele düşmemeli.

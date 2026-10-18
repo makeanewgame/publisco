@@ -183,6 +183,42 @@ def pdf_with_large_raw_but_tiny_display_image_bytes() -> bytes:
     return data
 
 
+def _pdf_with_rgba_image(rgba: tuple[int, int, int, int]) -> bytes:
+    """Sayfada büyük (boyut filtresini geçen) gösterilen, tek renkli bir RGBA
+    görsel içeren PDF -- PyMuPDF alfa kanalını SMask olarak gömer."""
+    image = Image.new("RGBA", (200, 150), color=rgba)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Bu sayfada alfa kanalli tek renkli bir gorsel var. " * 4, fontsize=12)
+    page.insert_image(pymupdf.Rect(72, 300, 272, 450), stream=buffer.getvalue())
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+@pytest.fixture
+def pdf_with_fully_transparent_image_bytes() -> bytes:
+    """Alfa=0 (tamamen görünmez) bir görsel -- Office'in vektör şekillerin
+    altına koyduğu efekt katmanlarının taklidi (bkz. `INVISIBLE_IMAGE_MAX_ALPHA`)."""
+    return _pdf_with_rgba_image((0, 0, 0, 0))
+
+
+@pytest.fixture
+def pdf_with_faint_shadow_image_bytes() -> bytes:
+    """Tek renkli, ~%35 opak bir görsel -- düşen gölge taklidi (bkz. `SHADOW_IMAGE_MAX_ALPHA`)."""
+    return _pdf_with_rgba_image((0, 0, 0, 89))
+
+
+@pytest.fixture
+def pdf_with_opaque_single_color_image_bytes() -> bytes:
+    """Tek renkli ama tam opak bir görsel (ör. düz renkli bir siluet/logo) --
+    gölge filtresinin yalnızca SOLUK tek renkli katmanları attığını test eder."""
+    return _pdf_with_rgba_image((30, 60, 120, 255))
+
+
 @pytest.fixture
 def pdf_with_two_columns_bytes() -> bytes:
     """İki sütunlu bir sayfa (akademik makale düzeni) üretir -- sol sütunda 3,

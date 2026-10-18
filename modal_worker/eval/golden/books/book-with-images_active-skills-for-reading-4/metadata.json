@@ -2,6 +2,7 @@
   "category": "book-with-images",
   "language": "en",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "Active Skills for Reading",
     "author": "Unknown (Educational Publisher)"

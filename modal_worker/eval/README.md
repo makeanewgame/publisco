@@ -31,6 +31,7 @@ içinde üretilen 3 kitapla mekaniği doğrular -- her zaman çalışır.
 
 ```bash
 pnpm test:conversion                        # tüm golden set, baseline ile karşılaştır (~1 saate kadar sürebilir)
+pnpm test:conversion --tier easy            # yalnız bir zorluk seviyesi (easy/medium/hard/out_of_scope; birden fazlası verilebilir)
 pnpm test:conversion --fast                 # her kategoriden hızlı bir temsilci (~1.5dk) -- hızlı doğrulama, regresyon garantisi değil
 pnpm test:conversion --smoke                # yalnız sentetik smoke kitaplar
 pnpm test:conversion --book book-007        # tek kitap + tam diagnostic
@@ -42,6 +43,37 @@ pnpm test:conversion --compare a.json b.json  # iki kayıtlı sonucu karşılaş
 Sonuçlar `eval/results/<timestamp>-<variant>.json`'a kaydedilir (gitignored).
 Baseline `eval/baselines/baseline.json`'da tutulur (**commit edilir** -- bu
 regresyon referansımız).
+
+## Zorluk seviyeleri, OCR önbelleği, akış sayaçları
+
+- **`tier`** (`metadata.json`): `easy` / `medium` / `hard`. `unsupported: true` kitaplar
+  `out_of_scope` sayılır (ayrıca yazılmaz). `--tier` verildiğinde sentetik smoke kitaplar
+  koşmaz; özet çıktısı seviye başına ortalamayı da basar.
+- **OCR önbelleği** (`ocr_cache.py`, `eval/.cache/ocr/`, git'e girmez): `pytesseract.image_to_data`
+  çıktısı sayfa pikselleri + parametreler + Tesseract sürümüyle anahtarlanır. Yalnızca
+  eval'de devrede, `converter.py`'ye dokunmaz. `--no-ocr-cache` ile kapatılır. Aynı sayfa
+  hem pipeline'da hem `ocr_quality` metriğinde OCR'landığı için ilk koşuda bile sayfaların
+  yarısı önbellekten gelir.
+- **Akış kusuru sayaçları** (`metrics/flow_defects.py`, skora girmez): tireli kelime
+  parçasıyla biten paragraf ve bölünmüş paragraf (noktalamasız biten + küçük harfle
+  başlayan çift). Özet tablosunda `broken_words` ve sızan başlık sayılarıyla yan yana
+  basılır; `--book` örnekleri de gösterir.
+
+## Bölüm tespiti eval'de de çalışır
+
+`runner.run_conversion`, golden config'de `chapters` yoksa canlı akışın yaptığı gibi önce
+`analyze_pdf` çağırıp bulunan bölümleri dönüşüme geçirir (canlıda `/analyze` → `/convert`).
+Bu adım 2026-10-13'te eklendi; öncesindeki sonuç dosyalarında her kitap tek bölümdür, `structure`
+skorları sonrasıyla kıyaslanamaz.
+
+## Düzeltme katmanı (`--refine`)
+
+`modal_worker/refine/` map ile reduce arasında çalışır; eval'de `--refine off|rules|model` ile
+seçilir (varsayılan `off`). `rules` paragraf birleştirme kurallarını uygular, `model` ayrıca her
+adayı bir karar modeline sorar ve modelin "hayır" dediklerini birleştirmez. Model yanıtları
+`eval/.cache/decisions/` altında saklanır (aynı soru ikinci kez ücretlendirilmez). Anahtar
+`AI_GATEWAY_API_KEY` (ortam ya da `modal_worker/.env`), model `REFINE_MODEL` (varsayılan
+`microsoft/microsoft-decision-1`). Özet çıktısı kitap başına aday / birleşen / veto / token basar.
 
 ## Mimari
 
@@ -75,6 +107,11 @@ Bunun yerine:
    / `must_exclude_phrases` (birkaç ayırt edici cümle -- tam metin yazmadan
    recall + header-sızıntısı kontrolü), `expected_chapters`, `expected_image_count`,
    `expected_paragraph_range`.
+   `must_exclude_phrases` sıklığa duyarlıdır: bir ifade yalnızca sayfa sayısına
+   oranla sık geçiyorsa (`EXCLUDE_LEAK_PAGE_RATIO_THRESHOLD`, koşu başlığı gibi)
+   skoru düşürür; seyrek geçenler `--book` çıktısında "Sparse excluded phrases"
+   olarak raporlanır ama cezalandırılmaz. Yani bu liste TEKRARLAYAN sayfa
+   döşemesi için; kitabın konusu olan sık bir kelimeyi buraya koymayın.
 3. **Tier-2 referans** (`reference.txt`, yalnız birkaç kitap): bağımsız
    kaynaklı tam referans metin (Project Gutenberg / Wikisource gibi
    public-domain kaynaklardan bedavaya gelir, elle yazılmaz). Word

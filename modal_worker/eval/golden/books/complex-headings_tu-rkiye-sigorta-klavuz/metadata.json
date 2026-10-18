@@ -2,6 +2,7 @@
   "category": "complex-headings",
   "language": "tr",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "Müşteri Platformu - Sağlık Kullanıcı Kılavuzu",
     "author": "Türkiye Sigorta"

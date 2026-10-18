@@ -53,6 +53,13 @@ class ConvertRequest(BaseModel):
     force_ocr: bool = False
 
 
+class CancelRequest(BaseModel):
+    """Vercel API'sinin Modal'ın `/cancel` web_endpoint'ine POST ettiği gövde —
+    `call_id`, `/convert`'in döndürdüğü `run_pipeline` FunctionCall kimliği."""
+
+    call_id: str
+
+
 class AnalyzeRequest(BaseModel):
     """Vercel API'sinin Modal'ın `/analyze` web_endpoint'ine POST ettiği gövde.
 

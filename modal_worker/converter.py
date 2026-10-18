@@ -1411,6 +1411,8 @@ CHAPTER_HEADING_MAX_WORDS = 12  # çok uzun satırlar (yanlışlıkla büyük/ka
 CHAPTER_TIER_RATIO = 0.9  # gömülü-metin (punto) adayları için: yalnızca en büyük katmana yakın olanlar
 CHAPTER_TIER_RATIO_OCR = 0.75  # OCR (piksel satır yüksekliği) adayları için -- ölçüm daha gürültülü, gerçek örnekte (bkz. scanned_002) aynı bölüm başlığı stilinde bile ~%25'e varan yükseklik sapması gözlendi
 CHAPTER_OUTLIER_CAP_RATIO = 2.0  # medyanın bu katından büyük TEK seferlik bir aday (ör. bir kapak illüstrasyonunun OCR yanlış okuması) tavan hesaplamasından hariç tutulur
+CHAPTER_TIER_MIN_MEMBERS = 2  # tavanı belirleyen punto katmanında en az bu kadar aday olmalı (bkz. `_filter_chapter_candidates`)
+CHAPTER_TITLE_CONTINUATION_SIZE_TOLERANCE = 0.1  # başlığın ikinci satırı ilk satırla aynı puntoda (pt) olmalı
 CHAPTER_MIN_PAGE_GAP = 2  # ardışık iki bölüm başlığı arasında beklenen en az sayfa farkı (kısa bir "Giriş" bölümünü bir sonraki bölümden ayırt edecek kadar gevşek)
 CHAPTER_OCR_SAMPLE_STRIDE = 5  # taranmış (embedded metni olmayan) sayfalarda kaç sayfada bir örnek OCR'lanır
 CHAPTER_OCR_MAX_SAMPLES = 60  # çok uzun taranmış kitaplarda maliyeti sınırlamak için üst sınır
@@ -1481,6 +1483,32 @@ def _matches_known_title_or_author(text: str, title: str | None, author: str | N
     return False
 
 
+# Açık bölüm ifadeleri: "3. BÖLÜM", "Bölüm 3", "Chapter 3", "Part II", "EK 1".
+CHAPTER_KEYWORD_PATTERN = re.compile(
+    r"^\s*(?:(?:\d+|[ivxlc]+)\s*[.)]?\s*(?:bölüm|kısım|kisim)\b"
+    r"|(?:bölüm|kısım|kisim|chapter|part|appendix|ek)\s+(?:\d+|[ivxlc]+)\b)",
+    re.IGNORECASE,
+)
+CHAPTER_KEYWORD_MIN_MATCHES = 3  # bu kadar aday açık bölüm ifadesi taşıyorsa bölüm katmanını onlar belirler
+
+LETTERSPACED_MIN_TOKENS = 4
+LETTERSPACED_MIN_SINGLE_CHAR_RATIO = 0.7
+
+
+def _collapse_letterspaced(text: str) -> str:
+    """Harf aralığı açılarak dizilmiş başlıkları ("c h r is t o p h e r") tek kelimeye
+    indirir. PDF'te her harf ayrı konumlandığı için metin katmanı araya boşluk koyuyor;
+    içindekilerde bu haliyle bozuk görünüyor. Kelime sınırları geri getirilemez, bu
+    yüzden yalnızca parçaların büyük çoğunluğu tek karakterse uygulanır."""
+    tokens = text.split()
+    if len(tokens) < LETTERSPACED_MIN_TOKENS:
+        return text
+    single_chars = sum(1 for token in tokens if len(token) == 1)
+    if single_chars / len(tokens) < LETTERSPACED_MIN_SINGLE_CHAR_RATIO:
+        return text
+    return "".join(tokens)
+
+
 def _detect_chapter_candidate_from_dict_page(page, body_font_size: float | None) -> tuple[str, float] | None:
     """Sayfanın gömülü metin katmanında en büyük punto/kalın başlık adayını
     (varsa) döner -- (metin, punto) ikilisi. Yalnızca `_looks_like_heading_font`
@@ -1502,10 +1530,12 @@ def _detect_chapter_candidate_from_dict_page(page, body_font_size: float | None)
         return None
     try:
         page_dict = page.get_text("dict")
+        has_macroman_font = _page_has_macroman_font(page)
     except Exception:
         return None
 
-    best: tuple[float, str] | None = None
+    # (metin, punto, başlık-fontu-mu) -- sayfadaki okuma sırasıyla tüm satırlar
+    lines: list[tuple[str, float, bool]] = []
     for block in page_dict.get("blocks", []):
         if block.get("type") != 0:
             continue
@@ -1513,16 +1543,43 @@ def _detect_chapter_candidate_from_dict_page(page, body_font_size: float | None)
             spans = line.get("spans", [])
             if not spans:
                 continue
-            text = "".join(_span_text(s) for s in spans).strip()
-            if not text or not _is_chapter_heading_shaped(text):
+            text = _fix_mac_turkish_mojibake("".join(_span_text(s) for s in spans).strip(), has_macroman_font)
+            if not text:
                 continue
             size = spans[0].get("size", 0.0)
             bold = _is_bold_span(spans[0].get("font", ""), spans[0].get("flags", 0))
-            if not _looks_like_heading_font(size, bold, body_font_size):
-                continue
-            if best is None or size > best[0]:
-                best = (size, text)
-    return (best[1], best[0]) if best else None
+            lines.append((text, size, _looks_like_heading_font(size, bold, body_font_size)))
+
+    best_index: int | None = None
+    best_is_keyword = False
+    for index, (text, size, is_heading_font) in enumerate(lines):
+        if not is_heading_font or not _is_chapter_heading_shaped(text):
+            continue
+        # "3. BÖLÜM" / "Chapter 3" gibi açık bir bölüm ifadesi, aynı sayfadaki daha
+        # büyük puntolu süs başlığından (ör. romanlarda bölüm numarasının altındaki
+        # anlatıcı adı) daha güvenilir bir bölüm işaretidir.
+        is_keyword = bool(CHAPTER_KEYWORD_PATTERN.match(text))
+        if (
+            best_index is None
+            or (is_keyword and not best_is_keyword)
+            or (is_keyword == best_is_keyword and size > lines[best_index][1])
+        ):
+            best_index, best_is_keyword = index, is_keyword
+    if best_index is None:
+        return None
+
+    # Bölüm başlığı çoğu kitapta iki satıra yayılır ("Bölüm 1" / "Bilimsel Yazım
+    # Nedir?"); hemen ardından gelen, AYNI puntodaki başlık-fontlu satırlar aynı
+    # başlığın devamıdır. Yalnızca ilk satır alınırsa içindekilerde otuz tane
+    # "Bölüm N" görünür, asıl başlık kaybolur.
+    title, size, _ = lines[best_index]
+    for text, next_size, is_heading_font in lines[best_index + 1 :]:
+        if not is_heading_font or abs(next_size - size) > CHAPTER_TITLE_CONTINUATION_SIZE_TOLERANCE:
+            break
+        if not any(ch.isalpha() for ch in text) or len(f"{title} {text}".split()) > CHAPTER_HEADING_MAX_WORDS:
+            break
+        title = f"{title} {text}"
+    return _collapse_letterspaced(title), size
 
 
 def _detect_chapter_candidate_from_ocr(doc, page_index: int, ocr_lang: str) -> tuple[str, float] | None:
@@ -1575,7 +1632,10 @@ def _detect_chapter_candidate_from_ocr(doc, page_index: int, ocr_lang: str) -> t
     return best_text, best_height
 
 
-CHAPTER_NUMBERING_PATTERN = re.compile(r"^(chapter|appendix)?\s*([0-9]+|[a-z])[.\):]\s", re.IGNORECASE)
+# Sondaki negatif ileri-bakış: "A. M. Celâl Şengör'ün Önsözü" gibi ad baş harfleriyle
+# başlayan başlıklar ("A." + "M.") madde numarası değildir -- böyle iki tesadüfi eşleşme,
+# numarasız 40 gerçek bölümü eleyebiliyordu (`turkish_bilimsel-makale-nasil-yazilir`).
+CHAPTER_NUMBERING_PATTERN = re.compile(r"^(chapter|appendix)?\s*([0-9]+|[a-z])[.\):]\s+(?![^\W\d_][.\)])", re.IGNORECASE)
 CHAPTER_NUMBERING_MIN_MATCHES = 2  # en az bu kadar aday numaralandırma deseniyle eşleşirse, kitabın gerçekten numaralı bir bölüm şeması olduğu varsayılır
 
 
@@ -1616,8 +1676,42 @@ def _filter_chapter_candidates(
 
     sizes = [size for _, _, size in candidates]
     median_size = statistics.median(sizes)
-    plausible = [c for c in candidates if c[2] <= median_size * CHAPTER_OUTLIER_CAP_RATIO] or candidates
+    # Uç değer süzgeci TEK seferlik gürültü içindir. Açık bölüm ifadesi taşıyan ve
+    # tekrar eden büyük adaylar gürültü değil, kitabın bölüm başlığı stilidir (gerçek
+    # örnek: `normal-text-novel_son-sans`, 41pt "N. BÖLÜM" başlıkları -- medyan,
+    # sayfalardaki 14-23pt'lik çok sayıda küçük aday yüzünden düşük kaldığı için hepsi
+    # "uç değer" sayılıp eleniyordu). Muafiyet bilerek yalnızca açık bölüm ifadelerine
+    # tanınır: herhangi bir tekrar eden büyük adaya tanındığında, görsel ağırlıklı
+    # kitaplardaki iri puntolu alıntı kutuları bölüm katmanını ele geçiriyordu.
+    cap = median_size * CHAPTER_OUTLIER_CAP_RATIO
+    oversized_keyword = [c for c in candidates if c[2] > cap and CHAPTER_KEYWORD_PATTERN.match(c[1])]
+    if len(oversized_keyword) < CHAPTER_KEYWORD_MIN_MATCHES:
+        oversized_keyword = []
+    plausible = [c for c in candidates if c[2] <= cap] + oversized_keyword or candidates
     max_size = max(size for _, _, size in plausible)
+
+    # Kitap bölümlerini açıkça adlandırıyorsa ("3. BÖLÜM", "Chapter 3") bölüm katmanı
+    # o adayların puntosudur; daha büyük puntolu diğer adaylar (iç kapak, süs başlığı)
+    # bölüm değildir.
+    keyword_sizes = [c[2] for c in plausible if CHAPTER_KEYWORD_PATTERN.match(c[1])]
+    if len(keyword_sizes) >= CHAPTER_KEYWORD_MIN_MATCHES and max(keyword_sizes) < max_size:
+        max_size = max(keyword_sizes)
+        plausible = [c for c in plausible if c[2] <= max_size]
+
+    # Tavanı TEK bir aday belirlemesin: kitabın kendi başlığı iç kapakta bölüm
+    # başlıklarından biraz büyük basılır (gerçek örnek: `turkish_bilimsel-makale-
+    # nasil-yazilir`, iç kapak 18pt, 41 bölüm başlığı 16pt -- 16 < 18 * 0.9 olduğu
+    # için bölümlerin HEPSİ eleniyor, kitap tek bölüm çıkıyordu). Kendi katmanında
+    # (`tier_ratio` içinde) en az `CHAPTER_TIER_MIN_MEMBERS` aday bulunan en büyük
+    # punto tavan sayılır; onun üstünde kalan tekil adaylar bölüm değildir.
+    recurring_sizes = [
+        size
+        for size in {c[2] for c in plausible}
+        if sum(1 for c in plausible if size * tier_ratio <= c[2] <= size) >= CHAPTER_TIER_MIN_MEMBERS
+    ]
+    if recurring_sizes and max(recurring_sizes) < max_size:
+        max_size = max(recurring_sizes)
+        plausible = [c for c in plausible if c[2] <= max_size]
 
     numbered = [c for c in plausible if CHAPTER_NUMBERING_PATTERN.match(c[1].strip())]
     if len(numbered) >= CHAPTER_NUMBERING_MIN_MATCHES and max(s for _, _, s in numbered) >= max_size * tier_ratio:
@@ -1632,6 +1726,15 @@ def _filter_chapter_candidates(
     last_page = -CHAPTER_MIN_PAGE_GAP
     for page_num, title in selected:
         if page_num - last_page < CHAPTER_MIN_PAGE_GAP:
+            # Çakışmada açık bölüm ifadesi ("Bölüm 1") kazanır: tek sayfalık bir ön
+            # bölüm ("Yazarın Teşekkürü") hemen ardındaki ilk bölümü düşürmesin.
+            if (
+                chapters
+                and CHAPTER_KEYWORD_PATTERN.match(title)
+                and not CHAPTER_KEYWORD_PATTERN.match(chapters[-1]["title"])
+            ):
+                chapters[-1] = {"start_page": page_num, "title": title}
+                last_page = page_num
             continue
         chapters.append({"start_page": page_num, "title": title})
         last_page = page_num
@@ -2100,6 +2203,58 @@ def detect_recurring_margin_text(
     return {key for key, count in occurrences.items() if count >= min_repeats}
 
 
+WATERMARK_MAX_CHARS = 40  # filigran adayı yalnızca kısa bloklar (site adresi, yayınevi adı)
+WATERMARK_POSITION_BUCKET_PT = 20.0  # "aynı konum" toleransı: blok sol-üst köşesi bu ızgarada aynı hücrede
+
+
+def detect_recurring_watermark_text(
+    doc, start_page: int, end_page: int, sample_count: int = HEADER_FOOTER_SAMPLE_COUNT,
+) -> set[str]:
+    """Kenar payının DIŞINDA, örneklenen sayfaların en az yarısında BİREBİR AYNI kısa
+    metinle VE aynı konumda tekrar eden blokları (filigran) bulur.
+
+    `detect_recurring_margin_text` yalnızca üst/alt şeride bakıyor; sayfanın ortasına
+    basılmış bir filigran (gerçek örnek: `multilingual_azerice-kitap-2`, her sayfanın
+    tam ortasında "bilikliol.az") gövde metnine 232 kez karışıyordu. Konum şartı
+    bilerek katı: aynı kısa metnin (ör. test kitaplarındaki "A) B) C)" şıkları) farklı
+    yerlerde tekrar etmesi meşru içeriktir; sayfaların yarısında AYNI noktada durması
+    değildir."""
+    occurrences: dict[tuple[str, int, int], int] = {}
+    sampled_pages = 0
+
+    for page_num in _sample_page_numbers(start_page, end_page, sample_count):
+        page_index = page_num - 1
+        if not (0 <= page_index < len(doc)):
+            continue
+        try:
+            raw_blocks = doc[page_index].get_text("blocks", sort=True)
+        except Exception:
+            continue
+
+        sampled_pages += 1
+        seen_this_page: set[tuple[str, int, int]] = set()
+        for block in raw_blocks:
+            if len(block) < 7 or block[6] != 0:
+                continue
+            text = block[4].strip()
+            if not text or len(text) > WATERMARK_MAX_CHARS:
+                continue
+            key = _repeat_key(text)
+            if len(key) < 3 or key == "#" or not _HAS_LETTER_RE.search(key):
+                continue
+            seen_this_page.add(
+                (key, round(block[0] / WATERMARK_POSITION_BUCKET_PT), round(block[1] / WATERMARK_POSITION_BUCKET_PT))
+            )
+        for entry in seen_this_page:
+            occurrences[entry] = occurrences.get(entry, 0) + 1
+
+    if sampled_pages == 0:
+        return set()
+
+    min_repeats = max(2, round(sampled_pages * HEADER_FOOTER_MIN_REPEAT_RATIO))
+    return {key for (key, _x, _y), count in occurrences.items() if count >= min_repeats}
+
+
 # ---------------------------------------------------------------------------
 # Gövde punto tespiti — yalnızca plan fazında, madde 1'deki başlık/paragraf
 # sezgiselinin ve font-boyutu tabanlı bölüm tespitinin "normal" kabul edeceği
@@ -2193,6 +2348,7 @@ def plan_conversion(pdf_bytes: bytes, config: dict[str, Any]) -> PlanResult:
         resolved_config = dict(resolved_config)
         resolved_config["header_margin_ratio"] = top_margin_ratio
         resolved_config["footer_margin_ratio"] = bottom_margin_ratio
+        recurring_margin_text |= detect_recurring_watermark_text(doc, start_page, end_page)
         resolved_config["recurring_margin_text"] = sorted(recurring_margin_text)
         resolved_config["body_font_size"] = detect_body_font_size(doc, start_page, end_page)
 

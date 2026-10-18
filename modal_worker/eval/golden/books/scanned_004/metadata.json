@@ -2,6 +2,7 @@
   "category": "bad-ocr-layer",
   "language": "tr",
   "is_scanned": false,
+  "tier": "hard",
   "config": {
     "title": "RÜZGÂRLAR",
     "author": "Bilinmiyor"

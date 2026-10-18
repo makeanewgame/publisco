@@ -2,6 +2,7 @@
   "category": "technical-with-code",
   "language": "en",
   "is_scanned": false,
+  "tier": "hard",
   "config": {
     "title": "Mastering Functional Programming (JavaScript)",
     "author": "Unknown"

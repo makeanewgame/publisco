@@ -2,6 +2,7 @@
   "category": "book-with-images",
   "language": "tr",
   "is_scanned": true,
+  "tier": "hard",
   "config": {
     "title": "Haritalarla Coğrafya 2022",
     "author": "Bayram Meral / Benim Hocam"

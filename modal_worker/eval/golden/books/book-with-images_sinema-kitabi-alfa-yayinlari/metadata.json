@@ -2,6 +2,7 @@
   "category": "book-with-images",
   "language": "tr",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "Sinema Kitabı",
     "author": "Alfa Yayınları"

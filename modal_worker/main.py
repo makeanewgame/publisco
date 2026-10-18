@@ -41,7 +41,8 @@ from converter import (
     process_page_range,
     slice_pdf_pages,
 )
-from schemas import AnalyzeRequest, ConvertRequest
+from refine import refine_page_results
+from schemas import AnalyzeRequest, CancelRequest, ConvertRequest
 
 logger = logging.getLogger("modal_worker.main")
 
@@ -95,7 +96,7 @@ image = (
     # `from converter import (...)` runtime'da `ModuleNotFoundError` ile patlıyor.
     # En son eklenmeli (Modal'ın önerisi): pip/apt katmanlarının cache'ini bozmadan
     # sadece bu dosyalar değiştiğinde yeniden mount edilir.
-    .add_local_python_source("converter", "schemas")
+    .add_local_python_source("converter", "schemas", "refine")
 )
 
 app = modal.App("publisco-modal-worker", image=image)
@@ -260,6 +261,8 @@ def reduce_and_build_epub(plan_result: PlanResult, page_results_per_chunk: list[
     paketliyor, Modal'ın varsayılan limiti çok sayfalı/görsel ağırlıklı
     kitaplarda yetersiz kalabiliyor."""
     all_page_results = [pr for chunk_results in page_results_per_chunk for pr in chunk_results]
+    # `config["refine_mode"]` verilmediyse (varsayılan "off") hiçbir şey yapmaz.
+    refine_page_results(plan_result, all_page_results)
     return assemble_epub(plan_result, all_page_results)
 
 
@@ -338,7 +341,7 @@ def convert_endpoint(request: ConvertRequest, authorization: str = Header(None))
     devredilip anında 202 dönülür."""
     _require_bearer(authorization)
 
-    run_pipeline.spawn(
+    function_call = run_pipeline.spawn(
         request.job_id,
         request.pdf_url,
         request.title,
@@ -347,7 +350,27 @@ def convert_endpoint(request: ConvertRequest, authorization: str = Header(None))
         request.options.to_engine_config(),
         request.force_ocr,
     )
-    return {"job_id": request.job_id, "status": "accepted"}
+    # `call_id`, Vercel'in kullanıcı "İptal"e bastığında `/cancel`'a geri
+    # göndereceği kimlik (ConvertJob.modalCallId'de saklanır).
+    return {"job_id": request.job_id, "status": "accepted", "call_id": function_call.object_id}
+
+
+@web_app.post("/cancel")
+def cancel_endpoint(request: CancelRequest, authorization: str = Header(None)) -> dict[str, Any]:
+    """Kullanıcı vazgeçtiğinde `run_pipeline`'ı sunucu tarafında durdurur —
+    yoksa pipeline sonucu kimse beklemediği halde container/OCR kaynağı
+    tüketmeye devam ediyordu. İptal edilen input'ta `InputCancellation`
+    (`BaseException`) fırlar, `run_pipeline`'ın `except Exception`'ı onu
+    yakalamadığı için FAILED webhook'u gitmez (Vercel job'ı zaten kendisi
+    CANCELLED'a çekip kotayı serbest bıraktı, bkz. ConvertService.cancel).
+    Zaten bitmiş bir çağrıyı iptal etmek no-op."""
+    _require_bearer(authorization)
+
+    try:
+        modal.FunctionCall.from_id(request.call_id).cancel()
+    except modal.exception.NotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Function call not found.") from exc
+    return {"call_id": request.call_id, "status": "cancelled"}
 
 
 @web_app.post("/analyze")

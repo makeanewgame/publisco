@@ -2,6 +2,7 @@
   "category": "book-with-images",
   "language": "tr",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "Ankara'nın Trekking Rotaları",
     "author": "Ankara İl Kültür ve Turizm Müdürlüğü / Ankara Kalkınma Ajansı"

@@ -24,10 +24,17 @@ from converter import (  # noqa: E402
     ConversionError,
     PageResult,
     PlanResult,
+    analyze_pdf,
     assemble_epub,
     plan_conversion,
     process_page_range,
 )
+from refine import refine_page_results  # noqa: E402
+from refine.decision_client import DecisionClient  # noqa: E402
+from refine.headings import DEFAULT_HEADING_MODEL  # noqa: E402
+from refine.paragraph_flow import RefineReport  # noqa: E402
+
+DECISION_CACHE_DIR = Path(__file__).resolve().parent / ".cache" / "decisions"
 
 
 @dataclass
@@ -38,6 +45,7 @@ class ConversionArtifact:
     epub_bytes: bytes
     duration_seconds: float
     error: str | None = None
+    refine: RefineReport | None = None
 
 
 @dataclass
@@ -56,20 +64,42 @@ class BookResult:
     # `eval/README.md`: unsupported=true kitaplar (ör. mathematical) skora/gate'e
     # dahil edilmez, yalnızca raporlanır -- bkz. NOTES.md/ROADMAP.md.
     unsupported: bool = False
+    tier: str = "medium"
 
 
-def run_conversion(pdf_bytes: bytes, config: dict[str, Any], book_id: str, force_ocr: bool = False) -> ConversionArtifact:
+def run_conversion(
+    pdf_bytes: bytes, config: dict[str, Any], book_id: str, force_ocr: bool = False, refine_mode: str = "off"
+) -> ConversionArtifact:
     """`convert_pdf_to_epub` ile davranışça eşdeğer, ama plan/page_results'ı
     metrikler için saklar. Dönüştürme başarısız olursa `error` doldurulur,
     `epub_bytes` boş kalır — çağıran taraf bunu skor gate'ine çevirir."""
     start = time.monotonic()
     try:
-        plan = plan_conversion(pdf_bytes, dict(config))
+        config = {**config, "refine_mode": refine_mode}
+        if not config.get("chapters"):
+            # Canlı akışın aynısı: önce /analyze bölümleri tespit eder, web arayüzü
+            # bunları /convert'e `options.chapters` olarak geçirir. `plan_conversion`
+            # bölüm tespitini KENDİSİ çalıştırmaz; bu adım olmadan eval her kitabı
+            # tek bölüm olarak dönüştürür ve bölüm tespiti hiç ölçülmez.
+            detected_chapters = analyze_pdf(pdf_bytes).get("chapters")
+            if detected_chapters:
+                config["chapters"] = detected_chapters
+        plan = plan_conversion(pdf_bytes, config)
         page_results: list[PageResult] = []
         for start_page, end_page in plan.chunks:
             page_results.extend(
                 process_page_range(pdf_bytes, start_page, end_page, plan.resolved_config, force_ocr=force_ocr)
             )
+        # main.py'deki `reduce_and_build_epub` ile aynı sıra: refine -> assemble.
+        # Karar modeli yanıtları diske yazılır: aynı soru ikinci kez ücretlendirilmez.
+        refine_report = refine_page_results(
+            plan,
+            page_results,
+            decision_client=DecisionClient.from_env(cache_dir=DECISION_CACHE_DIR),
+            heading_client=DecisionClient.from_env(
+                cache_dir=DECISION_CACHE_DIR, model_env="REFINE_HEADING_MODEL", default_model=DEFAULT_HEADING_MODEL
+            ),
+        )
         epub_bytes = assemble_epub(plan, page_results)
         return ConversionArtifact(
             book_id=book_id,
@@ -77,6 +107,7 @@ def run_conversion(pdf_bytes: bytes, config: dict[str, Any], book_id: str, force
             page_results=page_results,
             epub_bytes=epub_bytes,
             duration_seconds=time.monotonic() - start,
+            refine=refine_report,
         )
     except ConversionError as exc:
         return ConversionArtifact(

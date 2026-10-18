@@ -2,6 +2,7 @@
   "category": "two-column-academic",
   "language": "en",
   "is_scanned": false,
+  "tier": "medium",
   "config": {
     "title": "Vibe Coding as a Reconfiguration of Intent Mediation in Software Development: Definition, Implications, and Research Agenda",
     "author": "Christian Meske, Tobias Hermanns, Esther von der Weiden, Kai-Uwe Loser, Thorsten Berger"

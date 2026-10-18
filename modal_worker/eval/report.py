@@ -263,8 +263,9 @@ def print_book_diagnostics(book: BookResult) -> None:
             print(f"  Missing phrases: {tc['phrase_include_misses']}")
         if tc.get("phrase_exclude_violations"):
             print(f"  Leaked excluded phrases: {tc['phrase_exclude_violations']}")
-        if tc.get("phrase_exclude_sparse"):
-            occurrences = tc.get("phrase_exclude_occurrences", {})
-            sparse = {p: occurrences.get(p) for p in tc["phrase_exclude_sparse"]}
-            print(f"  Sparse excluded phrases (not penalized, phrase -> count): {sparse}")
+        if tc.get("phrase_exclude_incidental"):
+            print(
+                "  Excluded phrases seen (not page-leak-like, no score penalty): "
+                f"{tc['phrase_exclude_incidental']}"
+            )
     print()

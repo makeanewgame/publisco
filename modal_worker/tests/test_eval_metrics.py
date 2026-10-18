@@ -196,6 +196,68 @@ def test_single_chapter_title_not_treated_as_leaked_exclude_phrase(sample_pdf_by
     assert body_result.phrase_exclude_violations == ["test paragrafidir"]
 
 
+def _pages_text(page_count: int, extra_per_page: dict[int, str]) -> str:
+    return "\n\n".join(
+        extra_per_page.get(i, "") + f"Sayfa {i} icin gercek bir govde paragrafi." for i in range(page_count)
+    )
+
+
+def test_exclude_phrase_seen_once_in_front_matter_is_not_a_leak():
+    """Sayfa 1 künyesinde bir kez geçen dergi adı sayfa döşemesi değildir -- eskiden
+    düz alt-dize araması bunu sızıntı sayıyordu (bkz. `EXCLUDE_LEAK_PAGE_RATIO`)."""
+    text = _pages_text(20, {0: "Dicle Medical Journal 2024; doi:10.5798/x\n\n"})
+    result = evaluate_text_completeness(
+        generated_text=text,
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Dicle Medical Journal"],
+        total_pages=20,
+    )
+    assert result.phrase_exclude_violations == []
+    assert result.phrase_exclude_incidental == {"Dicle Medical Journal": 1}
+
+
+def test_exclude_phrase_recurring_on_most_pages_is_a_leak():
+    text = _pages_text(20, {i: "Dicle Medical Journal 2024\n\n" for i in range(20)})
+    result = evaluate_text_completeness(
+        generated_text=text,
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Dicle Medical Journal"],
+        total_pages=20,
+    )
+    assert result.phrase_exclude_violations == ["Dicle Medical Journal"]
+    assert result.phrase_exclude_incidental == {}
+
+
+def test_exclude_phrase_dispersed_in_body_below_page_ratio_is_not_a_leak():
+    """`progit`'teki "Scott Chacon" deseni: kitabın kendi `git log` örneklerinde
+    onlarca kez geçiyor ama sayfaların küçük bir kısmında -- içerik, sızıntı değil."""
+    text = _pages_text(100, {i: "Author: Scott Chacon <schacon@example.com>\n\n" for i in range(0, 100, 10)})
+    result = evaluate_text_completeness(
+        generated_text=text,
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Scott Chacon"],
+        total_pages=100,
+    )
+    assert result.phrase_exclude_violations == []
+    assert result.phrase_exclude_incidental == {"Scott Chacon": 10}
+
+
+def test_exclude_phrase_needs_minimum_repeats_even_in_short_documents():
+    """2 sayfalık belgede 2 geçiş oranı 1.0 yapar ama tek başına tekrar kanıtı değil."""
+    text = _pages_text(2, {0: "Dicle Medical Journal\n\n", 1: "Dicle Medical Journal\n\n"})
+    result = evaluate_text_completeness(
+        generated_text=text,
+        reference_text=None,
+        must_include_phrases=[],
+        must_exclude_phrases=["Dicle Medical Journal"],
+        total_pages=2,
+    )
+    assert result.phrase_exclude_violations == []
+
+
 def test_ngram_overlap_drops_on_reordered_text():
     """İki-sütun okuma sırası bozulması: kelime kümesi aynı kalsa bile
     n-gram (sıra duyarlı) örtüşmesi düşmeli."""

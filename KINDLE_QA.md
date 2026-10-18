@@ -6,9 +6,9 @@ için `pnpm test:conversion --save-epubs`, bkz. `modal_worker/eval/README.md`).
 
 Amaç: `eval/` framework'ünün metrikleriyle yakalanamayan (görsel yerleşim,
 okuma deneyimi, font/encoding garipliği gibi) sorunları bulmak. Bir bulgu
-netleşince buradan `NOTES.md`'nin "Sorunlar (Buglar)" bölümüne taşınır (kök
-neden + hangi kitap(lar)da gözlendiği ile), gerekiyorsa `ROADMAP.md`/
-`TAMAMLANANLAR.md` de senkronlanır (bkz. `CLAUDE.md` "After Every Task").
+netleşince Trello board'unun `Bugs` listesine kart olarak açılır (kök neden +
+hangi kitap(lar)da gözlendiği ile, `eval`/`converter` etiketiyle; bkz. `CLAUDE.md`
+"📋 Trello İş Akışı").
 
 Kontrol edilen kitabı `[x]`'e çevir, bulgu varsa satırın sonuna kısaca yaz
 (bulgu yoksa "OK" yeterli).

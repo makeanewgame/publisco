@@ -17,5 +17,37 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "tar": "^7.5.22",
+      "glob@10": "^10.5.0",
+      "picomatch@4": "^4.0.5",
+      "webpack": "^5.109.2",
+      "tmp": "^0.2.7",
+      "qs": "^6.16.1",
+      "body-parser": "^1.20.6",
+      "ajv@8": "^8.20.0",
+      "file-type": "^21.3.4",
+      "@xmldom/xmldom": "^0.9.12",
+      "fast-xml-parser": "^5.10.1",
+      "uuid": "^11.1.1",
+      "send": "^0.19.2",
+      "postcss": "^8.5.30",
+      "multer": "^2.4.0",
+      "deepmerge-ts": "^8.0.0",
+      "proxy-addr": "^2.0.8",
+      "shell-quote": "^1.12.0",
+      "undici@6": "^6.29.1",
+      "mysql2": "^3.24.6",
+      "js-yaml@3": "^3.15.2",
+      "js-yaml@4": "^4.3.2",
+      "joi@17": "^17.13.8",
+      "fast-uri@3": "^3.1.8",
+      "compression": "^1.8.2",
+      "source-map-js": "^1.2.2",
+      "brace-expansion@1": "^1.1.21",
+      "brace-expansion@2": "^2.1.7"
+    }
   }
 }

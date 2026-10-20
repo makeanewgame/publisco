@@ -166,6 +166,7 @@ def _paragraph_text_to_html(
     )
     is_heading = (
         is_heading_shaped
+        and _HAS_LETTER_RE.search(lines[0]) is not None  # harfsiz sayısal içerik (tablo değeri, yıl) başlık değildir
         and not _looks_like_math_or_citation(lines[0])
         and not _looks_like_axis_label(lines[0])
         and _looks_like_heading_font(font_size or 0.0, is_bold, body_font_size)
@@ -278,16 +279,83 @@ def _looks_like_paragraph_continuation(
     return False
 
 
+# Harfsiz ama içerik olan kısa bloklar (golden sette ölçüldü, Trello AxiXJisJ):
+# soru/liste numarası ("81.", "1)", "(3)" -- sayfa no ve eksen etiketi noktalı/
+# parantezli olmaz), yıl ve yıl aralığı ("1776.", "(1370-1405)", "1850-1915"),
+# ondalıklı/saatli değer ("59.90", "11.000", "00:15") ve yalnız sayılardan oluşan
+# çok satırlı bir tablo sütunu ("5\n7\n10"). Çıplak tek tamsayı ("28", "0", "50")
+# gürültü kalır: gövdeye düşmüş sayfa numarası ya da grafik eksen etiketi.
+_LIST_MARKER_RE = re.compile(r"^\(?\d{1,3}[.)]$")
+_YEAR_OR_RANGE_RE = re.compile(r"^\(?(?:1\d{3}|20\d{2})\.?\)?$|^\(?\d{3,4}\s*[-–]\s*\d{2,4}(?:/\d{2,4})?\)?\.?$")
+_DECIMAL_VALUE_RE = re.compile(r"\d[.,:]\d")
+_NUMERIC_LINE_RE = re.compile(r"^[\d\s.,:%()<>*+\-–/]*\d[\d\s.,:%()<>*+\-–/]*$")
+
+
+def _is_axis_ticks(lines: list[str]) -> bool:
+    """Eşit aralıklı sayı dizisi ("0 2 4 6 8 10", "0 50 100 150"): grafik eksen
+    işaretleri -- tablo sütunlarının değerleri neredeyse hiç aritmetik dizi oluşturmaz."""
+    try:
+        values = [float(line.replace(",", ".")) for line in lines]
+    except ValueError:
+        return False
+    if len(values) < 3:
+        return False
+    step = values[1] - values[0]
+    return step != 0 and all(abs((b - a) - step) < 1e-9 for a, b in zip(values, values[1:]))
+
+
+def _is_numeric_content(text: str) -> bool:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if _is_axis_ticks(lines):
+        return False
+    if _LIST_MARKER_RE.match(text) or _YEAR_OR_RANGE_RE.match(text) or _DECIMAL_VALUE_RE.search(text):
+        return True
+    return len(lines) >= 2 and all(_NUMERIC_LINE_RE.match(line) for line in lines)
+
+
 def _is_noise_block(text: str) -> bool:
     """Tek karakterlik parçaları (dikey çizgi/süslemenin OCR/metin çıkarıcı
     tarafından "i", "#" gibi yanlış yorumlanması) ve kısa, hiç harf
     içermeyen blokları (yalnız rakam/sembol -- ör. başıboş sayfa no,
-    "* * *" bölüm ayracı) gürültü sayar."""
+    "* * *" bölüm ayracı) gürültü sayar. Sayısal içerik (bkz.
+    `_is_numeric_content`) muaftır."""
     if len(text) <= 1:
         return True
     if len(text) <= NOISE_MAX_CHARS and not _HAS_LETTER_RE.search(text):
-        return True
+        return not _is_numeric_content(text.strip())
     return False
+
+
+LIST_MARKER_MAX_GAP_RATIO = 3.0  # numara ile metin arası yatay boşluk, satır yüksekliğinin bu katını aşmamalı
+
+
+def _attach_list_markers(
+    positioned: list[tuple[float, float, float, float, str, float, bool]],
+) -> list[tuple[float, float, float, float, str, float, bool]]:
+    """PyMuPDF'in ayrı blok olarak verdiği liste/soru numarasını ("14.", "1)"),
+    aynı satırda hemen sağındaki metin bloğunun başına ekler -- aksi halde numara
+    kendi başına bir paragraf olur. Eşi bulunmayan numara olduğu gibi kalır."""
+    result = list(positioned)
+    for marker in positioned:
+        mx0, my0, mx1, my1, mtext, _msize, _mbold = marker
+        if not _LIST_MARKER_RE.match(mtext.strip()):
+            continue
+        height = max(my1 - my0, 1.0)
+        best = None
+        for index, other in enumerate(result):
+            ox0, oy0, _ox1, _oy1, otext, _osize, _obold = other
+            if other is marker or not _HAS_LETTER_RE.search(otext):
+                continue
+            if abs(oy0 - my0) > height * 0.6 or ox0 < mx1 - 2 or ox0 - mx1 > height * LIST_MARKER_MAX_GAP_RATIO:
+                continue
+            if best is None or ox0 < result[best][0]:
+                best = index
+        if best is None:
+            continue
+        ox0, oy0, ox1, oy1, otext, osize, obold = result[best]
+        result[best] = (mx0, min(my0, oy0), ox1, max(my1, oy1), f"{mtext.strip()} {otext}", osize, obold)
+        result.remove(marker)
+    return result
 
 
 def _normalize_for_match(text: str) -> str:
@@ -1160,6 +1228,7 @@ def _collect_filtered_text_blocks(
         x0, y0, x1, y1 = block.get("bbox", (0.0, 0.0, 0.0, 0.0))
         positioned.append((x0, y0, x1, y1, text, size, bold))
 
+    positioned = _attach_list_markers(positioned)
     all_positions = [(x0, y0, x1, y1, text, size) for x0, y0, x1, y1, text, size, _bold in positioned]
 
     kept: list[tuple[float, float, float, float, str, float, bool]] = []

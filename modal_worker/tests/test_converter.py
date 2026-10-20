@@ -1135,3 +1135,33 @@ def test_render_footnotes_never_links_to_missing_ids():
     assert html_text.startswith("<p>a9 b</p>")
     assert '<aside epub:type="footnote" id="fn-p1-1"><p>1 Referansı akışta kalmamış not.</p></aside>' in html_text
     assert 'href="#ref-' not in html_text
+
+
+def test_noise_filter_keeps_numeric_content_but_drops_stray_numbers():
+    """Trello AxiXJisJ: harfsiz kısa bloklar arasında içerik olanlar (soru/liste
+    numarası, yıl/aralık, ondalıklı değer, tablo sütunu) silinmemeli; çıplak tek
+    tamsayı (gövdeye düşmüş sayfa no, grafik eksen etiketi) ve süsleme silinmeye
+    devam etmeli."""
+    from converter import _is_noise_block
+
+    for kept in ["81.", "1)", "(3)", "1776.", "(1370-1405)", "1850-1915", "59.90 \n(<0.001*)", "00:15", "5 \n7 \n10"]:
+        assert not _is_noise_block(kept), kept
+    # son ikisi grafik eksen işaretleri (eşit aralıklı dizi), tablo sütunu değil
+    for dropped in ["28", "0", "150", "* * *", "◆ ◆ ◆", "•", "i", "0\n2\n4\n6\n8\n10", "0.0\n0.5\n1.0"]:
+        assert _is_noise_block(dropped), dropped
+
+
+def test_list_marker_block_is_attached_to_item_text_and_never_a_heading():
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 100), "14.", fontsize=12)
+    page.insert_text((96, 100), "Which of the following sentences is true?", fontsize=12)
+    page.insert_text((72, 300), "This page is a question page of a test book with enough body text.", fontsize=12)
+    page.insert_text((72, 400), "59.90", fontsize=12)
+    data = doc.tobytes()
+    doc.close()
+
+    html_text = process_page_range(data, 1, 1, {"title": "Kitap", "author": "Yazar"})[0].html
+
+    assert "<p>14. Which of the following sentences is true?</p>" in html_text
+    assert "<p>59.90</p>" in html_text

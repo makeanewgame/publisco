@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MembershipTier, Prisma } from '../generated/prisma/client';
+import { downgradeLapsedPremium } from '../payments/membership';
 import { CONVERTER_QUOTA_PAGES, STORAGE_QUOTA_BYTES } from './quota.constants';
 import {
   ConverterQuotaExceededException,
@@ -39,6 +40,7 @@ export class QuotaService {
   }
 
   async getUsageSummary(userId: string): Promise<QuotaUsageSummary> {
+    await downgradeLapsedPremium(this.prisma, userId);
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { membershipTier: true, convertedPagesTotal: true, quota: true },
@@ -86,6 +88,8 @@ export class QuotaService {
   // de uygunsa converter kotasını rezerve eder (sayaç artırılır). Worker'a
   // giden istek başarısız olursa releaseConversionQuota ile geri alınmalıdır.
   async reserveConversionQuota(userId: string, fileSizeBytes: number, pageCount: number): Promise<void> {
+    // Süresi geçmiş premium önce düşürülür ki aşağıdaki limitler FREE'den okunsun.
+    await downgradeLapsedPremium(this.prisma, userId);
     await this.prisma.$transaction(async (tx) => {
       // "users" satırı kilitleniyor (convertedPagesTotal'a yazacağız); user_quotas
       // sadece okunuyor, o yüzden join'e FOR UPDATE gerekmiyor.
@@ -150,6 +154,7 @@ export class QuotaService {
     fileSizeBytes: number,
     fn: (tx: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
+    await downgradeLapsedPremium(this.prisma, userId);
     return this.prisma.$transaction(
       async (tx) => {
         const rows = await tx.$queryRaw<

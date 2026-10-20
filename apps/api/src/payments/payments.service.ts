@@ -10,7 +10,7 @@ import {
 } from '@lemonsqueezy/lemonsqueezy.js';
 import { PrismaService } from '../prisma/prisma.service';
 import { MembershipTier, Subscription } from '../generated/prisma/client';
-import { defaultQuotaData } from '../users/users.service';
+import { ACTIVE_SUBSCRIPTION_STATUSES, downgradeLapsedPremium, setMembershipTier } from './membership';
 
 export interface SubscriptionDto {
   status: string;
@@ -60,12 +60,6 @@ interface LemonSqueezyWebhookPayload {
   };
 }
 
-// Lemon Squeezy abonelik erişiminin devam ettiğini kabul ettiğimiz durumlar.
-// "cancelled" bilinçli olarak burada yok: kullanıcı iptal etse de dönem
-// sonuna (ends_at) kadar erişimi sürer — tier'ı ancak gerçek
-// "subscription_expired" webhook'u geldiğinde FREE'ye düşürüyoruz.
-const ACTIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'on_trial']);
-
 @Injectable()
 export class PaymentsService implements OnModuleInit {
   private readonly logger = new Logger(PaymentsService.name);
@@ -110,6 +104,7 @@ export class PaymentsService implements OnModuleInit {
   }
 
   async getSubscriptionSummary(userId: string): Promise<SubscriptionSummaryDto> {
+    await downgradeLapsedPremium(this.prisma, userId);
     const [user, subscription] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { membershipTier: true } }),
       this.findLatestSubscription(userId),
@@ -253,24 +248,9 @@ export class PaymentsService implements OnModuleInit {
     }
 
     if (eventName === 'subscription_expired') {
-      await this.setMembershipTier(user.id, MembershipTier.FREE);
+      await setMembershipTier(this.prisma, user.id, MembershipTier.FREE);
     } else if (ACTIVE_SUBSCRIPTION_STATUSES.has(attrs.status)) {
-      await this.setMembershipTier(user.id, MembershipTier.PREMIUM);
+      await setMembershipTier(this.prisma, user.id, MembershipTier.PREMIUM);
     }
-  }
-
-  // membershipTier tek başına quota limitlerini değiştirmez: bir UserQuota
-  // satırı varsa QuotaService.resolveLimits orayı tier sabitlerine tercih
-  // eder (bkz. quota.service.ts), o yüzden ikisini birlikte güncelliyoruz.
-  private async setMembershipTier(userId: string, tier: MembershipTier): Promise<void> {
-    const quotaData = defaultQuotaData(tier);
-    await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: userId }, data: { membershipTier: tier } }),
-      this.prisma.userQuota.upsert({
-        where: { userId },
-        create: { userId, ...quotaData },
-        update: quotaData,
-      }),
-    ]);
   }
 }

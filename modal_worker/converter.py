@@ -32,6 +32,7 @@ import io
 import logging
 import re
 import statistics
+import unicodedata
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
@@ -877,6 +878,21 @@ def _decode_symbol_font_pua(text: str, font_name: str) -> str:
     return "".join(out)
 
 
+_MATH_ALPHANUMERIC_RANGE = (0x1D400, 0x1D7FF)
+
+
+def _normalize_math_alphanumeric(text: str) -> str:
+    """Unicode "Mathematical Alphanumeric Symbols" bloğunu (𝜏, 𝑛, 𝑷, 𝟏) düz
+    Latin/Yunan harfine ve rakama çevirir (NFKC). Geçerli Unicode ama Kindle'ın
+    varsayılan fontunda karşılığı yok, kutu (□) görünüyordu -- matematik kitabı
+    olmayan `book-with-images_966108`'in formüllerinde de ("𝜏=𝜎𝑛𝑡𝑎𝑛(φb+𝑖)").
+    Kaybedilen yalnızca italik/kalın matematik stili."""
+    lo, hi = _MATH_ALPHANUMERIC_RANGE
+    if not any(lo <= ord(ch) <= hi for ch in text):
+        return text
+    return "".join(unicodedata.normalize("NFKC", ch) if lo <= ord(ch) <= hi else ch for ch in text)
+
+
 def _span_text(span: dict, note_ids: dict[str, str] | None = None) -> str:
     """Bir span'ın metni, font'a bağlı düzeltmeler uygulanmış halde.
 
@@ -884,7 +900,7 @@ def _span_text(span: dict, note_ids: dict[str, str] | None = None) -> str:
     bir dipnot referansıysa (bkz. `_detect_page_footnotes`) metni bir noteref
     belirteciyle sarılır -- `assemble_epub` bunu `<a epub:type="noteref">`'e
     çevirir."""
-    text = _decode_symbol_font_pua(span.get("text", ""), span.get("font", ""))
+    text = _normalize_math_alphanumeric(_decode_symbol_font_pua(span.get("text", ""), span.get("font", "")))
     if note_ids and _is_note_mark_span(span):
         mark = text.strip()
         if mark in note_ids:

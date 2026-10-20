@@ -1165,3 +1165,10 @@ def test_list_marker_block_is_attached_to_item_text_and_never_a_heading():
 
     assert "<p>14. Which of the following sentences is true?</p>" in html_text
     assert "<p>59.90</p>" in html_text
+
+
+def test_math_alphanumeric_is_normalized_to_plain_letters():
+    """Trello ehQsb70j parça 3: Matematik Alfanümerik blok Kindle'da kutu görünüyor;
+    düz harfe/rakama çevrilmeli, diğer karakterlere (φ, Türkçe harfler) dokunulmamalı."""
+    assert _span_text({"text": "𝜏=𝜎𝑛𝑡𝑎𝑛(φb+𝑖)", "font": "CambriaMath"}) == "τ=σntan(φb+i)"
+    assert _span_text({"text": "Çarpımsal 𝑷-Fonksiyonlar 𝟐", "font": "Cambria"}) == "Çarpımsal P-Fonksiyonlar 2"

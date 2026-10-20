@@ -1061,3 +1061,77 @@ def test_detect_recurring_watermark_text_requires_same_position():
 
     assert found == {"ornekfiligran.az"}
     doc.close()
+
+
+def _footnote_pdf(ref_mark: str | None, note_line: str | None, extra_body: str = "") -> bytes:
+    """Gövde paragrafı (sonunda isteğe bağlı üst simge referansı) + sayfa altında
+    küçük puntolu bir not satırı olan tek sayfalık PDF. Üst simge, küçük puntoyla
+    yukarı kaydırılmış metin olarak yazılır -- PyMuPDF bunu span `flags` bit 0
+    (superscript) ile işaretler, gerçek kitaplardaki gibi."""
+    doc = pymupdf.open()
+    page = doc.new_page()
+    font = pymupdf.Font("helv")
+    writer = pymupdf.TextWriter(page.rect)
+    body = "Ahmet bir simit aldı ve sahil boyunca yürümeye devam etti."
+    writer.append((72, 100), body, font=font, fontsize=12)
+    if ref_mark is not None:
+        writer.append((72 + font.text_length(body, fontsize=12), 95), ref_mark, font=font, fontsize=7)
+    if extra_body:
+        writer.append((72, 130), extra_body, font=font, fontsize=12)
+    if note_line is not None:
+        writer.append((72, 700), note_line, font=font, fontsize=8)
+    writer.write_text(page)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def _chapter_html(pdf_bytes: bytes) -> str:
+    epub_bytes = convert_pdf_to_epub(pdf_bytes, {"title": "Kitap", "author": "Yazar"})
+    with zipfile.ZipFile(io.BytesIO(epub_bytes)) as archive:
+        return archive.read("EPUB/chap_01.xhtml").decode("utf-8")
+
+
+def test_footnote_becomes_clickable_noteref_and_aside():
+    """Pub-1: üst simge referans + sayfa altındaki eşleşen not, metnin devamına
+    eklenmek yerine EPUB 3 açılır dipnot desenine (noteref -> aside) dönüşmeli."""
+    html_text = _chapter_html(_footnote_pdf("1", "1 Susamlı, halka şeklinde bir ekmek türü. (Ç.N.)"))
+
+    assert 'epub:type="noteref" href="#fn-p1-1" id="ref-p1-1">1</a>' in html_text
+    assert (
+        '<aside epub:type="footnote" id="fn-p1-1"><p><a href="#ref-p1-1">1</a> '
+        "Susamlı, halka şeklinde bir ekmek türü. (Ç.N.)</p></aside>"
+    ) in html_text
+    body_part = html_text.split("<aside", 1)[0]
+    assert "Susamlı" not in body_part  # not artık gövde akışında değil
+    assert "﷐" not in html_text and "﷒" not in html_text
+
+
+def test_footnote_requires_matching_superscript_reference():
+    """Gövdede eşleşen üst simge yoksa sayfa altındaki rakamla başlayan küçük
+    satır (ör. künye, tablo notu) dipnot sayılmaz, akışta kalır."""
+    html_text = _chapter_html(_footnote_pdf(None, "1 Susamlı, halka şeklinde bir ekmek türü. (Ç.N.)"))
+
+    assert "noteref" not in html_text and "<aside" not in html_text
+    assert "Susamlı" in html_text
+
+
+def test_footnote_rejects_formula_fragment_matched_by_exponent():
+    """Gövdedeki bir üs ("x²") ile alttaki bir formül satırının ("2 + x = y")
+    tesadüfi eşleşmesi dipnot sayılmamalı (düzyazı şartı)."""
+    html_text = _chapter_html(_footnote_pdf("2", "2 + x = y"))
+
+    assert "noteref" not in html_text and "<aside" not in html_text
+
+
+def test_render_footnotes_never_links_to_missing_ids():
+    from converter import Footnote, _noteref_token, _render_footnotes
+
+    html_text = _render_footnotes(
+        f"<p>a{_noteref_token('p1-9', '9')} b</p>",  # notu olmayan referans
+        [Footnote(note_id="p1-1", mark="1", text="Referansı akışta kalmamış not.")],
+    )
+
+    assert html_text.startswith("<p>a9 b</p>")
+    assert '<aside epub:type="footnote" id="fn-p1-1"><p>1 Referansı akışta kalmamış not.</p></aside>' in html_text
+    assert 'href="#ref-' not in html_text

@@ -809,12 +809,25 @@ def _decode_symbol_font_pua(text: str, font_name: str) -> str:
     return "".join(out)
 
 
-def _span_text(span: dict) -> str:
-    """Bir span'ın metni, font'a bağlı düzeltmeler uygulanmış halde."""
-    return _decode_symbol_font_pua(span.get("text", ""), span.get("font", ""))
+def _span_text(span: dict, note_ids: dict[str, str] | None = None) -> str:
+    """Bir span'ın metni, font'a bağlı düzeltmeler uygulanmış halde.
+
+    `note_ids` (dipnot işareti -> not kimliği) verilmişse ve span, eşleşmiş
+    bir dipnot referansıysa (bkz. `_detect_page_footnotes`) metni bir noteref
+    belirteciyle sarılır -- `assemble_epub` bunu `<a epub:type="noteref">`'e
+    çevirir."""
+    text = _decode_symbol_font_pua(span.get("text", ""), span.get("font", ""))
+    if note_ids and _is_note_mark_span(span):
+        mark = text.strip()
+        if mark in note_ids:
+            return _noteref_token(note_ids[mark], mark)
+        singles = _span_note_marks(mark)[1:]
+        if singles == list(mark) and all(ch in note_ids for ch in singles):
+            return "".join(_noteref_token(note_ids[ch], ch) for ch in singles)
+    return text
 
 
-def _block_text_and_font(block: dict) -> tuple[str, float, bool]:
+def _block_text_and_font(block: dict, note_ids: dict[str, str] | None = None) -> tuple[str, float, bool]:
     """`page.get_text('dict')`'in bir metin bloğundan, `get_text('blocks')`'un
     ürettiğiyle aynı biçimde (satırlar `\\n` ile birleşik) düz metni, ve
     bloğun İLK span'ından temsili punto boyutu/kalınlığını çıkarır. Gerçek
@@ -828,7 +841,7 @@ def _block_text_and_font(block: dict) -> tuple[str, float, bool]:
     bold = False
     first_span_seen = False
     for line in block.get("lines", []):
-        line_text = "".join(_span_text(span) for span in line.get("spans", []))
+        line_text = "".join(_span_text(span, note_ids) for span in line.get("spans", []))
         lines_text.append(line_text)
         if not first_span_seen:
             for span in line.get("spans", []):
@@ -839,11 +852,11 @@ def _block_text_and_font(block: dict) -> tuple[str, float, bool]:
     return "\n".join(lines_text), size, bold
 
 
-def _line_text_and_font(line: dict) -> tuple[str, float, bool]:
+def _line_text_and_font(line: dict, note_ids: dict[str, str] | None = None) -> tuple[str, float, bool]:
     """`_block_text_and_font`'un tek bir `line` sözlüğü (dict block'un `lines`
     listesindeki bir eleman) için karşılığı -- metni ve İLK span'ın punto/
     kalınlığını döner. `_unmerge_multi_column_block`'ta kullanılır."""
-    text = "".join(_span_text(span) for span in line.get("spans", []))
+    text = "".join(_span_text(span, note_ids) for span in line.get("spans", []))
     size = 0.0
     bold = False
     for span in line.get("spans", []):
@@ -851,6 +864,160 @@ def _line_text_and_font(line: dict) -> tuple[str, float, bool]:
         bold = _is_bold_span(span.get("font", ""), span.get("flags", 0))
         break
     return text, size, bold
+
+
+# ---------------------------------------------------------------------------
+# Dipnotlar
+# ---------------------------------------------------------------------------
+#
+# Gömülü metinli sayfalarda gövdedeki üst simge bir işaret ("1", "*", "†") ile
+# sayfanın alt kısmındaki, gövdeden küçük puntolu ve AYNI işaretle başlayan
+# satır EŞLEŞİRSE bir dipnot sayılır. Eşleşme şartı yanlış-pozitifleri (denklem
+# üsleri, sayfa altındaki sıradan küçük yazılar) eler -- golden sette tek başına
+# "altta küçük puntolu, rakamla başlayan blok" sinyali yüzlerce sayfada tetikleniyor,
+# eşleşmeli olan yalnızca gerçek dipnot sayfalarında. Not blokları gövde akışından
+# çıkarılır; referans span'ı noteref belirteciyle (bkz. `_NOTEREF_*`) işaretlenir.
+# HTML'e çevirme reduce fazında (`assemble_epub`) yapılır: `refine/` paragraf
+# metnini unescape/escape ederek birleştirdiğinden map fazında üretilmiş bir
+# `<a>` etiketi orada kaçışlanıp bozulurdu, Unicode noncharacter belirteçleri ise
+# bu dönüşümlerden aynen geçer.
+
+FOOTNOTE_MIN_TOP_RATIO = 0.5  # not bloğu sayfanın alt yarısında başlamalı
+FOOTNOTE_MAX_SIZE_RATIO = 0.92  # not bloğunun puntosu sayfanın baskın gövde puntosunun bu oranından küçük olmalı
+FOOTNOTE_CONTINUATION_SIZE_TOLERANCE = 0.15  # işaretsiz bir bloğun önceki notun devamı sayılması için punto farkı (göreli)
+FOOTNOTE_CONTINUATION_MAX_GAP_RATIO = 1.0  # ... ve önceki not bloğuyla arasındaki dikey boşluk (not puntosunun katı)
+_SUPERSCRIPT_FLAG = 1  # PyMuPDF span "flags" bitfield: bit 0 = üst simge
+_NOTE_SYMBOLS = "*∗†‡§"  # ∗ = U+2217, LaTeX'in \thanks/\ast'i düz '*' yerine bunu basar
+_NOTE_MARK_RE = re.compile(rf"^(?:[0-9]{{1,3}}|[{_NOTE_SYMBOLS}]{{1,3}})$")
+_LEADING_NOTE_MARK_RE = re.compile(rf"^\s*([0-9]{{1,3}}[.)]?(?=\s)|[{_NOTE_SYMBOLS}]{{1,3}})\s*")
+_NOTE_PROSE_RE = re.compile(r"[^\W\d_]{3,}")  # not metninde en az bir gerçek kelime -- formül parçalarını eler
+_NOTEREF_OPEN, _NOTEREF_SEP, _NOTEREF_CLOSE = "﷐", "﷑", "﷒"
+_NOTEREF_TOKEN_RE = re.compile("﷐([^﷑﷒]*)﷑([^﷒]*)﷒")
+
+
+@dataclass
+class Footnote:
+    note_id: str  # bölüm içinde tekil (ör. "p22-1"); `fn-<id>` / `ref-<id>` HTML kimlikleri bundan türer
+    mark: str
+    text: str
+
+
+def _is_note_mark_span(span: dict) -> bool:
+    return bool(span.get("flags", 0) & _SUPERSCRIPT_FLAG) and bool(
+        _NOTE_MARK_RE.match(span.get("text", "").strip())
+    )
+
+
+def _span_note_marks(mark: str) -> list[str]:
+    """Bir referans span'ının işaret(ler)i: "1" -> ["1"]; birden fazla notu
+    birlikte gösteren sembol dizisi ("∗†") -> ["∗†", "∗", "†"] (önce bütünü)."""
+    if len(mark) > 1 and all(ch in _NOTE_SYMBOLS for ch in mark):
+        return [mark, *dict.fromkeys(mark)]
+    return [mark]
+
+
+def _noteref_token(note_id: str, mark: str) -> str:
+    return f"{_NOTEREF_OPEN}{note_id}{_NOTEREF_SEP}{mark}{_NOTEREF_CLOSE}"
+
+
+def _dominant_span_size(blocks: list[dict]) -> float | None:
+    """Karakter sayısıyla ağırlıklandırılmış en yaygın span puntosu."""
+    weights: dict[float, int] = {}
+    for block in blocks:
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                n = len(span.get("text", "").strip())
+                if n:
+                    size = round(span.get("size", 0.0), 1)
+                    weights[size] = weights.get(size, 0) + n
+    return max(weights, key=weights.get) if weights else None
+
+
+def _leading_note_mark(line: dict, ref_marks: set[str]) -> tuple[str | None, str]:
+    """Satır `ref_marks`'taki bir işaretle başlıyorsa (işaret, satırın kalanı) döner,
+    değilse (None, satırın tamamı). İşaret ya ayrı bir üst simge span'ı ya da
+    satır başında boşlukla ayrılmış düz metindir ("1 GNU Compiler...")."""
+    spans = line.get("spans", [])
+    text = "".join(_span_text(s) for s in spans)
+    first = next((i for i, s in enumerate(spans) if s.get("text", "").strip()), None)
+    if first is None:
+        return None, text
+    if _is_note_mark_span(spans[first]) and spans[first]["text"].strip() in ref_marks:
+        return spans[first]["text"].strip(), "".join(_span_text(s) for s in spans[first + 1 :]).strip()
+    match = _LEADING_NOTE_MARK_RE.match(text)
+    if match:
+        mark = match.group(1).rstrip(".)")
+        if mark in ref_marks:
+            return mark, text[match.end():]
+    return None, text
+
+
+def _detect_page_footnotes(raw_blocks: list[dict], page_height: float) -> tuple[set[int], dict[str, str]]:
+    """Sayfanın dipnotlarını bulur. Dönüş: (not bloklarının `raw_blocks` indeksleri,
+    işaret -> not metni; sayfadaki sırasıyla). Bkz. bölüm başındaki açıklama."""
+    text_blocks = [(i, b) for i, b in enumerate(raw_blocks) if b.get("type") == 0 and b.get("lines")]
+    body_size = _dominant_span_size([b for _, b in text_blocks])
+    if not body_size:
+        return set(), {}
+    small = body_size * FOOTNOTE_MAX_SIZE_RATIO
+
+    # Referans adayları yalnızca gövde puntosundaki bloklardan toplanır -- not
+    # satırlarının kendi baştaki üst simge işaretleri eşleşmeyi kendi kendine
+    # sağlamasın diye.
+    ref_marks: set[str] = set()
+    for _, block in text_blocks:
+        if (_dominant_span_size([block]) or 0.0) < small:
+            continue
+        for line in block["lines"]:
+            for span in line.get("spans", []):
+                if _is_note_mark_span(span):
+                    ref_marks.update(_span_note_marks(span["text"].strip()))
+    if not ref_marks:
+        return set(), {}
+
+    notes: dict[str, list[str]] = {}
+    note_sources: dict[str, set[int]] = {}  # işaret -> notun metnini taşıyan bloklar
+    current: str | None = None
+    note_size: float | None = None
+    last_note_bottom = 0.0
+    for index, block in sorted(text_blocks, key=lambda item: item[1]["bbox"][1]):
+        if block["bbox"][1] < page_height * FOOTNOTE_MIN_TOP_RATIO:
+            continue
+        size = _dominant_span_size([block])
+        if not size or size >= small:
+            continue
+        parsed = [_leading_note_mark(line, ref_marks) for line in block["lines"]]
+        parsed = [(mark, rest) for mark, rest in parsed if mark is not None or rest.strip()]
+        if not parsed:
+            continue
+        if parsed[0][0] is None and (
+            current is None
+            or note_size is None
+            or abs(size - note_size) / note_size > FOOTNOTE_CONTINUATION_SIZE_TOLERANCE
+            or block["bbox"][1] - last_note_bottom > note_size * FOOTNOTE_CONTINUATION_MAX_GAP_RATIO
+            # sayfa no gibi harfsiz kısa bloklar notun devamı değildir
+            or not any(_HAS_LETTER_RE.search(rest) for _, rest in parsed)
+        ):
+            continue
+        for mark, rest in parsed:
+            if mark is not None and mark not in notes:
+                current = mark
+                notes[mark] = [rest]
+            elif current is not None:
+                notes[current].append(rest if mark is None else f"{mark} {rest}")
+            if current is not None:
+                note_sources.setdefault(current, set()).add(index)
+        note_size = note_size or size
+        last_note_bottom = max(last_note_bottom, block["bbox"][3])
+
+    texts = {mark: clean_text("\n".join(lines)) for mark, lines in notes.items()}
+    # Düzyazı olmayan bir "not" (denklem parçası: gövdedeki bir üs ile alttaki
+    # bir formül satırının tesadüfi eşleşmesi) reddedilir; onun bloklarına
+    # dokunan tüm notlar da düşer, bloklar gövde akışında kalır.
+    rejected_blocks = {i for mark, text in texts.items() if not _NOTE_PROSE_RE.search(text) for i in note_sources[mark]}
+    kept = {mark: text for mark, text in texts.items() if not (note_sources[mark] & rejected_blocks)}
+    note_blocks = {i for mark in kept for i in note_sources[mark]}
+    return note_blocks, kept
 
 
 def _bands_are_disjoint(bands: list[tuple[float, float]]) -> bool:
@@ -864,7 +1031,7 @@ def _bands_are_disjoint(bands: list[tuple[float, float]]) -> bool:
 
 
 def _unmerge_multi_column_block(
-    block: dict, page_width: float
+    block: dict, page_width: float, note_ids: dict[str, str] | None = None
 ) -> list[tuple[float, float, float, float, str, float, bool]] | None:
     """PyMuPDF'in `get_text('dict')`'te tek bir "blok" olarak döndürdüğü,
     ama aslında birden fazla sütunu (ör. çok-sütunlu İçindekiler/Katkıda-
@@ -903,7 +1070,7 @@ def _unmerge_multi_column_block(
 
     unmerged = []
     for line in lines:
-        text, size, bold = _line_text_and_font(line)
+        text, size, bold = _line_text_and_font(line, note_ids)
         if not text.strip():
             continue
         x0, y0, x1, y1 = line.get("bbox", (0.0, 0.0, 0.0, 0.0))
@@ -916,6 +1083,8 @@ def _collect_filtered_text_blocks(
     blacklist: set[str] | None = None,
     top_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
     bottom_margin_ratio: float = HEADER_FOOTER_DEFAULT_MARGIN_RATIO,
+    footnotes_out: list[Footnote] | None = None,
+    note_id_prefix: str = "",
 ) -> list[tuple[float, float, float, float, str, float, bool]]:
     """Sayfadaki metin bloklarını PyMuPDF'ten (`get_text('dict')`, punto/
     kalınlık bilgisi taşıması için -- bkz. ROADMAP.md madde 1) okuyup üç
@@ -928,7 +1097,13 @@ def _collect_filtered_text_blocks(
     birleştirmesi yapılmadan) döner -- hem `_extract_text_blocks`'un (paragraf
     sınırı çıkarımı) hem `_build_interleaved_page_html`'in (görsellerle konum
     bazlı harmanlama) hem `detect_chapters`'ın (font-boyutu bölüm tespiti)
-    ortak temeli."""
+    ortak temeli.
+
+    `footnotes_out` verilirse dipnot ayrıştırması açılır (bkz.
+    `_detect_page_footnotes`): not blokları dönen listeye girmez, `Footnote`
+    olarak `footnotes_out`'a eklenir (kimlikleri `note_id_prefix` + sıra no);
+    gövdedeki eşleşmiş referanslar noteref belirteciyle işaretlenir. Verilmezse
+    davranış eskisiyle aynıdır."""
     try:
         raw_blocks = page.get_text("dict").get("blocks", [])
     except Exception:
@@ -938,17 +1113,33 @@ def _collect_filtered_text_blocks(
     page_width = page.rect.width
     has_macroman_font = _page_has_macroman_font(page)
 
+    note_blocks: set[int] = set()
+    note_ids: dict[str, str] = {}
+    if footnotes_out is not None:
+        note_blocks, notes = _detect_page_footnotes(raw_blocks, page_height)
+        for number, (mark, note_text) in enumerate(notes.items(), start=1):
+            note_ids[mark] = f"{note_id_prefix}{number}"
+            footnotes_out.append(
+                Footnote(
+                    note_id=note_ids[mark],
+                    mark=mark,
+                    text=_fix_mac_turkish_mojibake(note_text, has_macroman_font),
+                )
+            )
+
     # İki geçişli: önce TÜM metin bloklarının konumu/metni (filtre uygulanmadan)
     # toplanıyor -- kenar payı filtresinin "bu blok gerçekten yalnız başına
     # duran bir koşu başlığı/sayfa no mu, yoksa üstündeki bir paragrafın
     # devamı mı" ayrımını yapabilmesi (`_looks_like_paragraph_continuation`)
     # için tüm sayfanın bağlamına ihtiyacı var.
     positioned: list[tuple[float, float, float, float, str, float, bool]] = []
-    for block in raw_blocks:
+    for block_index, block in enumerate(raw_blocks):
         if block.get("type") != 0:  # yalnızca metin blokları (1 = görsel)
             continue
+        if block_index in note_blocks:
+            continue
 
-        unmerged = _unmerge_multi_column_block(block, page_width)
+        unmerged = _unmerge_multi_column_block(block, page_width, note_ids)
         if unmerged is not None:
             # PyMuPDF bu bloğu yanlışlıkla birden fazla sütunu tek akışta
             # birleştirmiş (bkz. `_unmerge_multi_column_block`) -- satır satır
@@ -962,7 +1153,7 @@ def _collect_filtered_text_blocks(
                 positioned.append((x0, y0, x1, y1, text, size, bold))
             continue
 
-        raw_text, size, bold = _block_text_and_font(block)
+        raw_text, size, bold = _block_text_and_font(block, note_ids)
         text = _fix_mac_turkish_mojibake(raw_text.strip(), has_macroman_font)
         if not text:
             continue
@@ -2443,6 +2634,7 @@ class PageResult:
     page_num: int
     html: str
     images: list[tuple[str, bytes, str]] = field(default_factory=list)  # (dosya adı, bayt, media_type)
+    footnotes: list[Footnote] = field(default_factory=list)  # `html`'deki noteref belirteçlerinin notları
 
 
 def _flush_text_run(
@@ -2469,7 +2661,7 @@ def _build_interleaved_page_html(
     top_margin_ratio: float,
     bottom_margin_ratio: float,
     body_font_size: float | None = None,
-) -> tuple[str, list[tuple[str, bytes, str]]]:
+) -> tuple[str, list[tuple[str, bytes, str]], list[Footnote]]:
     """Sayfanın metin ve gömülü-görsel bloklarını TEK bir okuma-sırası akışında
     birleştirir -- görseller artık sayfanın SONUNA değil, PDF'teki gerçek
     konumlarına (ör. paragraf arasına) yerleştirilir (bkz. ROADMAP.md madde 2).
@@ -2486,9 +2678,21 @@ def _build_interleaved_page_html(
     Yalnızca gömülü metin katmanı bulunan (OCR'a düşmemiş, `force_ocr` ile
     ezilmemiş) sayfalarda kullanılır -- çağıran (`process_page`) OCR-türetilmiş
     metin için eski düz akışı kullanmaya devam eder (bkz. oradaki not:
-    OCR koordinatları piksel-uzayında, PDF görselleri nokta-uzayında)."""
+    OCR koordinatları piksel-uzayında, PDF görselleri nokta-uzayında).
+
+    Dipnotlar da yalnızca bu yolda ayrıştırılır (span'ın üst simge bayrağı OCR
+    metninde yok) -- not kimlikleri mutlak sayfa numarasını içerir ki bölüm
+    dosyasında tekil kalsın."""
     page = doc[page_index]
-    text_blocks = _collect_filtered_text_blocks(page, blacklist, top_margin_ratio, bottom_margin_ratio)
+    footnotes: list[Footnote] = []
+    text_blocks = _collect_filtered_text_blocks(
+        page,
+        blacklist,
+        top_margin_ratio,
+        bottom_margin_ratio,
+        footnotes_out=footnotes,
+        note_id_prefix=f"p{page_num}-",
+    )
     image_blocks = extract_embedded_page_images(doc, page_index, page_num)
 
     combined: list[tuple[float, float, float, float, str, Any]] = [
@@ -2514,7 +2718,7 @@ def _build_interleaved_page_html(
             html_parts.append(f'<img src="{img_name}" alt="Sayfa {page_num} görseli" />')
         _flush_text_run(text_run, html_parts, body_font_size)
 
-    return "\n".join(html_parts), images
+    return "\n".join(html_parts), images, footnotes
 
 
 def process_page(
@@ -2553,6 +2757,7 @@ def process_page(
 
     html_parts: list[str] = []
     images: list[tuple[str, bytes, str]] = []
+    footnotes: list[Footnote] = []
 
     if page_num in diagram_pages:
         img_name = f"images/page_{page_num}_diagram.jpg"
@@ -2652,14 +2857,14 @@ def process_page(
     else:
         # Normal gömülü-metin sayfası: metin ve görselleri PDF'teki gerçek
         # okuma sırasına göre TEK bir akışta harmanla (bkz. ROADMAP.md madde 2).
-        page_html, page_images = _build_interleaved_page_html(
+        page_html, page_images, footnotes = _build_interleaved_page_html(
             doc, page_index, page_num, header_blacklist, top_margin_ratio, bottom_margin_ratio, body_font_size
         )
         if page_html:
             html_parts.append(page_html)
         images.extend(page_images)
 
-    return PageResult(page_num=page_num, html="\n".join(html_parts), images=images)
+    return PageResult(page_num=page_num, html="\n".join(html_parts), images=images, footnotes=footnotes)
 
 
 def process_page_range(
@@ -2716,6 +2921,37 @@ def process_page_range(
 # Reduce fazı — tek container
 # ---------------------------------------------------------------------------
 
+def _render_footnotes(chapter_html: str, footnotes: list[Footnote]) -> str:
+    """Bölüm HTML'indeki noteref belirteçlerini `<a epub:type="noteref">`'e
+    çevirir ve notları bölümün sonuna `<aside epub:type="footnote">` olarak
+    ekler (EPUB 3 açılır dipnot deseni; Kindle/Apple Books referansa
+    dokunulunca notu açar). Notu olmayan bir belirteç yalnızca işaretine,
+    referansı akışta kalmamış bir not geri bağlantısız düz nota döner -- hiçbir
+    `href` var olmayan bir kimliği göstermez."""
+    known_ids = {note.note_id for note in footnotes}
+    referenced: set[str] = set()
+
+    def _ref(match: re.Match) -> str:
+        note_id, mark = match.group(1), match.group(2)
+        if note_id not in known_ids:
+            return mark
+        id_attr = "" if note_id in referenced else f' id="ref-{note_id}"'
+        referenced.add(note_id)
+        return f'<a class="noteref" epub:type="noteref" href="#fn-{note_id}"{id_attr}>{mark}</a>'
+
+    rendered = _NOTEREF_TOKEN_RE.sub(_ref, chapter_html)
+    rendered = re.sub("[﷐-﷒]", "", rendered)
+    asides = []
+    for note in footnotes:
+        mark = html.escape(note.mark)
+        backlink = f'<a href="#ref-{note.note_id}">{mark}</a>' if note.note_id in referenced else mark
+        asides.append(
+            f'<aside epub:type="footnote" id="fn-{note.note_id}">'
+            f"<p>{backlink} {html.escape(note.text)}</p></aside>"
+        )
+    return "\n".join([rendered, *asides]) if asides else rendered
+
+
 def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
     """Sayfa sonuçlarını plan fazındaki bölüm haritasına göre (chunk sınırından
     bağımsız, sayfa numarası sırasına göre) `EpubHtml` item'larına toplayıp
@@ -2744,6 +2980,8 @@ def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
             "img { max-width: 100%; display: block; margin: 1em auto; }"
             ".visual-page { margin: 1.5em 0; }"
             ".caption { font-size: 0.95em; text-align: center; color: #444; }"
+            ".noteref { vertical-align: super; font-size: 0.75em; line-height: 0; text-decoration: none; }"
+            "aside p { font-size: 0.9em; }"
         ),
     )
     book.add_item(css)
@@ -2761,6 +2999,7 @@ def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
     chapter_items = []
     for i, chap in enumerate(plan.chapters):
         html_parts = [f"<h1>{html.escape(chap.title)}</h1>"]
+        chapter_footnotes: list[Footnote] = []
 
         for page_num in range(chap.start_page, chap.end_page + 1):
             pr = by_page.get(page_num)
@@ -2781,10 +3020,11 @@ def assemble_epub(plan: PlanResult, page_results: list[PageResult]) -> bytes:
                 )
             if pr.html:
                 html_parts.append(pr.html)
+            chapter_footnotes.extend(pr.footnotes)
 
         chap_file = f"chap_{i + 1:02d}.xhtml"
         epub_chap = epub.EpubHtml(title=chap.title, file_name=chap_file, lang=book.language)
-        epub_chap.content = "\n".join(html_parts)
+        epub_chap.content = _render_footnotes("\n".join(html_parts), chapter_footnotes)
         epub_chap.add_item(css)
         book.add_item(epub_chap)
         chapter_items.append(epub_chap)

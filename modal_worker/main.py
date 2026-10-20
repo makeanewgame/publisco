@@ -56,6 +56,7 @@ BLOB_API_VERSION = "7"
 
 DOWNLOAD_RETRIES = 3
 DOWNLOAD_BACKOFF_SECONDS = 2.0
+PROD_REFINE_MODE = "rules"  # bkz. reduce_and_build_epub
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -261,7 +262,11 @@ def reduce_and_build_epub(plan_result: PlanResult, page_results_per_chunk: list[
     paketliyor, Modal'ın varsayılan limiti çok sayfalı/görsel ağırlıklı
     kitaplarda yetersiz kalabiliyor."""
     all_page_results = [pr for chunk_results in page_results_per_chunk for pr in chunk_results]
-    # `config["refine_mode"]` verilmediyse (varsayılan "off") hiçbir şey yapmaz.
+    # Prod varsayılanı "rules": sayfa/sütun sonunda tireyle ya da noktalamasız bölünen
+    # paragraflar birleştirilir (Trello DnsgEHVo, yQGQfytq). "model" bir API anahtarı
+    # gerektirdiğinden yalnızca config açıkça isterse; refine_page_results'ın kendi
+    # varsayılanı eval için "off" kalır.
+    plan_result.resolved_config.setdefault("refine_mode", PROD_REFINE_MODE)
     refine_page_results(plan_result, all_page_results)
     return assemble_epub(plan_result, all_page_results)
 

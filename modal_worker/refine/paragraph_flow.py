@@ -27,6 +27,21 @@ _HYPHENS = "-­‐"
 _DANGLING_HYPHEN_RE = re.compile(rf"[^\W\d_]{{2,}}[{_HYPHENS}]$", re.UNICODE)
 _FIRST_LETTER_RE = re.compile(r"[^\W\d_]", re.UNICODE)
 _SENTENCE_END_CHARS = ".!?:;…\"'”’)»›」]"
+# Paragraf sonundaki dipnot referans belirteci (bkz. converter `_NOTEREF_*`): "details.¹"
+# cümle sonu kontrolünde görünmez olmalı.
+_TRAILING_NOTEREF_RE = re.compile("(?:﷐[^﷒]*﷒)+$")
+# Kod: süslü/açılı parantez, atama/karşılaştırma, `;`, `::`, `->` ya da bitişik çağrı
+# parantezi ("pop(") içeren kelime. Düzyazıdaki atıf parantezi ("(İmre, 2011)") sayılmaz.
+_CODE_WORD_RE = re.compile(r"[{}<>=;]|::|->|\w\(")
+CODE_WORD_RATIO = 0.25
+# Dizin satırı sonu: sayfa numarası ya da aralığı ("operator+= 417", "race condition 35–37").
+_PAGE_NUMBER_TAIL_RE = re.compile(r"\b\d{1,4}(?:\s*[–-]\s*\d{1,4})?$")
+# Akışa sızmış koşu başlığı ("304 CHAPTER 10 Testing and debugging ..."): sayfanın
+# devam metni ona değil, önceki sayfanın paragrafına aittir.
+_RUNNING_HEAD_RE = re.compile(r"^\d{1,4}\s+[A-ZÇĞİÖŞÜ]{3,}\b")
+_CAPTION_RE = re.compile(
+    r"^(?:figure|fig\.|table|listing|şekil|çizelge|tablo|resim|grafik)\s*\d", re.IGNORECASE
+)
 
 # Bundan kısa bloklar çoğunlukla başlık/altyazı/etiket -- noktalamasız bitmeleri
 # olağan, "split" adayı sayılmazlar ("hyphen" için uzunluk şartı yok).
@@ -71,10 +86,27 @@ def _starts_lowercase(text: str) -> bool:
     return ch.islower() and ch.upper() != ch
 
 
+def _looks_like_code(text: str) -> bool:
+    words = text.split()
+    if not words:
+        return False
+    return sum(1 for word in words if _CODE_WORD_RE.search(word)) / len(words) >= CODE_WORD_RATIO
+
+
 def classify_boundary(prev_text: str, next_text: str) -> str | None:
-    """İki ardışık paragraf metni birleştirme adayıysa türünü, değilse None döner."""
-    prev_text, next_text = prev_text.rstrip(), next_text.lstrip()
+    """İki ardışık paragraf metni birleştirme adayıysa türünü, değilse None döner.
+
+    Kod satırları (her `<p>` bir kod satırı; birleşince satır yapısı kaybolur,
+    düzyazıya yapışır) ve dizin satırları (ikisi de sayfa numarasıyla biter,
+    küçük harfle başlar) desene uyduğu halde aday sayılmaz -- teknik kitaplarda
+    (cplus-conherince) kuralın önerdiklerinin çoğu bunlardı."""
+    prev_text = _TRAILING_NOTEREF_RE.sub("", prev_text.rstrip()).rstrip()
+    next_text = next_text.lstrip()
     if not prev_text or not next_text or not _starts_lowercase(next_text):
+        return None
+    if _looks_like_code(prev_text) or _looks_like_code(next_text) or _RUNNING_HEAD_RE.match(prev_text):
+        return None
+    if _PAGE_NUMBER_TAIL_RE.search(prev_text) and _PAGE_NUMBER_TAIL_RE.search(next_text.rstrip()):
         return None
     if _DANGLING_HYPHEN_RE.search(prev_text):
         return "hyphen"
@@ -125,6 +157,10 @@ def find_join_candidates(page_results: list[Any], chapter_start_pages: set[int] 
             # sayfa sonundaki şekil ya da sonraki sayfanın başındaki arka plan
             # görseli, sayfayı aşan paragrafı kesmez.
             if prev is not None and image_since_prev and prev[0] == page_index:
+                prev = None
+            # Altyazı sayfa içinde bir sonraki satıra taşabilir, ama sayfanın son
+            # paragrafı bir altyazıysa sonraki sayfanın başı onun devamı değil gövdedir.
+            if prev is not None and prev[0] != page_index and _CAPTION_RE.match(prev[2].lstrip()):
                 prev = None
 
             if prev is not None:

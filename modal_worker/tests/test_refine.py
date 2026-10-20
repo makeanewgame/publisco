@@ -157,3 +157,43 @@ def test_demote_false_headings_only_below_threshold():
     assert (usage.candidate_count, usage.demoted_count) == (3, 1)  # "Sayfa 2" sorulmaz
     assert pages[0].html == "<p>Basitliğin güzelliği.</p>\n<p>Plato</p>\n<h2>AÇIKLIK GEREKSİNİMİ</h2>"
     assert pages[1].html == "<h2>HAYDEN</h2>\n<p>Gövde.</p>\n<h2>Sayfa 2</h2>"
+
+
+def test_classify_boundary_skips_code_index_and_running_heads():
+    """cplus-conherince'te kuralın önerdiklerinin çoğu bunlardı: kod satırları, dizin
+    satırları ve akışa sızmış koşu başlıkları birleştirilmemeli."""
+    # Düzyazı -> kod satırı / kod satırı -> kod satırı
+    assert classify_boundary("deleted by adding = delete to the declaration. no_copies can thus be written as",
+                             "class no_copies { public: no_copies(){} };") is None
+    assert classify_boundary("bool is_set() const { return flag.load(std::memory_order_relaxed); }",
+                             "void set_condition_variable(std::condition_variable& cv) {") is None
+    # Dizin: iki taraf da sayfa numarasıyla bitiyor
+    assert classify_boundary("std::atomic<> class template, operator+= 417 enforcing ordering with 119",
+                             "for pointer specializations 423 operator-= 418") is None
+    assert classify_boundary("example parallel implementation 228 simple parallel implementation 95",
+                             "race condition 35–37") is None
+    # Sızmış koşu başlığı
+    assert classify_boundary("304 CHAPTER 10 Testing and debugging multithreaded applications",
+                             "that you don't. If you don't have colleagues you can ask, ask a friend.") is None
+    # Kod kelimesi içeren ama düzyazı olan paragraf yine birleşir
+    assert classify_boundary("The Boost Thread Library provides an API based on the std::thread proposals and",
+                             "is portable to many platforms.") == "split"
+
+
+def test_classify_boundary_ignores_trailing_noteref_token():
+    """Dipnot referansıyla biten cümle ("details.¹") bitmiş sayılmalı."""
+    noteref = "﷐p3-1﷑1﷒"
+    assert classify_boundary(LONG + "." + noteref, "onunla konuştu.") is None
+    assert classify_boundary(LONG + " ve" + noteref, "onunla konuştu.") == "split"
+
+
+def test_caption_at_page_end_does_not_join_next_page_body():
+    caption = "Figure 8.1 Distributing consecutive chunks of data between threads"
+    pages = [
+        PageResult(page_num=1, html=f"<p>{caption}</p>"),
+        PageResult(page_num=2, html="<p>case, both the parallel tasks and the final reduction step are accumulations.</p>"),
+    ]
+    assert find_join_candidates(pages) == []
+    # Aynı sayfada altyazının devam satırı birleşebilir
+    same_page = [PageResult(page_num=1, html=f"<p>{caption} and the final</p>\n<p>reduction step.</p>")]
+    assert [c.kind for c in find_join_candidates(same_page)] == ["split"]
